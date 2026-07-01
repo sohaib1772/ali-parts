@@ -150,21 +150,11 @@ export function VehiclePicker({ open, onOpenChange }: { open: boolean; onOpenCha
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-1.5 font-bold"><Car className="size-4" /> الشركة المصنعة</div>
                 <div className="text-xs text-muted-foreground">
-                  {brands.filter((b) =>
-                    ["شوفرليت", "Chevrolet", "جمسي", "GMC", "GM"].some((n) =>
-                      b.name_ar?.toLowerCase().includes(n.toLowerCase()) ||
-                      b.name_en?.toLowerCase().includes(n.toLowerCase())
-                    )
-                  ).length} خيار
+                  {brands.filter(isAllowedBrand).length} خيار
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                {brands.filter((b) =>
-                  ["شوفرليت", "Chevrolet", "جمسي", "GMC", "GM"].some((n) =>
-                    b.name_ar?.toLowerCase().includes(n.toLowerCase()) ||
-                    b.name_en?.toLowerCase().includes(n.toLowerCase())
-                  )
-                ).map((b) => {
+                {brands.filter(isAllowedBrand).map((b) => {
                   const sel = brand?.id === b.id;
                   return (
                     <button
