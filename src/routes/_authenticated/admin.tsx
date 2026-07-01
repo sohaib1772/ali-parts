@@ -88,6 +88,7 @@ type ProductForm = {
   in_stock: boolean;
   is_featured: boolean;
   is_deal: boolean;
+  compatible_models: string[];
 };
 
 const emptyProduct: ProductForm = {
