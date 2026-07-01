@@ -43,8 +43,11 @@ function HomePage() {
     }
   }, []);
 
-  const filteredFeatured = filterProductsByVehicle(featured, vehicle);
   const filteredDeals = filterProductsByVehicle(deals, vehicle);
+  const dealIds = new Set(filteredDeals.slice(0, 4).map((p) => p.id));
+  const filteredFeatured = filterProductsByVehicle(featured, vehicle).filter(
+    (p) => !dealIds.has(p.id),
+  );
 
   return (
     <PageShell>
