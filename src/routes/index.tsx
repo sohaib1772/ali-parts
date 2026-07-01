@@ -5,7 +5,7 @@ import { Search, Hash, ChevronLeft, Sparkles, Flame } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { FloatingWhatsapp } from "@/components/floating-whatsapp";
 import { ProductCard } from "@/components/product-card";
-import { VehiclePicker, VehicleBar, getSavedVehicle } from "@/components/vehicle-picker";
+import { VehiclePicker, VehicleBar, getSavedVehicle, useSavedVehicle, filterProductsByVehicle } from "@/components/vehicle-picker";
 import {
   bannersQuery,
   brandsQuery,
@@ -34,6 +34,7 @@ function HomePage() {
   const { data: banners } = useSuspenseQuery(bannersQuery());
   const { data: models } = useSuspenseQuery(carModelsQuery());
 
+  const vehicle = useSavedVehicle();
   const [pickerOpen, setPickerOpen] = useState(false);
   useEffect(() => {
     if (!getSavedVehicle()) {
@@ -41,6 +42,9 @@ function HomePage() {
       return () => clearTimeout(t);
     }
   }, []);
+
+  const filteredFeatured = filterProductsByVehicle(featured, vehicle);
+  const filteredDeals = filterProductsByVehicle(deals, vehicle);
 
   return (
     <PageShell>
@@ -113,10 +117,10 @@ function HomePage() {
       </Section>
 
       {/* Deals */}
-      {deals.length > 0 && (
+      {filteredDeals.length > 0 && (
         <Section title="عروض اليوم" icon={<Flame className="size-4 text-destructive" />}>
           <div className="grid grid-cols-2 gap-3 px-4">
-            {deals.slice(0, 4).map((p) => (
+            {filteredDeals.slice(0, 4).map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
           </div>
@@ -125,11 +129,23 @@ function HomePage() {
 
       {/* Featured */}
       <Section title="منتجات مميزة" icon={<Sparkles className="size-4 text-gold" />}>
+        {vehicle && (
+          <div className="px-4 mb-2">
+            <div className="text-xs text-gold font-semibold">
+              مُفلتر حسب: {vehicle.brandName} {vehicle.modelName} ({vehicle.year})
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3 px-4">
-          {featured.map((p) => (
+          {filteredFeatured.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
         </div>
+        {filteredFeatured.length === 0 && (
+          <div className="px-4 text-center text-muted-foreground text-sm py-8">
+            لا توجد منتجات متوافقة مع مركبتك. اختر مركبة أخرى أو تواصل معنا.
+          </div>
+        )}
       </Section>
 
       <div className="h-6" />
