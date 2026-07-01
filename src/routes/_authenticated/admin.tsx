@@ -81,7 +81,7 @@ function CompatibleModelsField({
   savedVehicle,
   onChange,
 }: {
-  models: { id: string; brand_id: string | null; name_ar: string; name_en: string }[];
+  models: CarModel[];
   selected: string[];
   savedVehicle: { brandName: string; modelId: string; modelName: string; year: string; engine: string } | null;
   onChange: (ids: string[]) => void;
