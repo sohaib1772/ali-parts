@@ -159,6 +159,7 @@ function ProductsAdmin() {
         in_stock: form.in_stock,
         is_featured: form.is_featured,
         is_deal: form.is_deal,
+        compatible_models: form.compatible_models.length > 0 ? form.compatible_models : null,
       };
       const res = form.id
         ? await supabase.from("products").update(payload).eq("id", form.id)
