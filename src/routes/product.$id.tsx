@@ -185,7 +185,7 @@ function ProductPage() {
           <button onClick={toggleFav} className="ms-auto size-10 rounded-xl bg-card border border-border grid place-items-center">
             <Heart className="size-5" />
           </button>
-          <a href={whatsappLink(`استفسار: ${product.name_ar}`)} target="_blank" rel="noreferrer" className="size-10 rounded-xl bg-whatsapp text-white grid place-items-center">
+          <a href={whatsappLink(`استفسار: ${product.name_ar}`, waNumber)} target="_blank" rel="noreferrer" className="size-10 rounded-xl bg-whatsapp text-white grid place-items-center">
             <WhatsappIcon className="size-5" />
           </a>
         </div>
