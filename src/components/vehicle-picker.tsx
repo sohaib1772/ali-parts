@@ -143,7 +143,12 @@ export function VehiclePicker({ open, onOpenChange }: { open: boolean; onOpenCha
                 <div className="text-xs text-muted-foreground">{brands.length} خيار</div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                {brands.map((b) => {
+                {brands.filter((b) =>
+                  ["شوفرليت", "Chevrolet", "جمسي", "GMC", "GM"].some((n) =>
+                    b.name_ar?.toLowerCase().includes(n.toLowerCase()) ||
+                    b.name_en?.toLowerCase().includes(n.toLowerCase())
+                  )
+                ).map((b) => {
                   const sel = brand?.id === b.id;
                   return (
                     <button
