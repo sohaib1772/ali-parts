@@ -476,11 +476,15 @@ function SettingsAdmin() {
   const [name, setName] = useState("");
   const [tagline, setTagline] = useState("");
   const [logo, setLogo] = useState("");
+  const [address, setAddress] = useState("");
+  const [about, setAbout] = useState("");
   const [saving, setSaving] = useState(false);
   const waVal = wa || settings.whatsapp_number || "";
   const nameVal = name || settings.store_name || "";
   const taglineVal = tagline || settings.store_tagline || "";
   const logoVal = logo || settings.store_logo || "";
+  const addressVal = address || settings.store_address || "";
+  const aboutVal = about || settings.store_about || "";
 
   const upsert = async (rows: { key: string; value: string }[]) => {
     const { error } = await supabase
@@ -499,6 +503,8 @@ function SettingsAdmin() {
         { key: "store_name", value: nameVal },
         { key: "store_tagline", value: taglineVal },
         { key: "store_logo", value: logoVal },
+        { key: "store_address", value: addressVal },
+        { key: "store_about", value: aboutVal },
       ]);
       toast.success("تم حفظ الإعدادات");
       qc.invalidateQueries({ queryKey: ["app_settings"] });
@@ -535,6 +541,12 @@ function SettingsAdmin() {
           dir="ltr"
         />
         <p className="text-xs text-muted-foreground mt-1">مثال: 9647701234567 (964 رمز العراق + الرقم بدون صفر)</p>
+      </Field>
+      <Field label="العنوان (يظهر في صفحة اتصل بنا)">
+        <Input value={addressVal} onChange={(e) => setAddress(e.target.value)} placeholder="بغداد، العراق" />
+      </Field>
+      <Field label="نبذة عن المتجر (يظهر في من نحن)">
+        <Textarea value={aboutVal} onChange={(e) => setAbout(e.target.value)} rows={4} placeholder="متجر متخصص في بيع قطع غيار..." />
       </Field>
       <Button className="w-full" onClick={save} disabled={saving}>
         {saving ? "جاري الحفظ..." : "حفظ"}
