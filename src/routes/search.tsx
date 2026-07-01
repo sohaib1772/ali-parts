@@ -6,6 +6,7 @@ import { z } from "zod";
 import { PageShell } from "@/components/page-shell";
 import { ProductCard } from "@/components/product-card";
 import { searchProductsQuery } from "@/lib/queries";
+import { useSavedVehicle, filterProductsByVehicle } from "@/components/vehicle-picker";
 
 const searchSchema = z.object({
   q: z.string().optional(),
