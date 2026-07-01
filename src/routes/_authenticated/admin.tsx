@@ -74,6 +74,63 @@ function AdminPage() {
 
 /* ---------------- Products ---------------- */
 
+function CompatibleModelsField({
+  models,
+  selected,
+  savedVehicle,
+  onChange,
+}: {
+  models: { id: string; brand_id: string | null; name_ar: string; name_en: string }[];
+  selected: string[];
+  savedVehicle: { brandName: string; modelId: string; modelName: string; year: string; engine: string } | null;
+  onChange: (ids: string[]) => void;
+}) {
+  const toggle = (id: string) => {
+    onChange(selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label>السيارات المتوافقة</Label>
+        {savedVehicle && !selected.includes(savedVehicle.modelId) && (
+          <button
+            type="button"
+            onClick={() => onChange([...selected, savedVehicle.modelId])}
+            className="text-[11px] font-bold text-gold hover:underline"
+          >
+            + اضف {savedVehicle.brandName} {savedVehicle.modelName}
+          </button>
+        )}
+      </div>
+      {savedVehicle && selected.includes(savedVehicle.modelId) && (
+        <div className="text-xs text-gold font-semibold">
+          متوافق مع المركبة المختارة: {savedVehicle.brandName} {savedVehicle.modelName} ({savedVehicle.year}) · {savedVehicle.engine}
+        </div>
+      )}
+      <div className="max-h-40 overflow-y-auto border border-border rounded-xl p-2 space-y-1 bg-card">
+        {models.length === 0 ? (
+          <div className="text-xs text-muted-foreground text-center py-2">لا توجد موديلات مسجلة</div>
+        ) : (
+          models.map((m) => (
+            <label key={m.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selected.includes(m.id)}
+                onChange={() => toggle(m.id)}
+                className="size-4 accent-navy"
+              />
+              <span className="text-sm flex-1">{m.name_ar}</span>
+              {m.name_en && <span className="text-xs text-muted-foreground">{m.name_en}</span>}
+            </label>
+          ))
+        )}
+      </div>
+      <div className="text-xs text-muted-foreground">{selected.length} موديل محدد</div>
+    </div>
+  );
+}
+
 type ProductForm = {
   id?: string;
   name_ar: string;
