@@ -24,12 +24,17 @@ function CategoryPage() {
   return (
     <PageShell title={cat?.name_ar ?? "التصنيف"}>
       <div className="px-4 pt-4">
-        <div className="text-xs text-muted-foreground mb-3">{products.length} منتج</div>
-        {products.length === 0 ? (
-          <div className="text-center text-muted-foreground py-16 text-sm">لا توجد منتجات في هذا التصنيف بعد</div>
+        {vehicle && (
+          <div className="text-xs text-gold font-semibold mb-2">
+            مُفلتر حسب: {vehicle.brandName} {vehicle.modelName} ({vehicle.year})
+          </div>
+        )}
+        <div className="text-xs text-muted-foreground mb-3">{filtered.length} منتج</div>
+        {filtered.length === 0 ? (
+          <div className="text-center text-muted-foreground py-16 text-sm">لا توجد منتجات متوافقة مع مركبتك في هذا التصنيف</div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
-            {products.map((p) => <ProductCard key={p.id} product={p} />)}
+            {filtered.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
         )}
       </div>
