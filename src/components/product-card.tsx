@@ -6,12 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatIQD, formatUSD, whatsappLink } from "@/lib/format";
 import type { Product } from "@/lib/queries";
 import { useAuth } from "@/lib/use-auth";
+import { useSetting } from "@/lib/admin";
 import { WhatsappIcon } from "./icons";
 
 export function ProductCard({ product }: { product: Product }) {
   const { userId } = useAuth();
   const qc = useQueryClient();
   const img = product.images?.[0];
+  const waNumber = useSetting("whatsapp_number");
 
   const requireAuth = () => {
     if (!userId) {
