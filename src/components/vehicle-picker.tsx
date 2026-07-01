@@ -54,7 +54,7 @@ export function useSavedVehicle(): Vehicle | null {
 
 import type { Product } from "@/lib/queries";
 
-const ENGINES = ["1500 cc", "2000 cc", "2500 cc", "3000 cc", "3500 cc", "V6", "V8", "تيربو"];
+const ENGINES = ["1500 cc", "2000 cc"];
 
 const ALLOWED_BRANDS = ["شوفرليت", "Chevrolet", "جمسي", "GMC", "GM"];
 
