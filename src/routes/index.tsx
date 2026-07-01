@@ -34,6 +34,7 @@ function HomePage() {
   const { data: banners } = useSuspenseQuery(bannersQuery());
   const { data: models } = useSuspenseQuery(carModelsQuery());
 
+  const vehicle = useSavedVehicle();
   const [pickerOpen, setPickerOpen] = useState(false);
   useEffect(() => {
     if (!getSavedVehicle()) {
@@ -41,6 +42,9 @@ function HomePage() {
       return () => clearTimeout(t);
     }
   }, []);
+
+  const filteredFeatured = filterProductsByVehicle(featured, vehicle);
+  const filteredDeals = filterProductsByVehicle(deals, vehicle);
 
   return (
     <PageShell>
