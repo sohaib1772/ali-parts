@@ -6,6 +6,7 @@ import { productByIdQuery } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
 import { formatIQD, formatUSD, whatsappLink } from "@/lib/format";
 import { useAuth } from "@/lib/use-auth";
+import { useSetting } from "@/lib/admin";
 import { toast } from "sonner";
 import { WhatsappIcon } from "@/components/icons";
 
@@ -37,6 +38,7 @@ function ProductPage() {
   const [qty, setQty] = useState(1);
   const [activeImg, setActiveImg] = useState(0);
   const router = useRouter();
+  const waNumber = useSetting("whatsapp_number");
 
   const img = product.images?.[activeImg];
 
