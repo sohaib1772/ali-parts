@@ -647,6 +647,28 @@ function SettingsAdmin() {
       <Field label="نبذة عن المتجر (يظهر في من نحن)">
         <Textarea value={aboutVal} onChange={(e) => setAbout(e.target.value)} rows={4} placeholder="متجر متخصص في بيع قطع غيار..." />
       </Field>
+      <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-3">
+        <div className="text-sm font-bold text-gold flex items-center gap-2">
+          <Package className="size-4" /> إعدادات شركات التوصيل
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="اسم الخيار الأول">
+            <Input value={shipLocalNameVal} onChange={(e) => setShipLocalName(e.target.value)} placeholder="التوصيل المحلي" />
+          </Field>
+          <Field label="كلفة التوصيل (د.ع)">
+            <Input type="number" value={shipLocalCostVal} onChange={(e) => setShipLocalCost(e.target.value)} inputMode="numeric" dir="ltr" />
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="اسم الخيار الثاني">
+            <Input value={shipAramexNameVal} onChange={(e) => setShipAramexName(e.target.value)} placeholder="أرامكس" />
+          </Field>
+          <Field label="كلفة التوصيل (د.ع)">
+            <Input type="number" value={shipAramexCostVal} onChange={(e) => setShipAramexCost(e.target.value)} inputMode="numeric" dir="ltr" />
+          </Field>
+        </div>
+        <p className="text-xs text-muted-foreground">اترك الاسم فارغاً لإخفاء الخيار من صفحة الدفع.</p>
+      </div>
       <Button className="w-full" onClick={save} disabled={saving}>
         {saving ? "جاري الحفظ..." : "حفظ"}
       </Button>
