@@ -104,7 +104,7 @@ export function ProductCard({ product }: { product: Product }) {
             أضف للسلة
           </button>
           <a
-            href={whatsappLink(`السلام عليكم، أرغب بالاستفسار عن: ${product.name_ar} (OEM: ${product.oem_number ?? "-"})`)}
+            href={whatsappLink(`السلام عليكم، أرغب بالاستفسار عن: ${product.name_ar} (OEM: ${product.oem_number ?? "-"})`, waNumber)}
             target="_blank"
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}
