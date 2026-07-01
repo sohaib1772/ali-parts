@@ -95,6 +95,7 @@ const emptyProduct: ProductForm = {
   name_ar: "", name_en: "", description_ar: "", oem_number: "",
   price_iqd: "", compare_price_iqd: "", category_id: "", brand_id: "",
   images: [], in_stock: true, is_featured: false, is_deal: false,
+  compatible_models: [],
 };
 
 function ProductsAdmin() {
@@ -130,6 +131,7 @@ function ProductsAdmin() {
       in_stock: !!p.in_stock,
       is_featured: !!p.is_featured,
       is_deal: !!p.is_deal,
+      compatible_models: p.compatible_models ?? [],
     });
     setOpen(true);
   };
