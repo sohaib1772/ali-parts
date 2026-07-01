@@ -24,6 +24,7 @@ export function formatArabicDate(iso: string): string {
 
 export const WHATSAPP_NUMBER = "9647800000000";
 
-export function whatsappLink(text: string): string {
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+export function whatsappLink(text: string, number?: string): string {
+  const n = (number || WHATSAPP_NUMBER).replace(/\D/g, "");
+  return `https://wa.me/${n}?text=${encodeURIComponent(text)}`;
 }
