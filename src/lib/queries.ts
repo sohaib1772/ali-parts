@@ -10,6 +10,7 @@ export type Product = {
   price_iqd: number;
   price_usd: number;
   compare_price_iqd: number | null;
+  shipping_iqd: number | null;
   category_id: string | null;
   brand_id: string | null;
   compatible_models: string[] | null;
