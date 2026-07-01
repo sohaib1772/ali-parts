@@ -52,7 +52,7 @@ export function useSavedVehicle(): Vehicle | null {
   return v;
 }
 
-const ENGINES = ["4 سلندر", "6 سلندر", "8 سلندر", "V6", "V8", "تيربو", "ديزل", "هجين"];
+const ENGINES = ["1500 cc", "2000 cc", "2500 cc", "3000 cc", "3500 cc", "V6", "V8", "تيربو"];
 
 export function VehiclePicker({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const { data: brands = [] } = useQuery(brandsQuery());
@@ -85,9 +85,8 @@ export function VehiclePicker({ open, onOpenChange }: { open: boolean; onOpenCha
   );
 
   const years = useMemo(() => {
-    const now = new Date().getFullYear();
     const arr: string[] = [];
-    for (let y = now + 1; y >= 1995; y--) arr.push(String(y));
+    for (let y = 2025; y >= 2016; y--) arr.push(String(y));
     return arr;
   }, []);
 
