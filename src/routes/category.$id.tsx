@@ -3,6 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { PageShell } from "@/components/page-shell";
 import { ProductCard } from "@/components/product-card";
 import { productsByCategoryQuery, categoriesQuery } from "@/lib/queries";
+import { useSavedVehicle, filterProductsByVehicle } from "@/components/vehicle-picker";
 
 export const Route = createFileRoute("/category/$id")({
   loader: ({ context, params }) => {
