@@ -3,6 +3,7 @@ import { Phone, MapPin } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { WhatsappIcon } from "@/components/icons";
 import { whatsappLink, WHATSAPP_NUMBER } from "@/lib/format";
+import { useSetting } from "@/lib/admin";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({ meta: [{ title: "اتصل بنا — Ali Parts" }] }),
@@ -10,6 +11,7 @@ export const Route = createFileRoute("/contact")({
 });
 
 function ContactPage() {
+  const address = useSetting("store_address", "بغداد، العراق");
   return (
     <PageShell title="اتصل بنا">
       <div className="px-4 pt-4 space-y-3">
@@ -31,7 +33,7 @@ function ContactPage() {
           <div className="size-12 rounded-xl bg-navy/10 text-navy grid place-items-center"><MapPin className="size-6" /></div>
           <div>
             <div className="font-bold">الموقع</div>
-            <div className="text-xs text-muted-foreground">بغداد، العراق</div>
+            <div className="text-xs text-muted-foreground">{address}</div>
           </div>
         </div>
       </div>
