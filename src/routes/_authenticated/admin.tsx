@@ -9,6 +9,7 @@ import {
   brandsQuery,
   bannersQuery,
   carModelsQuery,
+  type CarModel,
 } from "@/lib/queries";
 import { VehicleBar, getSavedVehicle, useSavedVehicle } from "@/components/vehicle-picker";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
