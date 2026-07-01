@@ -8,7 +8,10 @@ import {
   categoriesQuery,
   brandsQuery,
   bannersQuery,
+  carModelsQuery,
+  type CarModel,
 } from "@/lib/queries";
+import { VehicleBar, getSavedVehicle, useSavedVehicle } from "@/components/vehicle-picker";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,6 +75,63 @@ function AdminPage() {
 
 /* ---------------- Products ---------------- */
 
+function CompatibleModelsField({
+  models,
+  selected,
+  savedVehicle,
+  onChange,
+}: {
+  models: CarModel[];
+  selected: string[];
+  savedVehicle: { brandName: string; modelId: string; modelName: string; year: string; engine: string } | null;
+  onChange: (ids: string[]) => void;
+}) {
+  const toggle = (id: string) => {
+    onChange(selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label>السيارات المتوافقة</Label>
+        {savedVehicle && !selected.includes(savedVehicle.modelId) && (
+          <button
+            type="button"
+            onClick={() => onChange([...selected, savedVehicle.modelId])}
+            className="text-[11px] font-bold text-gold hover:underline"
+          >
+            + اضف {savedVehicle.brandName} {savedVehicle.modelName}
+          </button>
+        )}
+      </div>
+      {savedVehicle && selected.includes(savedVehicle.modelId) && (
+        <div className="text-xs text-gold font-semibold">
+          متوافق مع المركبة المختارة: {savedVehicle.brandName} {savedVehicle.modelName} ({savedVehicle.year}) · {savedVehicle.engine}
+        </div>
+      )}
+      <div className="max-h-40 overflow-y-auto border border-border rounded-xl p-2 space-y-1 bg-card">
+        {models.length === 0 ? (
+          <div className="text-xs text-muted-foreground text-center py-2">لا توجد موديلات مسجلة</div>
+        ) : (
+          models.map((m) => (
+            <label key={m.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selected.includes(m.id)}
+                onChange={() => toggle(m.id)}
+                className="size-4 accent-navy"
+              />
+              <span className="text-sm flex-1">{m.name_ar}</span>
+              {m.name_en && <span className="text-xs text-muted-foreground">{m.name_en}</span>}
+            </label>
+          ))
+        )}
+      </div>
+      <div className="text-xs text-muted-foreground">{selected.length} موديل محدد</div>
+    </div>
+  );
+}
+
 type ProductForm = {
   id?: string;
   name_ar: string;
@@ -86,12 +146,14 @@ type ProductForm = {
   in_stock: boolean;
   is_featured: boolean;
   is_deal: boolean;
+  compatible_models: string[];
 };
 
 const emptyProduct: ProductForm = {
   name_ar: "", name_en: "", description_ar: "", oem_number: "",
   price_iqd: "", compare_price_iqd: "", category_id: "", brand_id: "",
   images: [], in_stock: true, is_featured: false, is_deal: false,
+  compatible_models: [],
 };
 
 function ProductsAdmin() {
@@ -110,6 +172,8 @@ function ProductsAdmin() {
   });
   const { data: categories = [] } = useQuery(categoriesQuery());
   const { data: brands = [] } = useQuery(brandsQuery());
+  const { data: carModels = [] } = useQuery(carModelsQuery());
+  const savedVehicle = useSavedVehicle();
 
   const openNew = () => { setForm(emptyProduct); setOpen(true); };
   const openEdit = (p: any) => {
@@ -127,6 +191,7 @@ function ProductsAdmin() {
       in_stock: !!p.in_stock,
       is_featured: !!p.is_featured,
       is_deal: !!p.is_deal,
+      compatible_models: p.compatible_models ?? [],
     });
     setOpen(true);
   };
@@ -152,6 +217,7 @@ function ProductsAdmin() {
         in_stock: form.in_stock,
         is_featured: form.is_featured,
         is_deal: form.is_deal,
+        compatible_models: form.compatible_models.length > 0 ? form.compatible_models : null,
       };
       const res = form.id
         ? await supabase.from("products").update(payload).eq("id", form.id)
@@ -250,6 +316,14 @@ function ProductsAdmin() {
                 </SelectContent>
               </Select>
             </Field>
+
+            <CompatibleModelsField
+              models={carModels}
+              selected={form.compatible_models}
+              savedVehicle={savedVehicle}
+              onChange={(ids) => setForm({ ...form, compatible_models: ids })}
+            />
+
             <div className="flex items-center justify-between py-1">
               <Label>متوفر</Label>
               <Switch checked={form.in_stock} onCheckedChange={(v) => setForm({ ...form, in_stock: v })} />
