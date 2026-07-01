@@ -18,6 +18,8 @@ function CategoryPage() {
   const { data: products } = useSuspenseQuery(productsByCategoryQuery(id));
   const { data: categories } = useSuspenseQuery(categoriesQuery());
   const cat = categories.find((c) => c.id === id);
+  const vehicle = useSavedVehicle();
+  const filtered = filterProductsByVehicle(products, vehicle);
 
   return (
     <PageShell title={cat?.name_ar ?? "التصنيف"}>
