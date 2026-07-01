@@ -473,6 +473,7 @@ function SettingsAdmin() {
   const qc = useQueryClient();
   const { data: settings = {} } = useQuery(settingsQuery());
   const [wa, setWa] = useState("");
+  const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
   const [tagline, setTagline] = useState("");
   const [logo, setLogo] = useState("");
@@ -480,6 +481,7 @@ function SettingsAdmin() {
   const [about, setAbout] = useState("");
   const [saving, setSaving] = useState(false);
   const waVal = wa || settings.whatsapp_number || "";
+  const phoneVal = phone || settings.phone_number || "";
   const nameVal = name || settings.store_name || "";
   const taglineVal = tagline || settings.store_tagline || "";
   const logoVal = logo || settings.store_logo || "";
@@ -500,6 +502,7 @@ function SettingsAdmin() {
     try {
       await upsert([
         { key: "whatsapp_number", value: clean },
+        { key: "phone_number", value: phoneVal.replace(/\D/g, "") },
         { key: "store_name", value: nameVal },
         { key: "store_tagline", value: taglineVal },
         { key: "store_logo", value: logoVal },
@@ -541,6 +544,16 @@ function SettingsAdmin() {
           dir="ltr"
         />
         <p className="text-xs text-muted-foreground mt-1">مثال: 9647701234567 (964 رمز العراق + الرقم بدون صفر)</p>
+      </Field>
+      <Field label="رقم الاتصال الهاتفي (صيغة دولية بدون +)">
+        <Input
+          value={phoneVal}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="9647701234567"
+          inputMode="numeric"
+          dir="ltr"
+        />
+        <p className="text-xs text-muted-foreground mt-1">يظهر في زر "اتصال هاتفي" بصفحة اتصل بنا. اتركه فارغاً لاستخدام رقم الواتساب.</p>
       </Field>
       <Field label="العنوان (يظهر في صفحة اتصل بنا)">
         <Input value={addressVal} onChange={(e) => setAddress(e.target.value)} placeholder="بغداد، العراق" />
