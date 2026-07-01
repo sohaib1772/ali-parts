@@ -258,6 +258,14 @@ function ProductsAdmin() {
                 </SelectContent>
               </Select>
             </Field>
+
+            <CompatibleModelsField
+              models={carModels}
+              selected={form.compatible_models}
+              savedVehicle={savedVehicle}
+              onChange={(ids) => setForm({ ...form, compatible_models: ids })}
+            />
+
             <div className="flex items-center justify-between py-1">
               <Label>متوفر</Label>
               <Switch checked={form.in_stock} onCheckedChange={(v) => setForm({ ...form, in_stock: v })} />
