@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { Search, Hash, ChevronLeft, Sparkles, Flame } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { FloatingWhatsapp } from "@/components/floating-whatsapp";
 import { ProductCard } from "@/components/product-card";
+import { VehiclePicker, VehicleBar, getSavedVehicle } from "@/components/vehicle-picker";
 import {
   bannersQuery,
   brandsQuery,
@@ -32,9 +34,21 @@ function HomePage() {
   const { data: banners } = useSuspenseQuery(bannersQuery());
   const { data: models } = useSuspenseQuery(carModelsQuery());
 
+  const [pickerOpen, setPickerOpen] = useState(false);
+  useEffect(() => {
+    if (!getSavedVehicle()) {
+      const t = setTimeout(() => setPickerOpen(true), 400);
+      return () => clearTimeout(t);
+    }
+  }, []);
+
   return (
     <PageShell>
       <SearchBar />
+
+      <div className="px-4 mt-3">
+        <VehicleBar onOpen={() => setPickerOpen(true)} />
+      </div>
 
       {/* Hero banner */}
       <div className="px-4 mt-4">
@@ -120,6 +134,7 @@ function HomePage() {
 
       <div className="h-6" />
       <FloatingWhatsapp />
+      <VehiclePicker open={pickerOpen} onOpenChange={setPickerOpen} />
     </PageShell>
   );
 }
