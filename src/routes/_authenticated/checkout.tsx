@@ -7,7 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 import { addressesQuery, cartQuery } from "@/lib/queries";
 import { formatIQD } from "@/lib/format";
-import { useSetting } from "@/lib/admin";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/checkout")({
@@ -20,19 +19,16 @@ function CheckoutPage() {
   const { data: addresses = [] } = useQuery(addressesQuery(userId));
   const [selectedAddr, setSelectedAddr] = useState<string | null>(null);
   const [payment, setPayment] = useState<"cod" | "transfer">("cod");
-  const [shipping, setShipping] = useState<"aramex" | "local">("local");
   const [placing, setPlacing] = useState(false);
   const navigate = useNavigate();
   const qc = useQueryClient();
 
-  const localName = useSetting("ship_local_name", "التوصيل المحلي");
-  const localCost = Number(useSetting("ship_local_cost", "5000")) || 0;
-  const aramexName = useSetting("ship_aramex_name", "أرامكس");
-  const aramexCost = Number(useSetting("ship_aramex_cost", "10000")) || 0;
-
   const activeAddr = addresses.find((a: any) => a.id === (selectedAddr ?? addresses.find((x: any) => x.is_default)?.id ?? addresses[0]?.id));
   const subtotal = items.reduce((s, i: any) => s + Number(i.product?.price_iqd ?? 0) * i.quantity, 0);
-  const shippingCost = shipping === "aramex" ? aramexCost : localCost;
+  const shippingCost = items.reduce(
+    (max, i: any) => Math.max(max, Number(i.product?.shipping_iqd ?? 0)),
+    0,
+  );
   const total = subtotal + shippingCost;
 
   const placeOrder = async () => {
@@ -96,13 +92,12 @@ function CheckoutPage() {
           )}
         </Section>
 
-        <Section title="شركة التوصيل" icon={<Truck className="size-4 text-gold" />}>
-          <div className="grid grid-cols-2 gap-2">
-            {localName && (
-              <ShipOption active={shipping === "local"} onClick={() => setShipping("local")} name={localName} price={localCost} />
-            )}
-            {aramexName && (
-              <ShipOption active={shipping === "aramex"} onClick={() => setShipping("aramex")} name={aramexName} price={aramexCost} />
+        <Section title="كلفة التوصيل" icon={<Truck className="size-4 text-gold" />}>
+          <div className="text-sm text-muted-foreground">
+            {shippingCost > 0 ? (
+              <>كلفة التوصيل: <span className="font-bold text-navy">{formatIQD(shippingCost)}</span></>
+            ) : (
+              "توصيل مجاني"
             )}
           </div>
         </Section>
@@ -143,15 +138,6 @@ function Section({ title, icon, children }: { title: string; icon: React.ReactNo
       <div className="flex items-center gap-2 mb-3">{icon}<span className="text-sm font-bold">{title}</span></div>
       {children}
     </div>
-  );
-}
-
-function ShipOption({ active, onClick, name, price }: { active: boolean; onClick: () => void; name: string; price: number }) {
-  return (
-    <button onClick={onClick} className={`rounded-xl p-3 border-2 text-start transition ${active ? "border-gold bg-gold/5" : "border-border"}`}>
-      <div className="text-sm font-bold">{name}</div>
-      <div className="text-xs text-muted-foreground">{formatIQD(price)}</div>
-    </button>
   );
 }
 
