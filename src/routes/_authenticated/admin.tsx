@@ -114,6 +114,8 @@ function ProductsAdmin() {
   });
   const { data: categories = [] } = useQuery(categoriesQuery());
   const { data: brands = [] } = useQuery(brandsQuery());
+  const { data: carModels = [] } = useQuery(carModelsQuery());
+  const savedVehicle = useSavedVehicle();
 
   const openNew = () => { setForm(emptyProduct); setOpen(true); };
   const openEdit = (p: any) => {
