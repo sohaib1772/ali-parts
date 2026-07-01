@@ -553,6 +553,10 @@ function SettingsAdmin() {
   const [logo, setLogo] = useState("");
   const [address, setAddress] = useState("");
   const [about, setAbout] = useState("");
+  const [shipLocalName, setShipLocalName] = useState("");
+  const [shipLocalCost, setShipLocalCost] = useState("");
+  const [shipAramexName, setShipAramexName] = useState("");
+  const [shipAramexCost, setShipAramexCost] = useState("");
   const [saving, setSaving] = useState(false);
   const waVal = wa || settings.whatsapp_number || "";
   const phoneVal = phone || settings.phone_number || "";
@@ -561,6 +565,10 @@ function SettingsAdmin() {
   const logoVal = logo || settings.store_logo || "";
   const addressVal = address || settings.store_address || "";
   const aboutVal = about || settings.store_about || "";
+  const shipLocalNameVal = shipLocalName || settings.ship_local_name || "التوصيل المحلي";
+  const shipLocalCostVal = shipLocalCost || settings.ship_local_cost || "5000";
+  const shipAramexNameVal = shipAramexName || settings.ship_aramex_name || "أرامكس";
+  const shipAramexCostVal = shipAramexCost || settings.ship_aramex_cost || "10000";
 
   const upsert = async (rows: { key: string; value: string }[]) => {
     const { error } = await supabase
@@ -582,6 +590,10 @@ function SettingsAdmin() {
         { key: "store_logo", value: logoVal },
         { key: "store_address", value: addressVal },
         { key: "store_about", value: aboutVal },
+        { key: "ship_local_name", value: shipLocalNameVal },
+        { key: "ship_local_cost", value: String(Number(shipLocalCostVal) || 0) },
+        { key: "ship_aramex_name", value: shipAramexNameVal },
+        { key: "ship_aramex_cost", value: String(Number(shipAramexCostVal) || 0) },
       ]);
       toast.success("تم حفظ الإعدادات");
       qc.invalidateQueries({ queryKey: ["app_settings"] });
