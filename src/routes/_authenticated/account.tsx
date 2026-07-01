@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, LogOut, MapPin, Heart, Package, Bell, Info, Shield, MessageCircle } from "lucide-react";
+import { ChevronLeft, LogOut, MapPin, Heart, Package, Bell, Info, Shield, MessageCircle, ShieldCheck } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 import { profileQuery } from "@/lib/queries";
+import { useIsAdmin } from "@/lib/admin";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/account")({
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/account")({
 function AccountPage() {
   const { user, userId } = useAuth();
   const { data: profile } = useQuery(profileQuery(userId));
+  const isAdmin = useIsAdmin();
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -26,6 +28,7 @@ function AccountPage() {
   };
 
   const links = [
+    ...(isAdmin ? [{ to: "/admin" as const, label: "لوحة الإدارة", icon: ShieldCheck }] : []),
     { to: "/orders", label: "طلباتي السابقة", icon: Package },
     { to: "/favorites", label: "المفضلة", icon: Heart },
     { to: "/addresses", label: "العناوين", icon: MapPin },
