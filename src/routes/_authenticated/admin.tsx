@@ -553,6 +553,10 @@ function SettingsAdmin() {
   const [logo, setLogo] = useState("");
   const [address, setAddress] = useState("");
   const [about, setAbout] = useState("");
+  const [shipLocalName, setShipLocalName] = useState("");
+  const [shipLocalCost, setShipLocalCost] = useState("");
+  const [shipAramexName, setShipAramexName] = useState("");
+  const [shipAramexCost, setShipAramexCost] = useState("");
   const [saving, setSaving] = useState(false);
   const waVal = wa || settings.whatsapp_number || "";
   const phoneVal = phone || settings.phone_number || "";
@@ -561,6 +565,10 @@ function SettingsAdmin() {
   const logoVal = logo || settings.store_logo || "";
   const addressVal = address || settings.store_address || "";
   const aboutVal = about || settings.store_about || "";
+  const shipLocalNameVal = shipLocalName || settings.ship_local_name || "التوصيل المحلي";
+  const shipLocalCostVal = shipLocalCost || settings.ship_local_cost || "5000";
+  const shipAramexNameVal = shipAramexName || settings.ship_aramex_name || "أرامكس";
+  const shipAramexCostVal = shipAramexCost || settings.ship_aramex_cost || "10000";
 
   const upsert = async (rows: { key: string; value: string }[]) => {
     const { error } = await supabase
@@ -582,6 +590,10 @@ function SettingsAdmin() {
         { key: "store_logo", value: logoVal },
         { key: "store_address", value: addressVal },
         { key: "store_about", value: aboutVal },
+        { key: "ship_local_name", value: shipLocalNameVal },
+        { key: "ship_local_cost", value: String(Number(shipLocalCostVal) || 0) },
+        { key: "ship_aramex_name", value: shipAramexNameVal },
+        { key: "ship_aramex_cost", value: String(Number(shipAramexCostVal) || 0) },
       ]);
       toast.success("تم حفظ الإعدادات");
       qc.invalidateQueries({ queryKey: ["app_settings"] });
@@ -635,6 +647,28 @@ function SettingsAdmin() {
       <Field label="نبذة عن المتجر (يظهر في من نحن)">
         <Textarea value={aboutVal} onChange={(e) => setAbout(e.target.value)} rows={4} placeholder="متجر متخصص في بيع قطع غيار..." />
       </Field>
+      <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-3">
+        <div className="text-sm font-bold text-gold flex items-center gap-2">
+          <Package className="size-4" /> إعدادات شركات التوصيل
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="اسم الخيار الأول">
+            <Input value={shipLocalNameVal} onChange={(e) => setShipLocalName(e.target.value)} placeholder="التوصيل المحلي" />
+          </Field>
+          <Field label="كلفة التوصيل (د.ع)">
+            <Input type="number" value={shipLocalCostVal} onChange={(e) => setShipLocalCost(e.target.value)} inputMode="numeric" dir="ltr" />
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="اسم الخيار الثاني">
+            <Input value={shipAramexNameVal} onChange={(e) => setShipAramexName(e.target.value)} placeholder="أرامكس" />
+          </Field>
+          <Field label="كلفة التوصيل (د.ع)">
+            <Input type="number" value={shipAramexCostVal} onChange={(e) => setShipAramexCost(e.target.value)} inputMode="numeric" dir="ltr" />
+          </Field>
+        </div>
+        <p className="text-xs text-muted-foreground">اترك الاسم فارغاً لإخفاء الخيار من صفحة الدفع.</p>
+      </div>
       <Button className="w-full" onClick={save} disabled={saving}>
         {saving ? "جاري الحفظ..." : "حفظ"}
       </Button>

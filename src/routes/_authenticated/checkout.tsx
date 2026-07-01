@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 import { addressesQuery, cartQuery } from "@/lib/queries";
 import { formatIQD } from "@/lib/format";
+import { useSetting } from "@/lib/admin";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/checkout")({
@@ -24,9 +25,14 @@ function CheckoutPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
+  const localName = useSetting("ship_local_name", "التوصيل المحلي");
+  const localCost = Number(useSetting("ship_local_cost", "5000")) || 0;
+  const aramexName = useSetting("ship_aramex_name", "أرامكس");
+  const aramexCost = Number(useSetting("ship_aramex_cost", "10000")) || 0;
+
   const activeAddr = addresses.find((a: any) => a.id === (selectedAddr ?? addresses.find((x: any) => x.is_default)?.id ?? addresses[0]?.id));
   const subtotal = items.reduce((s, i: any) => s + Number(i.product?.price_iqd ?? 0) * i.quantity, 0);
-  const shippingCost = shipping === "aramex" ? 10000 : 5000;
+  const shippingCost = shipping === "aramex" ? aramexCost : localCost;
   const total = subtotal + shippingCost;
 
   const placeOrder = async () => {
@@ -92,8 +98,12 @@ function CheckoutPage() {
 
         <Section title="شركة التوصيل" icon={<Truck className="size-4 text-gold" />}>
           <div className="grid grid-cols-2 gap-2">
-            <ShipOption active={shipping === "local"} onClick={() => setShipping("local")} name="التوصيل المحلي" price={5000} />
-            <ShipOption active={shipping === "aramex"} onClick={() => setShipping("aramex")} name="أرامكس" price={10000} />
+            {localName && (
+              <ShipOption active={shipping === "local"} onClick={() => setShipping("local")} name={localName} price={localCost} />
+            )}
+            {aramexName && (
+              <ShipOption active={shipping === "aramex"} onClick={() => setShipping("aramex")} name={aramexName} price={aramexCost} />
+            )}
           </div>
         </Section>
 
