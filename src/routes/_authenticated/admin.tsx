@@ -473,27 +473,62 @@ function SettingsAdmin() {
   const qc = useQueryClient();
   const { data: settings = {} } = useQuery(settingsQuery());
   const [wa, setWa] = useState("");
+  const [name, setName] = useState("");
+  const [tagline, setTagline] = useState("");
+  const [logo, setLogo] = useState("");
   const [saving, setSaving] = useState(false);
-  const current = wa || settings.whatsapp_number || "";
+  const waVal = wa || settings.whatsapp_number || "";
+  const nameVal = name || settings.store_name || "";
+  const taglineVal = tagline || settings.store_tagline || "";
+  const logoVal = logo || settings.store_logo || "";
 
-  const save = async () => {
-    const clean = current.replace(/\D/g, "");
-    if (clean.length < 8) { toast.error("أدخل رقماً صحيحاً بصيغة دولية بدون +"); return; }
-    setSaving(true);
+  const upsert = async (rows: { key: string; value: string }[]) => {
     const { error } = await supabase
       .from("app_settings")
-      .upsert({ key: "whatsapp_number", value: clean, updated_at: new Date().toISOString() });
-    setSaving(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("تم حفظ رقم الواتساب");
-    qc.invalidateQueries({ queryKey: ["app_settings"] });
+      .upsert(rows.map((r) => ({ ...r, updated_at: new Date().toISOString() })));
+    if (error) throw error;
+  };
+
+  const save = async () => {
+    const clean = waVal.replace(/\D/g, "");
+    if (clean.length < 8) { toast.error("أدخل رقم واتساب صحيح"); return; }
+    setSaving(true);
+    try {
+      await upsert([
+        { key: "whatsapp_number", value: clean },
+        { key: "store_name", value: nameVal },
+        { key: "store_tagline", value: taglineVal },
+        { key: "store_logo", value: logoVal },
+      ]);
+      toast.success("تم حفظ الإعدادات");
+      qc.invalidateQueries({ queryKey: ["app_settings"] });
+    } catch (e: any) {
+      toast.error(e.message ?? "حدث خطأ");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="space-y-4">
+      <Field label="اسم المتجر">
+        <Input value={nameVal} onChange={(e) => setName(e.target.value)} placeholder="Ali Parts" />
+      </Field>
+      <Field label="الشعار الفرعي (تحت الاسم)">
+        <Input value={taglineVal} onChange={(e) => setTagline(e.target.value)} placeholder="قطع أصلية · العراق" />
+      </Field>
+      <div>
+        <Label className="text-xs mb-1 block">شعار المتجر (لوگو)</Label>
+        <ImageUploader
+          images={logoVal ? [logoVal] : []}
+          max={1}
+          onChange={(imgs) => setLogo(imgs[0] ?? "")}
+        />
+        <p className="text-xs text-muted-foreground mt-1">إذا لم يتم رفع صورة سيظهر الحرف الأول من اسم المتجر.</p>
+      </div>
       <Field label="رقم الواتساب (صيغة دولية بدون +)">
         <Input
-          value={current}
+          value={waVal}
           onChange={(e) => setWa(e.target.value)}
           placeholder="9647701234567"
           inputMode="numeric"
