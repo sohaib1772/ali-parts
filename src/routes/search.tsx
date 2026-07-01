@@ -23,6 +23,8 @@ function SearchPage() {
   const { q: initialQ, mode } = Route.useSearch();
   const [q, setQ] = useState(initialQ ?? "");
   const { data: results, isFetching } = useQuery(searchProductsQuery(q));
+  const vehicle = useSavedVehicle();
+  const filtered = filterProductsByVehicle(results ?? [], vehicle);
 
   return (
     <PageShell title="بحث">
