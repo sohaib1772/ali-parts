@@ -140,6 +140,7 @@ type ProductForm = {
   oem_number: string;
   price_iqd: string;
   compare_price_iqd: string;
+  shipping_iqd: string;
   category_id: string;
   brand_id: string;
   images: string[];
@@ -151,7 +152,7 @@ type ProductForm = {
 
 const emptyProduct: ProductForm = {
   name_ar: "", name_en: "", description_ar: "", oem_number: "",
-  price_iqd: "", compare_price_iqd: "", category_id: "", brand_id: "",
+  price_iqd: "", compare_price_iqd: "", shipping_iqd: "", category_id: "", brand_id: "",
   images: [], in_stock: true, is_featured: false, is_deal: false,
   compatible_models: [],
 };
@@ -185,6 +186,7 @@ function ProductsAdmin() {
       oem_number: p.oem_number ?? "",
       price_iqd: String(p.price_iqd ?? ""),
       compare_price_iqd: String(p.compare_price_iqd ?? ""),
+      shipping_iqd: String(p.shipping_iqd ?? ""),
       category_id: p.category_id ?? "",
       brand_id: p.brand_id ?? "",
       images: p.images ?? [],
@@ -211,6 +213,7 @@ function ProductsAdmin() {
         price_iqd: Number(form.price_iqd),
         price_usd: Number(form.price_iqd) / 1310,
         compare_price_iqd: form.compare_price_iqd ? Number(form.compare_price_iqd) : null,
+        shipping_iqd: form.shipping_iqd ? Number(form.shipping_iqd) : 0,
         category_id: form.category_id || null,
         brand_id: form.brand_id || null,
         images: form.images,
@@ -300,6 +303,9 @@ function ProductsAdmin() {
                 <Input type="number" value={form.compare_price_iqd} onChange={(e) => setForm({ ...form, compare_price_iqd: e.target.value })} />
               </Field>
             </div>
+            <Field label="كلفة التوصيل لهذا المنتج (د.ع)">
+              <Input type="number" value={form.shipping_iqd} onChange={(e) => setForm({ ...form, shipping_iqd: e.target.value })} inputMode="numeric" dir="ltr" placeholder="0" />
+            </Field>
             <Field label="التصنيف">
               <Select value={form.category_id} onValueChange={(v) => setForm({ ...form, category_id: v })}>
                 <SelectTrigger><SelectValue placeholder="اختر تصنيف" /></SelectTrigger>
