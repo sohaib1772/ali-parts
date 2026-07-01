@@ -8,7 +8,9 @@ import {
   categoriesQuery,
   brandsQuery,
   bannersQuery,
+  carModelsQuery,
 } from "@/lib/queries";
+import { VehicleBar, getSavedVehicle, useSavedVehicle } from "@/components/vehicle-picker";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
