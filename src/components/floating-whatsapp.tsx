@@ -1,10 +1,12 @@
 import { WhatsappIcon } from "./icons";
 import { whatsappLink } from "@/lib/format";
+import { useSetting } from "@/lib/admin";
 
 export function FloatingWhatsapp() {
+  const number = useSetting("whatsapp_number");
   return (
     <a
-      href={whatsappLink("السلام عليكم، أرغب بالاستفسار عن قطعة")}
+      href={whatsappLink("السلام عليكم، أرغب بالاستفسار عن قطعة", number)}
       target="_blank"
       rel="noreferrer"
       aria-label="تواصل واتساب"
