@@ -1,0 +1,1 @@
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS shipping_iqd numeric NOT NULL DEFAULT 0;

@@ -359,6 +359,7 @@ export type Database = {
           oem_number: string | null
           price_iqd: number
           price_usd: number
+          shipping_iqd: number
           specs: Json | null
         }
         Insert: {
@@ -378,6 +379,7 @@ export type Database = {
           oem_number?: string | null
           price_iqd?: number
           price_usd?: number
+          shipping_iqd?: number
           specs?: Json | null
         }
         Update: {
@@ -397,6 +399,7 @@ export type Database = {
           oem_number?: string | null
           price_iqd?: number
           price_usd?: number
+          shipping_iqd?: number
           specs?: Json | null
         }
         Relationships: [
