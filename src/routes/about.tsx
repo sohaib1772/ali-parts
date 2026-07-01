@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageShell } from "@/components/page-shell";
 import { Shield, Truck, Award, Users } from "lucide-react";
+import { useSetting } from "@/lib/admin";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -10,6 +11,11 @@ export const Route = createFileRoute("/about")({
 });
 
 function AboutPage() {
+  const storeName = useSetting("store_name", "Ali Parts");
+  const aboutText = useSetting(
+    "store_about",
+    "متجر متخصص في بيع قطع غيار سيارات شفروليه، GMC، وكاديلاك الأصلية داخل العراق. نلتزم بتوفير قطع عالية الجودة مع خدمة عملاء متميزة وتوصيل سريع.",
+  );
   const items = [
     { icon: Shield, title: "قطع أصلية 100%", desc: "نضمن أصالة كل قطعة نبيعها" },
     { icon: Truck, title: "توصيل سريع", desc: "لكل محافظات العراق" },
@@ -20,11 +26,8 @@ function AboutPage() {
     <PageShell title="من نحن">
       <div className="px-4 pt-4">
         <div className="bg-gradient-hero text-primary-foreground rounded-3xl p-6 shadow-luxe">
-          <h1 className="text-2xl font-black mb-3">Ali Parts</h1>
-          <p className="text-sm text-primary-foreground/80 leading-relaxed">
-            متجر متخصص في بيع قطع غيار سيارات شفروليه، GMC، وكاديلاك الأصلية داخل العراق.
-            نلتزم بتوفير قطع عالية الجودة مع خدمة عملاء متميزة وتوصيل سريع.
-          </p>
+          <h1 className="text-2xl font-black mb-3">{storeName}</h1>
+          <p className="text-sm text-primary-foreground/80 leading-relaxed whitespace-pre-line">{aboutText}</p>
         </div>
         <div className="grid grid-cols-2 gap-3 mt-4">
           {items.map((it) => (
