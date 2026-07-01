@@ -20,7 +20,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList } from "lucide-react";
 import { formatIQD } from "@/lib/format";
-import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from "@/lib/order-status";
+import { statusLabel, statusColor } from "@/lib/order-status";
+
+const STATUSES = ["received", "preparing", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"] as const;
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
@@ -446,16 +448,16 @@ function OrdersAdmin() {
         <div key={o.id} className="bg-card border border-border rounded-2xl p-3 space-y-2">
           <div className="flex items-center justify-between">
             <div className="text-xs font-mono text-muted-foreground">#{o.id.slice(0, 8)}</div>
-            <div className={`text-xs font-bold px-2 py-0.5 rounded-full ${ORDER_STATUS_COLORS[o.status as keyof typeof ORDER_STATUS_COLORS] ?? ""}`}>
-              {ORDER_STATUS_LABELS[o.status as keyof typeof ORDER_STATUS_LABELS] ?? o.status}
+          <div className={`text-xs font-bold px-2 py-0.5 rounded-full ${statusColor(o.status)}`}>
+              {statusLabel(o.status)}
             </div>
           </div>
           <div className="text-sm">{formatIQD(o.total_iqd)}</div>
           <Select value={o.status} onValueChange={(v) => updateStatus(o.id, v)}>
             <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {Object.entries(ORDER_STATUS_LABELS).map(([k, v]) => (
-                <SelectItem key={k} value={k}>{v}</SelectItem>
+              {STATUSES.map((k) => (
+                <SelectItem key={k} value={k}>{statusLabel(k)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
