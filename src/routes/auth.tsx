@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
-import { ArrowRight, Loader2, Phone, Lock, User as UserIcon } from "lucide-react";
+import { ArrowRight, Loader2, Phone, Lock, User as UserIcon, Sparkles } from "lucide-react";
 import { useSetting } from "@/lib/admin";
 
 function normalizePhone(raw: string): string | null {
@@ -105,91 +105,161 @@ function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-hero text-primary-foreground flex flex-col">
-      <div className="mx-auto w-full max-w-md px-6 pt-12 pb-6 flex-1 flex flex-col">
-        <Link to="/" className="text-xs text-gold/80 mb-6 inline-flex items-center gap-1">
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#050505] text-white flex flex-col items-center justify-center p-6 selection:bg-gold/30">
+      {/* Ambient background glows */}
+      <div className="pointer-events-none fixed top-[-10%] left-[-10%] w-[45%] h-[45%] rounded-full bg-amber-500/10 blur-[120px]" />
+      <div className="pointer-events-none fixed bottom-[-10%] right-[-10%] w-[45%] h-[45%] rounded-full bg-white/5 blur-[120px]" />
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:32px_32px] opacity-[0.03]" />
+
+      <div className="relative w-full max-w-[420px]">
+        <Link
+          to="/"
+          className="absolute -top-14 right-0 inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-gold transition-colors"
+        >
           <ArrowRight className="size-3.5" /> العودة للرئيسية
         </Link>
 
-        <div className="flex items-center gap-3 mb-8">
-          {storeLogo ? (
-            <div className="size-14 rounded-2xl overflow-hidden shadow-gold bg-white">
-              <img src={storeLogo} alt={storeName} className="size-full object-cover" />
+        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-gradient-to-b from-[#141414] to-[#0a0a0a] p-8 shadow-2xl">
+          {/* Top golden shine line */}
+          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent" />
+
+          {/* Logo / Brand */}
+          <div className="flex flex-col items-center mb-10">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-300 rotate-45 opacity-25 blur-xl" />
+              <div className="relative size-20 rounded-2xl bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] border border-white/10 flex items-center justify-center shadow-[0_0_30px_rgba(201,162,39,0.15)]">
+                {storeLogo ? (
+                  <img src={storeLogo} alt={storeName} className="max-h-14 max-w-14 object-contain" />
+                ) : (
+                  <span className="font-luxury text-3xl font-bold text-gold">{storeName.charAt(0).toUpperCase()}</span>
+                )}
+              </div>
             </div>
-          ) : (
-            <div className="size-14 rounded-2xl bg-gradient-gold grid place-items-center font-black text-navy text-2xl shadow-gold">
-              {storeName.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <div>
-            <div className="text-2xl font-black">{storeName}</div>
-            <div className="text-xs text-gold">{storeTagline}</div>
+            <h1 className="font-luxury text-3xl font-bold tracking-tight text-center mb-1">
+              {storeName}
+            </h1>
+            <p className="font-body-lux text-sm text-white/40 text-center">{storeTagline}</p>
+          </div>
+
+          {/* Headline */}
+          <div className="text-center mb-8">
+            <h2 className="font-luxury text-2xl font-semibold mb-2">
+              {mode === "login" ? "تسجيل الدخول" : "إنشاء حساب"}
+            </h2>
+            <p className="font-body-lux text-sm text-white/40">
+              {mode === "login" ? "بوابة النخبة لقطع غيار السيارات الفاخرة" : "انضم إلى عالم التميز لسيارتك"}
+            </p>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {mode === "signup" && (
+              <LuxuryField
+                icon={<UserIcon className="size-4" />}
+                placeholder="الاسم الكامل"
+                value={fullName}
+                onChange={setFullName}
+              />
+            )}
+            <LuxuryField
+              icon={<Phone className="size-4" />}
+              placeholder="رقم الهاتف (07XX XXX XXXX)"
+              type="tel"
+              required
+              value={phone}
+              onChange={setPhone}
+            />
+            <LuxuryField
+              icon={<Lock className="size-4" />}
+              placeholder="كلمة المرور"
+              type="password"
+              required
+              value={password}
+              onChange={setPassword}
+            />
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-gold to-amber-500 p-px shadow-[0_0_24px_rgba(201,162,39,0.25)] active:scale-[0.98] transition-transform disabled:opacity-50"
+            >
+              <div className="relative flex items-center justify-center gap-2 rounded-[15px] bg-[#0a0a0a] py-4 transition-colors group-hover:bg-transparent">
+                {loading ? <Loader2 className="size-4 animate-spin text-white" /> : <Sparkles className="size-4 text-gold" />}
+                <span className="font-body-lux font-bold text-white">
+                  {mode === "login" ? "دخول المتجر" : "إنشاء حساب"}
+                </span>
+              </div>
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-6">
+            <div className="h-px flex-1 bg-white/10" />
+            <span className="font-body-lux text-[11px] text-white/40 uppercase tracking-widest">أو</span>
+            <div className="h-px flex-1 bg-white/10" />
+          </div>
+
+          {/* Google */}
+          <button
+            onClick={handleGoogle}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 py-3.5 transition disabled:opacity-50"
+          >
+            <GoogleG />
+            <span className="font-body-lux text-sm font-medium">المتابعة عبر Google</span>
+          </button>
+
+          {/* Toggle mode */}
+          <button
+            onClick={() => setMode(mode === "login" ? "signup" : "login")}
+            className="mt-8 w-full text-center text-sm text-white/50 hover:text-gold transition font-body-lux"
+          >
+            {mode === "login" ? "ليس لديك حساب؟ " : "لديك حساب بالفعل؟ "}
+            <span className="text-gold font-bold">{mode === "login" ? "أنشئ حساباً" : "سجّل الدخول"}</span>
+          </button>
+
+          {/* Bottom decorative dots */}
+          <div className="mt-8 flex justify-center gap-1.5">
+            <div className="w-8 h-1 rounded-full bg-gold/30" />
+            <div className="w-2 h-1 rounded-full bg-white/10" />
+            <div className="w-2 h-1 rounded-full bg-white/10" />
           </div>
         </div>
 
-        <h1 className="text-3xl font-black mb-2">{mode === "login" ? "أهلاً بعودتك" : "أنشئ حسابك"}</h1>
-        <p className="text-primary-foreground/70 text-sm mb-8">
-          {mode === "login" ? "سجّل الدخول لمتابعة طلباتك ومفضلتك" : "انضم إلى Ali Parts خلال ثوانٍ"}
-        </p>
-
-        <button
-          onClick={handleGoogle}
-          disabled={loading}
-          className="w-full h-12 rounded-2xl bg-white text-navy font-bold flex items-center justify-center gap-3 shadow-luxe hover:brightness-95 transition mb-4 disabled:opacity-50"
-        >
-          <GoogleG /> المتابعة عبر Google
-        </button>
-
-        <div className="flex items-center gap-3 my-2">
-          <div className="h-px flex-1 bg-white/20" />
-          <span className="text-xs text-primary-foreground/60">أو</span>
-          <div className="h-px flex-1 bg-white/20" />
+        {/* Trust badges */}
+        <div className="flex justify-center gap-6 mt-8">
+          <div className="flex items-center gap-2 opacity-50 hover:opacity-100 transition-opacity">
+            <div className="w-1.5 h-1.5 rounded-full bg-gold" />
+            <span className="text-[10px] text-white/60 uppercase tracking-[0.2em] font-body-lux">قطع أصلية</span>
+          </div>
+          <div className="flex items-center gap-2 opacity-50 hover:opacity-100 transition-opacity">
+            <div className="w-1.5 h-1.5 rounded-full bg-gold" />
+            <span className="text-[10px] text-white/60 uppercase tracking-[0.2em] font-body-lux">توصيل سريع</span>
+          </div>
         </div>
-
-        <form onSubmit={handleSubmit} className="space-y-3 mt-2">
-          {mode === "signup" && (
-            <Field icon={<UserIcon className="size-4" />} placeholder="الاسم الكامل" value={fullName} onChange={setFullName} />
-          )}
-          <Field icon={<Phone className="size-4" />} placeholder="رقم الهاتف (07XX XXX XXXX)" type="tel" required value={phone} onChange={setPhone} />
-          <Field icon={<Lock className="size-4" />} placeholder="كلمة المرور" type="password" required value={password} onChange={setPassword} />
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full h-12 rounded-2xl bg-gradient-gold text-navy font-bold shadow-gold flex items-center justify-center gap-2 hover:brightness-105 transition disabled:opacity-50"
-          >
-            {loading && <Loader2 className="size-4 animate-spin" />}
-            {mode === "login" ? "تسجيل الدخول" : "إنشاء حساب"}
-          </button>
-        </form>
-
-        <button
-          onClick={() => setMode(mode === "login" ? "signup" : "login")}
-          className="mt-6 text-sm text-center text-primary-foreground/80 hover:text-gold transition"
-        >
-          {mode === "login" ? "ليس لديك حساب؟ " : "لديك حساب بالفعل؟ "}
-          <span className="text-gold font-bold">{mode === "login" ? "أنشئ حساباً" : "سجّل الدخول"}</span>
-        </button>
       </div>
     </div>
   );
 }
 
-function Field({ icon, placeholder, type = "text", value, onChange, required }: {
+function LuxuryField({ icon, placeholder, type = "text", value, onChange, required }: {
   icon: React.ReactNode; placeholder: string; type?: string; value: string; onChange: (v: string) => void; required?: boolean;
 }) {
   return (
-    <label className="flex items-center gap-3 h-12 rounded-2xl bg-white/10 border border-white/15 px-4 focus-within:border-gold transition">
-      <span className="text-gold">{icon}</span>
-      <input
-        type={type}
-        placeholder={placeholder}
-        required={required}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="flex-1 bg-transparent outline-none text-sm text-white placeholder:text-white/50"
-      />
-    </label>
+    <div className="group relative">
+      <div className="absolute inset-0 rounded-2xl bg-gold/5 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity" />
+      <div className="relative flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0a0a0a]/60 px-4 py-3.5 focus-within:border-gold/50 focus-within:ring-1 focus-within:ring-gold/20 transition-all">
+        <span className="text-gold/80 shrink-0">{icon}</span>
+        <input
+          type={type}
+          placeholder={placeholder}
+          required={required}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="flex-1 bg-transparent outline-none text-sm text-white placeholder:text-white/30 font-body-lux"
+        />
+      </div>
+    </div>
   );
 }
 

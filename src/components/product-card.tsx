@@ -102,16 +102,17 @@ export function ProductCard({ product }: { product: Product }) {
             <ShoppingCart className="size-3.5" />
             أضف للسلة
           </button>
-          <a
-            href={whatsappLink(`السلام عليكم، أرغب بالاستفسار عن: ${product.name_ar} (OEM: ${product.oem_number ?? "-"})`, waNumber)}
-            target="_blank"
-            rel="noreferrer"
-            onClick={(e) => e.stopPropagation()}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              window.open(whatsappLink(`السلام عليكم، أرغب بالاستفسار عن: ${product.name_ar} (OEM: ${product.oem_number ?? "-"})`, waNumber), "_blank", "noopener,noreferrer");
+            }}
             aria-label="واتساب"
             className="size-9 rounded-xl bg-whatsapp text-white grid place-items-center hover:opacity-90 transition"
           >
             <WhatsappIcon className="size-4" />
-          </a>
+          </button>
         </div>
       </div>
     </Link>

@@ -285,19 +285,22 @@ export function VehiclePicker({ open, onOpenChange }: { open: boolean; onOpenCha
 
 export function VehicleBar({ onOpen }: { onOpen: () => void }) {
   const v = useSavedVehicle();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const vehicle = mounted ? v : null;
   return (
     <button
       onClick={onOpen}
       className="w-full flex items-center gap-3 bg-navy text-primary-foreground rounded-2xl px-4 py-3 shadow-luxe"
     >
       <div className="size-10 rounded-xl bg-white/10 grid place-items-center overflow-hidden">
-        {v?.brandLogo ? <img src={v.brandLogo} alt="" className="max-h-8 max-w-8 object-contain" /> : <Car className="size-5 text-gold" />}
+        {vehicle?.brandLogo ? <img src={vehicle.brandLogo} alt="" className="max-h-8 max-w-8 object-contain" /> : <Car className="size-5 text-gold" />}
       </div>
       <div className="flex-1 text-start min-w-0">
         <div className="text-[11px] text-gold font-bold">مركباتي</div>
-        {v ? (
+        {vehicle ? (
           <div className="text-sm font-extrabold truncate">
-            {v.brandName} {v.modelName} · {v.year} · {v.engine}
+            {vehicle.brandName} {vehicle.modelName} · {vehicle.year} · {vehicle.engine}
           </div>
         ) : (
           <div className="text-sm font-bold">إدارة واختيار مركبتك</div>
