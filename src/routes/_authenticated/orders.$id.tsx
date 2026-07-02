@@ -147,10 +147,19 @@ function OrderDetail() {
         <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
           <div className="flex justify-between text-sm py-1"><span className="text-muted-foreground">المجموع الفرعي</span><span>{formatIQD(order.subtotal_iqd)}</span></div>
           <div className="flex justify-between text-sm py-1"><span className="text-muted-foreground">التوصيل</span><span>{formatIQD(order.shipping_iqd)}</span></div>
+          {Number((order as any).points_used ?? 0) > 0 && (
+            <div className="flex justify-between text-sm py-1">
+              <span className="text-muted-foreground">خصم نقاط ({(order as any).points_used})</span>
+              <span className="text-success">- {formatIQD(Number((order as any).points_used) * 10)}</span>
+            </div>
+          )}
           <div className="border-t border-border mt-2 pt-3 flex justify-between items-baseline">
             <span className="font-bold">الإجمالي</span>
             <span className="text-xl font-black text-navy">{formatIQD(order.total_iqd)}</span>
           </div>
+          {Number((order as any).points_earned ?? 0) > 0 && (
+            <div className="mt-2 text-xs text-gold font-bold">🎉 كسبت {(order as any).points_earned} نقطة من هذا الطلب</div>
+          )}
         </div>
 
         <div className="text-center text-xs text-muted-foreground">
