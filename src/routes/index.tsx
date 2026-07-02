@@ -49,8 +49,6 @@ function HomePage() {
 
   return (
     <PageShell>
-      <SearchBar />
-
       <div className="px-4 mt-3">
         <VehicleBar onOpen={() => setPickerOpen(true)} />
       </div>
