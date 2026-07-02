@@ -9,7 +9,6 @@ import { VehiclePicker, VehicleBar, getSavedVehicle, useSavedVehicle, filterProd
 import {
   bannersQuery,
   brandsQuery,
-  carModelsQuery,
   categoriesQuery,
   dealsQuery,
   featuredProductsQuery,
