@@ -4,8 +4,25 @@ const KEY = "order_seen_v1";
 
 type Map = Record<string, string>;
 
+let cache: Map = {};
+let cacheRaw: string | null = null;
+const EMPTY: Map = {};
+
 function read(): Map {
-  if (typeof window === "undefined") return {};
+  if (typeof window === "undefined") return EMPTY;
+  const raw = localStorage.getItem(KEY);
+  if (raw === cacheRaw) return cache;
+  cacheRaw = raw;
+  try {
+    cache = raw ? (JSON.parse(raw) as Map) : {};
+  } catch {
+    cache = {};
+  }
+  return cache;
+}
+
+function readRaw(): Map {
+  if (typeof window === "undefined") return EMPTY;
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}") as Map;
   } catch {
@@ -31,14 +48,15 @@ function subscribe(cb: () => void) {
 }
 
 export function useOrderSeenMap(): Map {
-  return useSyncExternalStore(subscribe, read, () => ({}));
+  return useSyncExternalStore(subscribe, read, () => EMPTY);
 }
 
 export function markOrderSeen(orderId: string, updatedAt: string) {
-  const m = read();
+  const m = { ...readRaw() };
   if (m[orderId] === updatedAt) return;
   m[orderId] = updatedAt;
   localStorage.setItem(KEY, JSON.stringify(m));
+  cacheRaw = null; // invalidate so next read() returns fresh snapshot
   emit();
 }
 
