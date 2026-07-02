@@ -22,7 +22,6 @@ export const Route = createFileRoute("/")({
     context.queryClient.ensureQueryData(dealsQuery());
     context.queryClient.ensureQueryData(bannersQuery());
     context.queryClient.ensureQueryData(brandsQuery());
-    context.queryClient.ensureQueryData(carModelsQuery());
   },
   component: HomePage,
 });
@@ -32,7 +31,6 @@ function HomePage() {
   const { data: featured } = useSuspenseQuery(featuredProductsQuery());
   const { data: deals } = useSuspenseQuery(dealsQuery());
   const { data: banners } = useSuspenseQuery(bannersQuery());
-  const { data: models } = useSuspenseQuery(carModelsQuery());
 
   const vehicle = useSavedVehicle();
   const [pickerOpen, setPickerOpen] = useState(false);
