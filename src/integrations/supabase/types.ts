@@ -307,6 +307,8 @@ export type Database = {
           notes: string | null
           order_number: string
           payment_method: string
+          points_earned: number
+          points_used: number
           shipping_iqd: number
           status: Database["public"]["Enums"]["order_status"]
           subtotal_iqd: number
@@ -320,6 +322,8 @@ export type Database = {
           notes?: string | null
           order_number?: string
           payment_method?: string
+          points_earned?: number
+          points_used?: number
           shipping_iqd?: number
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_iqd?: number
@@ -333,6 +337,8 @@ export type Database = {
           notes?: string | null
           order_number?: string
           payment_method?: string
+          points_earned?: number
+          points_used?: number
           shipping_iqd?: number
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_iqd?: number
@@ -426,6 +432,7 @@ export type Database = {
           full_name: string | null
           id: string
           phone: string | null
+          points_balance: number
         }
         Insert: {
           avatar_url?: string | null
@@ -433,6 +440,7 @@ export type Database = {
           full_name?: string | null
           id: string
           phone?: string | null
+          points_balance?: number
         }
         Update: {
           avatar_url?: string | null
@@ -440,6 +448,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          points_balance?: number
         }
         Relationships: []
       }
