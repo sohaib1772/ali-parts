@@ -5,7 +5,7 @@ import { Search, ChevronLeft, Sparkles, Flame, CircleDot } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { FloatingWhatsapp } from "@/components/floating-whatsapp";
 import { ProductCard } from "@/components/product-card";
-import { VehiclePicker, VehicleBar, getSavedVehicle, useSavedVehicle, filterProductsByVehicle } from "@/components/vehicle-picker";
+import { VehiclePicker, VehicleBar, useSavedVehicle, filterProductsByVehicle } from "@/components/vehicle-picker";
 import {
   bannersQuery,
   brandsQuery,
@@ -34,12 +34,6 @@ function HomePage() {
 
   const vehicle = useSavedVehicle();
   const [pickerOpen, setPickerOpen] = useState(false);
-  useEffect(() => {
-    if (!getSavedVehicle()) {
-      const t = setTimeout(() => setPickerOpen(true), 400);
-      return () => clearTimeout(t);
-    }
-  }, []);
 
   const filteredDeals = filterProductsByVehicle(deals, vehicle);
   const dealIds = new Set(filteredDeals.slice(0, 4).map((p) => p.id));
