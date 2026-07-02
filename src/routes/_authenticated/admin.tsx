@@ -532,7 +532,7 @@ function TaxonomyAdmin() {
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{catForm.id ? "تعديل تصنيف" : "إضافة تصنيف"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <ImageUploader images={catForm.image_url ? [catForm.image_url] : []} max={1} onChange={(imgs) => setCatForm({ ...catForm, image_url: imgs[0] ?? "" })} />
+            <ImageUploader images={catForm.image_url ? [catForm.image_url] : []} max={1} resizeTo={256} onChange={(imgs) => setCatForm({ ...catForm, image_url: imgs[0] ?? "" })} />
             <Field label="الاسم بالعربي *"><Input value={catForm.name_ar} onChange={(e) => setCatForm({ ...catForm, name_ar: e.target.value })} /></Field>
             <Field label="الاسم بالإنجليزي"><Input value={catForm.name_en} onChange={(e) => setCatForm({ ...catForm, name_en: e.target.value })} /></Field>
             <Field label="الأيقونة (اختياري)">
