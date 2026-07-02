@@ -14,6 +14,7 @@ import {
   dealsQuery,
   featuredProductsQuery,
 } from "@/lib/queries";
+import type { Banner } from "@/lib/queries";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => {
