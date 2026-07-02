@@ -2,7 +2,8 @@ import { createFileRoute, Link, useRouter, notFound } from "@tanstack/react-rout
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ArrowRight, Heart, Minus, Plus, Share2, Shield, ShoppingCart, Truck, CheckCircle2, XCircle, Facebook, X as CloseIcon } from "lucide-react";
-import { productByIdQuery } from "@/lib/queries";
+import { productByIdQuery, carModelsQuery, brandsQuery } from "@/lib/queries";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatIQD, whatsappLink } from "@/lib/format";
 import { useAuth } from "@/lib/use-auth";
@@ -39,6 +40,8 @@ function ProductPage() {
   const [activeImg, setActiveImg] = useState(0);
   const router = useRouter();
   const waNumber = useSetting("whatsapp_number");
+  const { data: models = [] } = useQuery(carModelsQuery());
+  const { data: brands = [] } = useQuery(brandsQuery());
 
   const img = product.images?.[activeImg];
 
@@ -182,9 +185,16 @@ function ProductPage() {
           <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
             <div className="text-xs font-bold text-gold mb-2">السيارات المتوافقة</div>
             <div className="flex flex-wrap gap-2">
-              {product.compatible_models.map((m) => (
-                <span key={m} className="text-xs px-2.5 py-1 rounded-full bg-navy text-primary-foreground">{m}</span>
-              ))}
+              {product.compatible_models.map((mid) => {
+                const model = models.find((x) => x.id === mid);
+                const brand = model ? brands.find((b) => b.id === model.brand_id) : null;
+                const label = model
+                  ? `${brand ? (brand.name_ar || brand.name_en) + " " : ""}${model.name_ar || model.name_en}`
+                  : mid;
+                return (
+                  <span key={mid} className="text-xs px-2.5 py-1 rounded-full bg-navy text-primary-foreground">{label}</span>
+                );
+              })}
             </div>
           </div>
         )}
