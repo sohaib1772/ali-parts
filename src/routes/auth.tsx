@@ -126,8 +126,8 @@ function AuthPage() {
           {/* Logo / Brand */}
           <div className="flex flex-col items-center mb-10">
             <div className="relative mb-6">
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-300 rotate-45 opacity-25 blur-xl" />
-              <div className="relative size-20 rounded-2xl bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] border border-white/10 flex items-center justify-center shadow-[0_0_30px_rgba(201,162,39,0.15)]">
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-300 rotate-45 opacity-30 blur-xl" />
+              <div className="relative size-20 rounded-2xl bg-gradient-to-br from-[#1e293b] to-[#0f172a] border border-white/15 flex items-center justify-center shadow-[0_0_30px_rgba(201,162,39,0.18)]">
                 {storeLogo ? (
                   <img src={storeLogo} alt={storeName} className="max-h-14 max-w-14 object-contain" />
                 ) : (
