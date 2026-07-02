@@ -532,7 +532,7 @@ function TaxonomyAdmin() {
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{catForm.id ? "تعديل تصنيف" : "إضافة تصنيف"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <ImageUploader images={catForm.image_url ? [catForm.image_url] : []} max={1} onChange={(imgs) => setCatForm({ ...catForm, image_url: imgs[0] ?? "" })} />
+            <ImageUploader images={catForm.image_url ? [catForm.image_url] : []} max={1} resizeTo={256} onChange={(imgs) => setCatForm({ ...catForm, image_url: imgs[0] ?? "" })} />
             <Field label="الاسم بالعربي *"><Input value={catForm.name_ar} onChange={(e) => setCatForm({ ...catForm, name_ar: e.target.value })} /></Field>
             <Field label="الاسم بالإنجليزي"><Input value={catForm.name_en} onChange={(e) => setCatForm({ ...catForm, name_en: e.target.value })} /></Field>
             <Field label="الأيقونة (اختياري)">
@@ -830,7 +830,29 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function ImageUploader({ images, onChange, max = 6 }: { images: string[]; onChange: (imgs: string[]) => void; max?: number }) {
+async function resizeImageFile(file: File, size: number): Promise<File> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.clearRect(0, 0, size, size);
+    // contain: keep aspect ratio, center
+    const scale = Math.min(size / bitmap.width, size / bitmap.height);
+    const w = bitmap.width * scale;
+    const h = bitmap.height * scale;
+    ctx.drawImage(bitmap, (size - w) / 2, (size - h) / 2, w, h);
+    const blob: Blob | null = await new Promise((res) => canvas.toBlob(res, "image/png", 0.92));
+    if (!blob) return file;
+    return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".png", { type: "image/png" });
+  } catch {
+    return file;
+  }
+}
+
+function ImageUploader({ images, onChange, max = 6, resizeTo }: { images: string[]; onChange: (imgs: string[]) => void; max?: number; resizeTo?: number }) {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -841,7 +863,8 @@ function ImageUploader({ images, onChange, max = 6 }: { images: string[]; onChan
       const urls: string[] = [];
       for (const f of Array.from(files)) {
         if (images.length + urls.length >= max) break;
-        const url = await uploadProductImage(f);
+        const toUpload = resizeTo ? await resizeImageFile(f, resizeTo) : f;
+        const url = await uploadProductImage(toUpload);
         if (url) urls.push(url);
       }
       onChange([...images, ...urls]);
