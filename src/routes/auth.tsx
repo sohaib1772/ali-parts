@@ -126,19 +126,19 @@ function AuthPage() {
           {/* Logo / Brand */}
           <div className="flex flex-col items-center mb-10">
             <div className="relative mb-6">
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-300 rotate-45 opacity-30 blur-xl" />
-              <div className="relative size-20 rounded-2xl bg-gradient-to-br from-[#1e293b] to-[#0f172a] border border-white/15 flex items-center justify-center shadow-[0_0_30px_rgba(201,162,39,0.18)]">
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-amber-500 to-amber-200 rotate-45 opacity-40 blur-2xl scale-110" />
+              <div className="relative size-28 rounded-3xl bg-gradient-to-br from-[#1e293b] to-[#0f172a] border-2 border-gold/40 flex items-center justify-center shadow-[0_0_50px_rgba(201,162,39,0.25)]">
                 {storeLogo ? (
-                  <img src={storeLogo} alt={storeName} className="max-h-14 max-w-14 object-contain" />
+                  <img src={storeLogo} alt={storeName} className="max-h-20 max-w-20 object-contain" />
                 ) : (
-                  <span className="font-luxury text-3xl font-bold text-gold">{storeName.charAt(0).toUpperCase()}</span>
+                  <span className="font-luxury text-5xl font-bold text-gold drop-shadow-[0_0_12px_rgba(201,162,39,0.5)]">{storeName.charAt(0).toUpperCase()}</span>
                 )}
               </div>
             </div>
-            <h1 className="font-luxury text-3xl font-bold tracking-tight text-center mb-1">
+            <h1 className="font-luxury text-4xl font-bold tracking-tight text-center mb-1">
               {storeName}
             </h1>
-            <p className="font-body-lux text-sm text-white/40 text-center">{storeTagline}</p>
+            <p className="font-body-lux text-sm text-gold/80 text-center mt-1">{storeTagline}</p>
           </div>
 
           {/* Headline */}
