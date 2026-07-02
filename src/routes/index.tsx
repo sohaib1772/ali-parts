@@ -147,6 +147,20 @@ function Section({ title, href, icon, children }: { title: string; href?: string
   );
 }
 
+function categoryBg(icon: string | null) {
+  const map: Record<string, string> = {
+    engine: "bg-amber-100 text-amber-600",
+    disc: "bg-rose-100 text-rose-600",
+    suspension: "bg-slate-100 text-slate-600",
+    zap: "bg-yellow-100 text-yellow-600",
+    filter: "bg-sky-100 text-sky-600",
+    droplet: "bg-emerald-100 text-emerald-600",
+    car: "bg-indigo-100 text-indigo-600",
+    circle: "bg-orange-100 text-orange-600",
+  };
+  return map[icon ?? ""] ?? "bg-card text-muted-foreground";
+}
+
 function CategoryEmoji({ icon }: { icon: string | null }) {
   const map: Record<string, string> = {
     engine: "⚙️",
