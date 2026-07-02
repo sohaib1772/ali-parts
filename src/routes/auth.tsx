@@ -183,7 +183,7 @@ function AuthPage() {
               disabled={loading}
               className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-gold to-amber-500 p-px shadow-[0_0_24px_rgba(201,162,39,0.25)] active:scale-[0.98] transition-transform disabled:opacity-50"
             >
-              <div className="relative flex items-center justify-center gap-2 rounded-[15px] bg-[#0a0a0a] py-4 transition-colors group-hover:bg-transparent">
+              <div className="relative flex items-center justify-center gap-2 rounded-[15px] bg-[#0f172a] py-4 transition-colors group-hover:bg-transparent">
                 {loading ? <Loader2 className="size-4 animate-spin text-white" /> : <Sparkles className="size-4 text-gold" />}
                 <span className="font-body-lux font-bold text-white">
                   {mode === "login" ? "دخول المتجر" : "إنشاء حساب"}
