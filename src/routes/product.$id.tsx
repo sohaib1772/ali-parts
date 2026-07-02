@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useRouter, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter, useNavigate, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ArrowRight, Heart, Minus, Plus, Share2, Shield, ShoppingCart, Truck, CheckCircle2, XCircle, Facebook, X as CloseIcon } from "lucide-react";
@@ -39,6 +39,14 @@ function ProductPage() {
   const [qty, setQty] = useState(1);
   const [activeImg, setActiveImg] = useState(0);
   const router = useRouter();
+  const navigate = useNavigate();
+  const goBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.history.back();
+    } else {
+      navigate({ to: "/" });
+    }
+  };
   const waNumber = useSetting("whatsapp_number");
   const { data: models = [] } = useQuery(carModelsQuery());
   const { data: brands = [] } = useQuery(brandsQuery());
@@ -104,7 +112,7 @@ function ProductPage() {
   return (
     <div className="min-h-screen bg-background pb-32">
       <div className="relative bg-card">
-        <button onClick={() => router.history.back()} className="absolute top-4 start-4 z-10 size-10 rounded-full bg-white/90 shadow-card grid place-items-center">
+        <button onClick={goBack} aria-label="رجوع" className="absolute top-4 start-4 z-20 size-10 rounded-full bg-white/90 shadow-card grid place-items-center">
           <ArrowRight className="size-5" />
         </button>
         <button onClick={share} className="absolute top-4 end-4 z-10 size-10 rounded-full bg-white/90 shadow-card grid place-items-center">
