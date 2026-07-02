@@ -831,6 +831,10 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function ImageUploader({ images, onChange, max = 6 }: { images: string[]; onChange: (imgs: string[]) => void; max?: number }) {
+  return <ImageUploaderInner images={images} onChange={onChange} max={max} />;
+}
+
+function ImageUploaderInner({ images, onChange, max = 6, resizeTo }: { images: string[]; onChange: (imgs: string[]) => void; max?: number; resizeTo?: number }) {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -841,7 +845,8 @@ function ImageUploader({ images, onChange, max = 6 }: { images: string[]; onChan
       const urls: string[] = [];
       for (const f of Array.from(files)) {
         if (images.length + urls.length >= max) break;
-        const url = await uploadProductImage(f);
+        const toUpload = resizeTo ? await resizeImageFile(f, resizeTo) : f;
+        const url = await uploadProductImage(toUpload);
         if (url) urls.push(url);
       }
       onChange([...images, ...urls]);
