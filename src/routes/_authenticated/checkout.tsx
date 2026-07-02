@@ -161,7 +161,7 @@ function CheckoutPage() {
           </div>
           {subtotal > 0 && (
             <div className="mt-2 text-[11px] text-muted-foreground">
-              ستكسب <span className="font-bold text-gold">{Math.floor(subtotal / 1000)} نقطة</span> عند تسليم الطلب
+              ستكسب <span className="font-bold text-gold">{Math.floor(subtotal / 10000) * 100} نقطة</span> عند تسليم الطلب
             </div>
           )}
         </div>
