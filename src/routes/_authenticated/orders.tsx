@@ -1,14 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, ChevronLeft } from "lucide-react";
+import { Package, ChevronLeft, X } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { ordersQuery } from "@/lib/queries";
 import { useAuth } from "@/lib/use-auth";
 import { formatIQD, formatArabicDate } from "@/lib/format";
 import { statusLabel, statusColor } from "@/lib/order-status";
 import { isOrderUnseen, useOrderSeenMap } from "@/lib/order-updates";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/orders")({
   component: OrdersPage,
@@ -19,6 +20,22 @@ function OrdersPage() {
   const { data: orders = [] } = useQuery(ordersQuery(userId));
   const seen = useOrderSeenMap();
   const qc = useQueryClient();
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+
+  const cancelOrder = async (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm("هل تريد إلغاء هذا الطلب؟")) return;
+    setCancellingId(id);
+    const { error } = await supabase.from("orders").update({ status: "cancelled" }).eq("id", id);
+    setCancellingId(null);
+    if (error) {
+      toast.error("تعذّر إلغاء الطلب");
+    } else {
+      toast.success("تم إلغاء الطلب");
+      qc.invalidateQueries({ queryKey: ["orders", userId] });
+    }
+  };
 
   useEffect(() => {
     if (!userId) return;
@@ -69,6 +86,16 @@ function OrdersPage() {
                 <span className="text-lg font-black text-navy">{formatIQD(o.total_iqd)}</span>
                 <ChevronLeft className="size-4 text-muted-foreground" />
               </div>
+              {(o.status === "received" || o.status === "preparing") && (
+                <button
+                  onClick={(e) => cancelOrder(e, o.id)}
+                  disabled={cancellingId === o.id}
+                  className="mt-3 w-full h-9 rounded-xl border border-destructive/40 text-destructive text-xs font-bold flex items-center justify-center gap-1 hover:bg-destructive/10 disabled:opacity-50"
+                >
+                  <X className="size-3.5" />
+                  {cancellingId === o.id ? "جاري الإلغاء..." : "إلغاء الطلب"}
+                </button>
+              )}
             </Link>
             );
           })

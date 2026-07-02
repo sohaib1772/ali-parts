@@ -1,12 +1,13 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, PackageCheck, Package as PackageIcon, PackageOpen, Truck, MapPin, Home, XCircle } from "lucide-react";
 import { orderByIdQuery } from "@/lib/queries";
 import { formatIQD, formatArabicDate } from "@/lib/format";
 import { statusLabel } from "@/lib/order-status";
 import { markOrderSeen } from "@/lib/order-updates";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/orders/$id")({
   loader: ({ context, params }) => context.queryClient.ensureQueryData(orderByIdQuery(params.id)),
@@ -52,6 +53,22 @@ function OrderDetail() {
 
   const activeIdx = TIMELINE.findIndex((t) => t.key === order.status);
   const cancelled = order.status === "cancelled";
+  const canCancel = order.status === "received" || order.status === "preparing";
+  const [cancelling, setCancelling] = useState(false);
+
+  const handleCancel = async () => {
+    if (!confirm("هل تريد إلغاء هذا الطلب؟")) return;
+    setCancelling(true);
+    const { error } = await supabase.from("orders").update({ status: "cancelled" }).eq("id", order.id);
+    setCancelling(false);
+    if (error) {
+      toast.error("تعذّر إلغاء الطلب");
+    } else {
+      toast.success("تم إلغاء الطلب");
+      qc.invalidateQueries({ queryKey: ["order", order.id] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background pb-8">
@@ -141,6 +158,17 @@ function OrderDetail() {
           <br />
           الحالة: {statusLabel(order.status)}
         </div>
+
+        {canCancel && (
+          <button
+            onClick={handleCancel}
+            disabled={cancelling}
+            className="w-full h-12 rounded-2xl border-2 border-destructive text-destructive font-black flex items-center justify-center gap-2 hover:bg-destructive/10 disabled:opacity-50"
+          >
+            <XCircle className="size-5" />
+            {cancelling ? "جاري الإلغاء..." : "إلغاء الطلب"}
+          </button>
+        )}
       </div>
     </div>
   );
