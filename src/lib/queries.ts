@@ -80,7 +80,7 @@ export const dealsQuery = () =>
   queryOptions({
     queryKey: ["products", "deals"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("*").eq("is_deal", true).limit(10);
+      const { data, error } = await supabase.from("products").select("*").eq("is_deal", true).order("created_at", { ascending: false }).limit(10);
       if (error) throw error;
       return (data ?? []) as Product[];
     },
