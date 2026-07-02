@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ChevronLeft, LogOut, MapPin, Heart, Package, Bell, Info, Shield, MessageCircle, ShieldCheck } from "lucide-react";
+import { ChevronLeft, LogOut, MapPin, Heart, Package, Bell, Info, Shield, MessageCircle, ShieldCheck, Sparkles } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { VehicleBar, VehiclePicker } from "@/components/vehicle-picker";
 import { supabase } from "@/integrations/supabase/client";
@@ -59,6 +59,17 @@ function AccountPage() {
 
         <div className="mt-4">
           <VehicleBar onOpen={() => setPickerOpen(true)} />
+        </div>
+
+        <div className="mt-4 bg-gradient-gold text-navy rounded-2xl p-4 shadow-gold flex items-center gap-3">
+          <div className="size-11 rounded-full bg-navy/10 grid place-items-center">
+            <Sparkles className="size-5" />
+          </div>
+          <div className="flex-1">
+            <div className="text-xs font-bold opacity-70">رصيد نقاطك</div>
+            <div className="text-2xl font-black leading-tight">{(profile as any)?.points_balance ?? 0} نقطة</div>
+            <div className="text-[10px] opacity-70">كل 100 نقطة = 1,000 دينار خصم عند الشراء</div>
+          </div>
         </div>
 
         <div className="mt-4 bg-card rounded-2xl border border-border shadow-card overflow-hidden">
