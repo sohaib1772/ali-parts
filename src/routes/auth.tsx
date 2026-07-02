@@ -119,9 +119,9 @@ function AuthPage() {
           <ArrowRight className="size-3.5" /> العودة للرئيسية
         </Link>
 
-        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-gradient-to-b from-[#141414] to-[#0a0a0a] p-8 shadow-2xl">
+        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-gradient-to-b from-[#1a2332] to-[#111827] p-8 shadow-2xl">
           {/* Top golden shine line */}
-          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent" />
+          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gold/70 to-transparent" />
 
           {/* Logo / Brand */}
           <div className="flex flex-col items-center mb-10">
