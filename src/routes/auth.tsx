@@ -42,6 +42,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -55,14 +56,16 @@ function AuthPage() {
     const raw = phone.trim();
     if (mode === "login" && raw.toLowerCase() === "aliskoda") {
       setLoading(true);
+      setProgress("جاري التحقق من بيانات الدخول…");
       try {
         const { error } = await supabase.auth.signInWithPassword({ email: "aliskoda@admin.local", password });
         if (error) throw error;
+        setProgress("تم — جاري تحويلك…");
         toast.success("مرحباً بك");
         navigate({ to: "/" });
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "حدث خطأ");
-      } finally { setLoading(false); }
+      } finally { setLoading(false); setProgress(null); }
       return;
     }
     const normalized = normalizePhone(raw);
@@ -72,6 +75,7 @@ function AuthPage() {
     }
     const loginEmail = phoneToEmail(normalized);
     setLoading(true);
+    setProgress(mode === "signup" ? "جاري إنشاء حسابك…" : "جاري التحقق من بيانات الدخول…");
     try {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
@@ -80,11 +84,13 @@ function AuthPage() {
           options: { emailRedirectTo: window.location.origin, data: { full_name: fullName, phone: "+" + normalized } },
         });
         if (error) throw error;
+        setProgress("تم إنشاء الحساب — جاري تحويلك…");
         toast.success("تم إنشاء الحساب بنجاح");
         navigate({ to: "/" });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
         if (error) throw error;
+        setProgress("تم — جاري تحويلك…");
         toast.success("مرحباً بعودتك");
         navigate({ to: "/" });
       }
@@ -92,14 +98,17 @@ function AuthPage() {
       toast.error(err instanceof Error ? err.message : "حدث خطأ");
     } finally {
       setLoading(false);
+      setProgress(null);
     }
   };
 
   const handleGoogle = async () => {
     setLoading(true);
+    setProgress("جاري فتح Google…");
     const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (result.error) { toast.error("تعذّر تسجيل الدخول"); setLoading(false); return; }
+    if (result.error) { toast.error("تعذّر تسجيل الدخول"); setLoading(false); setProgress(null); return; }
     if (result.redirected) return;
+    setProgress("تم — جاري تحويلك…");
     toast.success("مرحباً بك");
     navigate({ to: "/" });
   };
@@ -112,6 +121,22 @@ function AuthPage() {
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:32px_32px] opacity-[0.02]" />
 
       <div className="relative w-full max-w-[420px]">
+        {loading && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center rounded-[2.5rem] bg-[#0f172a]/70 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-4 rounded-2xl border border-gold/30 bg-[#111827]/90 px-8 py-6 shadow-[0_0_30px_rgba(201,162,39,0.25)]">
+              <div className="relative">
+                <Loader2 className="size-10 animate-spin text-gold" />
+                <div className="absolute inset-0 rounded-full bg-gold/20 blur-xl" />
+              </div>
+              <p className="font-body-lux text-sm text-white/90 text-center min-w-[180px]">
+                {progress ?? "جاري المعالجة…"}
+              </p>
+              <div className="h-1 w-40 overflow-hidden rounded-full bg-white/10">
+                <div className="h-full w-1/2 animate-[progress_1.2s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-gold to-transparent" />
+              </div>
+            </div>
+          </div>
+        )}
         <Link
           to="/"
           className="absolute -top-14 right-0 inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-gold transition-colors"
