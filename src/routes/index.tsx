@@ -58,30 +58,7 @@ function HomePage() {
       </div>
 
       {/* Hero banner */}
-      <div className="px-4 mt-4">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-hero text-primary-foreground p-5 shadow-luxe">
-          <div className="absolute -top-10 -end-10 size-40 rounded-full bg-gold/20 blur-2xl" />
-          <div className="absolute -bottom-16 -start-8 size-40 rounded-full bg-gold/10 blur-3xl" />
-          <div className="relative">
-            <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-gold bg-gold/10 border border-gold/30 rounded-full px-3 py-1 mb-3">
-              <Sparkles className="size-3.5" /> قطع أصلية ١٠٠٪
-            </div>
-            <h1 className="text-2xl font-black leading-tight mb-1">
-              قطع غيار <span className="text-gold">شفروليه</span> و<span className="text-gold">GMC</span> و<span className="text-gold">كاديلاك</span>
-            </h1>
-            <p className="text-sm text-primary-foreground/80 mb-4">توصيل سريع لجميع محافظات العراق</p>
-            <Link
-              to="/search"
-              className="inline-flex items-center gap-2 bg-gradient-gold text-navy font-bold text-sm px-4 py-2.5 rounded-xl shadow-gold hover:brightness-105 transition"
-            >
-              <Search className="size-4" /> ابحث الآن
-            </Link>
-          </div>
-          {banners[0] && (
-            <div className="mt-4 text-xs text-gold/90">{banners[0].subtitle_ar}</div>
-          )}
-        </div>
-      </div>
+      <HeroCarousel banners={banners} />
 
       {/* Categories */}
       <Section title="التصنيفات" href="/categories">
