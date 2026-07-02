@@ -68,7 +68,7 @@ function isAllowedBrand(b: { name_ar?: string | null; name_en?: string | null })
 export function filterProductsByVehicle(products: Product[], vehicle: Vehicle | null): Product[] {
   if (!vehicle) return products;
   return products.filter((p) => {
-    if (!p.compatible_models || p.compatible_models.length === 0) return false;
+    if (!p.compatible_models || p.compatible_models.length === 0) return true;
     return p.compatible_models.includes(vehicle.modelId);
   });
 }
