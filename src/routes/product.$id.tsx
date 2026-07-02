@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useRouter, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowRight, Heart, Minus, Plus, Share2, Shield, ShoppingCart, Truck, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowRight, Heart, Minus, Plus, Share2, Shield, ShoppingCart, Truck, CheckCircle2, XCircle, Facebook, X as CloseIcon } from "lucide-react";
 import { productByIdQuery } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
 import { formatIQD, whatsappLink } from "@/lib/format";
@@ -82,12 +82,19 @@ function ProductPage() {
   };
 
   const share = async () => {
-    const url = window.location.href;
-    if (navigator.share) {
-      try { await navigator.share({ title: product.name_ar, url }); } catch { /* cancelled */ }
-    } else {
-      await navigator.clipboard.writeText(url);
+    setShareOpen(true);
+  };
+  const [shareOpen, setShareOpen] = useState(false);
+  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+  const shareText = `${product.name_ar}${product.oem_number ? ` (OEM: ${product.oem_number})` : ""}`;
+  const waShareHref = whatsappLink(`${shareText}\n${shareUrl}`, "");
+  const fbShareHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
       toast.success("نُسخ الرابط");
+    } catch {
+      toast.error("تعذّر النسخ");
     }
   };
 
@@ -100,9 +107,21 @@ function ProductPage() {
         <button onClick={share} className="absolute top-4 end-4 z-10 size-10 rounded-full bg-white/90 shadow-card grid place-items-center">
           <Share2 className="size-5" />
         </button>
-        <div className="aspect-square bg-muted grid place-items-center">
+        <div
+          className="aspect-square bg-muted grid place-items-center select-none"
+          onContextMenu={(e) => e.preventDefault()}
+          style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" }}
+        >
           {img ? (
-            <img src={img} alt={product.name_ar} className="size-full object-cover" />
+            <img
+              src={img}
+              alt={product.name_ar}
+              draggable={false}
+              onContextMenu={(e) => e.preventDefault()}
+              onDragStart={(e) => e.preventDefault()}
+              className="size-full object-cover pointer-events-none select-none"
+              style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" }}
+            />
           ) : (
             <span className="text-8xl opacity-30">⚙️</span>
           )}
@@ -111,7 +130,14 @@ function ProductPage() {
           <div className="flex gap-2 px-4 py-3 overflow-x-auto no-scrollbar">
             {product.images.map((im, i) => (
               <button key={i} onClick={() => setActiveImg(i)} className={`size-14 rounded-xl overflow-hidden border-2 flex-shrink-0 ${activeImg === i ? "border-gold" : "border-transparent"}`}>
-                <img src={im} alt="" className="size-full object-cover" />
+                <img
+                  src={im}
+                  alt=""
+                  draggable={false}
+                  onContextMenu={(e) => e.preventDefault()}
+                  onDragStart={(e) => e.preventDefault()}
+                  className="size-full object-cover pointer-events-none select-none"
+                />
               </button>
             ))}
           </div>
@@ -212,6 +238,60 @@ function ProductPage() {
           </button>
         </div>
       </div>
+
+      {shareOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-navy/60 backdrop-blur-sm grid place-items-end sm:place-items-center"
+          onClick={() => setShareOpen(false)}
+        >
+          <div
+            className="w-full sm:max-w-sm bg-card rounded-t-3xl sm:rounded-3xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-luxe animate-in slide-in-from-bottom"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-extrabold">مشاركة المنتج</h3>
+              <button onClick={() => setShareOpen(false)} className="size-8 rounded-full bg-muted grid place-items-center">
+                <CloseIcon className="size-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <a
+                href={waShareHref}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setShareOpen(false)}
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-muted hover:bg-whatsapp/10 transition"
+              >
+                <span className="size-12 rounded-full bg-whatsapp text-white grid place-items-center">
+                  <WhatsappIcon className="size-6" />
+                </span>
+                <span className="text-xs font-bold">واتساب</span>
+              </a>
+              <a
+                href={fbShareHref}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setShareOpen(false)}
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-muted hover:bg-[#1877F2]/10 transition"
+              >
+                <span className="size-12 rounded-full bg-[#1877F2] text-white grid place-items-center">
+                  <Facebook className="size-6" />
+                </span>
+                <span className="text-xs font-bold">فيسبوك</span>
+              </a>
+              <button
+                onClick={() => { copyLink(); setShareOpen(false); }}
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-muted hover:bg-navy/10 transition"
+              >
+                <span className="size-12 rounded-full bg-navy text-primary-foreground grid place-items-center">
+                  <Share2 className="size-5" />
+                </span>
+                <span className="text-xs font-bold">نسخ الرابط</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
