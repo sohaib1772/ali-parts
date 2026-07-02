@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Search, ChevronLeft, Sparkles, Flame } from "lucide-react";
+import { Search, ChevronLeft, Sparkles, Flame, Cpu, Disc, CircleDot, Zap, Filter, Car, Circle, Gift, Wrench, Cog, Fuel, Droplets, WindshieldWiper } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { FloatingWhatsapp } from "@/components/floating-whatsapp";
 import { ProductCard } from "@/components/product-card";
@@ -56,20 +56,20 @@ function HomePage() {
       {/* Hero banner */}
       <HeroCarousel banners={banners} />
 
-      {/* Categories */}
-      <Section title="التصنيفات">
-        <div className="flex gap-4 overflow-x-auto no-scrollbar px-4 pb-2">
+      {/* Categories — square illustrated cards */}
+      <Section title="الأقسام" href="/categories" icon={<CircleDot className="size-4 text-gold" />}>
+        <div className="grid grid-cols-3 gap-3 px-4">
           {categories.map((c, i) => (
             <Link
               key={c.id}
               to="/category/$id"
               params={{ id: c.id }}
-              className="flex-shrink-0 flex flex-col items-center gap-2 min-w-[72px] group"
+              className="group flex flex-col items-center gap-2.5 p-3 rounded-2xl bg-card border border-border/60 shadow-card hover:shadow-luxe hover:-translate-y-0.5 transition-all active:scale-95"
             >
-              <div className={`size-16 rounded-full flex items-center justify-center text-2xl shadow-card transition-transform group-hover:scale-105 ${categoryBg(i)}`}>
-                <CategoryEmoji icon={c.icon} />
+              <div className={`w-full aspect-square rounded-xl flex items-center justify-center text-4xl shadow-inner transition-transform group-hover:scale-105 ${categoryBg(i)}`}>
+                <CategoryIcon icon={c.icon} />
               </div>
-              <span className="text-[11px] font-bold text-center leading-tight text-foreground whitespace-nowrap">{c.name_ar}</span>
+              <span className="text-[11px] font-bold text-center leading-tight text-foreground line-clamp-2 min-h-[2rem] flex items-center justify-center">{c.name_ar}</span>
             </Link>
           ))}
         </div>
@@ -133,32 +133,55 @@ function Section({ title, href, icon, children }: { title: string; href?: string
 
 function categoryBg(index: number) {
   const styles = [
-    "bg-amber-100 text-amber-600",
-    "bg-rose-100 text-rose-600",
-    "bg-slate-100 text-slate-600",
-    "bg-yellow-100 text-yellow-600",
-    "bg-sky-100 text-sky-600",
-    "bg-emerald-100 text-emerald-600",
-    "bg-indigo-100 text-indigo-600",
-    "bg-orange-100 text-orange-600",
-    "bg-violet-100 text-violet-600",
-    "bg-teal-100 text-teal-600",
+    "bg-gradient-to-br from-amber-50 to-amber-100 text-amber-600",
+    "bg-gradient-to-br from-rose-50 to-rose-100 text-rose-600",
+    "bg-gradient-to-br from-slate-50 to-slate-100 text-slate-600",
+    "bg-gradient-to-br from-yellow-50 to-yellow-100 text-yellow-600",
+    "bg-gradient-to-br from-sky-50 to-sky-100 text-sky-600",
+    "bg-gradient-to-br from-emerald-50 to-emerald-100 text-emerald-600",
+    "bg-gradient-to-br from-indigo-50 to-indigo-100 text-indigo-600",
+    "bg-gradient-to-br from-orange-50 to-orange-100 text-orange-600",
+    "bg-gradient-to-br from-violet-50 to-violet-100 text-violet-600",
+    "bg-gradient-to-br from-teal-50 to-teal-100 text-teal-600",
   ];
   return styles[index % styles.length];
 }
 
-function CategoryEmoji({ icon }: { icon: string | null }) {
-  const map: Record<string, string> = {
-    engine: "⚙️",
-    disc: "🛞",
-    suspension: "🔩",
-    zap: "⚡",
-    filter: "🌀",
-    droplet: "🛢️",
-    car: "🚗",
-    circle: "⭕",
+function CategoryIcon({ icon }: { icon: string | null }) {
+  const key = icon?.toLowerCase() ?? "";
+  const emojiMap: Record<string, React.ReactNode> = {
+    engine: <span className="drop-shadow-sm">⚙️</span>,
+    disc: <span className="drop-shadow-sm">🛞</span>,
+    brake: <span className="drop-shadow-sm">🛞</span>,
+    braking: <span className="drop-shadow-sm">🛞</span>,
+    suspension: <span className="drop-shadow-sm">🔩</span>,
+    zap: <span className="drop-shadow-sm">⚡</span>,
+    electrical: <span className="drop-shadow-sm">⚡</span>,
+    electronics: <span className="drop-shadow-sm">🔋</span>,
+    filter: <span className="drop-shadow-sm">🌀</span>,
+    filters: <span className="drop-shadow-sm">🌀</span>,
+    oil: <span className="drop-shadow-sm">🛢️</span>,
+    droplet: <span className="drop-shadow-sm">🛢️</span>,
+    car: <span className="drop-shadow-sm">🚗</span>,
+    body: <span className="drop-shadow-sm">🚙</span>,
+    circle: <span className="drop-shadow-sm">⭕</span>,
+    tire: <span className="drop-shadow-sm">🛞</span>,
+    wheel: <span className="drop-shadow-sm">🛞</span>,
+    wiper: <span className="drop-shadow-sm">🌧️</span>,
+    windshield: <span className="drop-shadow-sm">🌧️</span>,
+    gift: <span className="drop-shadow-sm">🎁</span>,
+    offer: <span className="drop-shadow-sm">🎁</span>,
+    deal: <span className="drop-shadow-sm">🎁</span>,
+    tool: <span className="drop-shadow-sm">🛠️</span>,
+    tools: <span className="drop-shadow-sm">🛠️</span>,
+    gear: <span className="drop-shadow-sm">⚙️</span>,
+    battery: <span className="drop-shadow-sm">🔋</span>,
+    light: <span className="drop-shadow-sm">💡</span>,
+    lights: <span className="drop-shadow-sm">💡</span>,
+    radiator: <span className="drop-shadow-sm">❄️</span>,
+    cooling: <span className="drop-shadow-sm">❄️</span>,
   };
-  return <span>{icon ? map[icon] ?? "🔧" : "🔧"}</span>;
+  return emojiMap[key] ?? <span className="drop-shadow-sm">🔧</span>;
 }
 
 function HeroCarousel({ banners }: { banners: Banner[] }) {
