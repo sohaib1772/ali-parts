@@ -146,15 +146,6 @@ function SearchBar() {
         <Search className="size-5 text-muted-foreground" />
         <span className="text-sm text-muted-foreground flex-1">ابحث عن قطعة، ماركة، أو رقم OEM…</span>
       </Link>
-      <Link
-        to="/search"
-        search={{ mode: "oem" }}
-        className="flex items-center gap-2 bg-gradient-navy text-primary-foreground rounded-2xl px-4 py-2.5 shadow-card"
-      >
-        <Hash className="size-4 text-gold" />
-        <span className="text-xs font-semibold flex-1">البحث برقم OEM</span>
-        <span className="text-[10px] text-gold">اضغط هنا</span>
-      </Link>
     </div>
   );
 }
