@@ -59,15 +59,15 @@ function HomePage() {
       {/* Categories — square illustrated cards */}
       <Section title="الأقسام" href="/categories" icon={<CircleDot className="size-4 text-gold" />}>
         <div className="grid grid-cols-3 gap-3 px-4">
-          {categories.map((c, i) => (
+          {categories.map((c) => (
             <Link
               key={c.id}
               to="/category/$id"
               params={{ id: c.id }}
               className="group flex flex-col items-center gap-2.5 p-3 rounded-2xl bg-card border border-border/60 shadow-card hover:shadow-luxe hover:-translate-y-0.5 transition-all active:scale-95"
             >
-              <div className={`w-full aspect-square rounded-xl flex items-center justify-center text-4xl shadow-inner transition-transform group-hover:scale-105 ${categoryBg(i)}`}>
-                <CategoryIcon icon={c.icon} />
+              <div className="w-full aspect-square rounded-xl bg-gradient-to-br from-muted/80 to-background flex items-center justify-center overflow-hidden">
+                <CategoryIcon category={c} />
               </div>
               <span className="text-[11px] font-bold text-center leading-tight text-foreground line-clamp-2 min-h-[2rem] flex items-center justify-center">{c.name_ar}</span>
             </Link>
@@ -147,41 +147,57 @@ function categoryBg(index: number) {
   return styles[index % styles.length];
 }
 
-function CategoryIcon({ icon }: { icon: string | null }) {
-  const key = icon?.toLowerCase() ?? "";
+function CategoryIcon({ category, index }: { category: { id: string; name_ar: string; icon: string | null; image_url: string | null }; index: number }) {
+  if (category.image_url) {
+    return (
+      <img
+        src={category.image_url}
+        alt={category.name_ar}
+        className="w-full h-full object-contain p-3 transition-transform group-hover:scale-105"
+        loading="lazy"
+      />
+    );
+  }
+
+  const key = category.icon?.toLowerCase() ?? "";
   const emojiMap: Record<string, React.ReactNode> = {
-    engine: <span className="drop-shadow-sm">⚙️</span>,
-    disc: <span className="drop-shadow-sm">🛞</span>,
-    brake: <span className="drop-shadow-sm">🛞</span>,
-    braking: <span className="drop-shadow-sm">🛞</span>,
-    suspension: <span className="drop-shadow-sm">🔩</span>,
-    zap: <span className="drop-shadow-sm">⚡</span>,
-    electrical: <span className="drop-shadow-sm">⚡</span>,
-    electronics: <span className="drop-shadow-sm">🔋</span>,
-    filter: <span className="drop-shadow-sm">🌀</span>,
-    filters: <span className="drop-shadow-sm">🌀</span>,
-    oil: <span className="drop-shadow-sm">🛢️</span>,
-    droplet: <span className="drop-shadow-sm">🛢️</span>,
-    car: <span className="drop-shadow-sm">🚗</span>,
-    body: <span className="drop-shadow-sm">🚙</span>,
-    circle: <span className="drop-shadow-sm">⭕</span>,
-    tire: <span className="drop-shadow-sm">🛞</span>,
-    wheel: <span className="drop-shadow-sm">🛞</span>,
-    wiper: <span className="drop-shadow-sm">🌧️</span>,
-    windshield: <span className="drop-shadow-sm">🌧️</span>,
-    gift: <span className="drop-shadow-sm">🎁</span>,
-    offer: <span className="drop-shadow-sm">🎁</span>,
-    deal: <span className="drop-shadow-sm">🎁</span>,
-    tool: <span className="drop-shadow-sm">🛠️</span>,
-    tools: <span className="drop-shadow-sm">🛠️</span>,
-    gear: <span className="drop-shadow-sm">⚙️</span>,
-    battery: <span className="drop-shadow-sm">🔋</span>,
-    light: <span className="drop-shadow-sm">💡</span>,
-    lights: <span className="drop-shadow-sm">💡</span>,
-    radiator: <span className="drop-shadow-sm">❄️</span>,
-    cooling: <span className="drop-shadow-sm">❄️</span>,
+    engine: <span className="text-4xl drop-shadow-sm">⚙️</span>,
+    disc: <span className="text-4xl drop-shadow-sm">🛞</span>,
+    brake: <span className="text-4xl drop-shadow-sm">🛞</span>,
+    braking: <span className="text-4xl drop-shadow-sm">🛞</span>,
+    suspension: <span className="text-4xl drop-shadow-sm">🔩</span>,
+    zap: <span className="text-4xl drop-shadow-sm">⚡</span>,
+    electrical: <span className="text-4xl drop-shadow-sm">⚡</span>,
+    electronics: <span className="text-4xl drop-shadow-sm">🔋</span>,
+    filter: <span className="text-4xl drop-shadow-sm">🌀</span>,
+    filters: <span className="text-4xl drop-shadow-sm">🌀</span>,
+    oil: <span className="text-4xl drop-shadow-sm">🛢️</span>,
+    droplet: <span className="text-4xl drop-shadow-sm">🛢️</span>,
+    car: <span className="text-4xl drop-shadow-sm">🚗</span>,
+    body: <span className="text-4xl drop-shadow-sm">🚙</span>,
+    circle: <span className="text-4xl drop-shadow-sm">⭕</span>,
+    tire: <span className="text-4xl drop-shadow-sm">🛞</span>,
+    wheel: <span className="text-4xl drop-shadow-sm">🛞</span>,
+    wiper: <span className="text-4xl drop-shadow-sm">🌧️</span>,
+    windshield: <span className="text-4xl drop-shadow-sm">🌧️</span>,
+    gift: <span className="text-4xl drop-shadow-sm">🎁</span>,
+    offer: <span className="text-4xl drop-shadow-sm">🎁</span>,
+    deal: <span className="text-4xl drop-shadow-sm">🎁</span>,
+    tool: <span className="text-4xl drop-shadow-sm">🛠️</span>,
+    tools: <span className="text-4xl drop-shadow-sm">🛠️</span>,
+    gear: <span className="text-4xl drop-shadow-sm">⚙️</span>,
+    battery: <span className="text-4xl drop-shadow-sm">🔋</span>,
+    light: <span className="text-4xl drop-shadow-sm">💡</span>,
+    lights: <span className="text-4xl drop-shadow-sm">💡</span>,
+    radiator: <span className="text-4xl drop-shadow-sm">❄️</span>,
+    cooling: <span className="text-4xl drop-shadow-sm">❄️</span>,
   };
-  return emojiMap[key] ?? <span className="drop-shadow-sm">🔧</span>;
+
+  return (
+    <div className={`w-full h-full flex items-center justify-center ${categoryBg(index)}`}>
+      {emojiMap[key] ?? <span className="text-4xl drop-shadow-sm">🔧</span>}
+    </div>
+  );
 }
 
 function HeroCarousel({ banners }: { banners: Banner[] }) {
