@@ -34,12 +34,6 @@ function HomePage() {
 
   const vehicle = useSavedVehicle();
   const [pickerOpen, setPickerOpen] = useState(false);
-  useEffect(() => {
-    if (!getSavedVehicle()) {
-      const t = setTimeout(() => setPickerOpen(true), 400);
-      return () => clearTimeout(t);
-    }
-  }, []);
 
   const filteredDeals = filterProductsByVehicle(deals, vehicle);
   const dealIds = new Set(filteredDeals.slice(0, 4).map((p) => p.id));
