@@ -3,7 +3,24 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
-import { ArrowRight, Loader2, Mail, Lock, User as UserIcon } from "lucide-react";
+import { ArrowRight, Loader2, Phone, Lock, User as UserIcon } from "lucide-react";
+import { useSetting } from "@/lib/admin";
+
+function normalizePhone(raw: string): string | null {
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return null;
+  // Iraqi numbers: accept 07XXXXXXXXX (11 digits) or 7XXXXXXXXX (10) or with 964
+  let n = digits;
+  if (n.startsWith("00964")) n = n.slice(5);
+  else if (n.startsWith("964")) n = n.slice(3);
+  else if (n.startsWith("0")) n = n.slice(1);
+  if (n.length !== 10 || !n.startsWith("7")) return null;
+  return "964" + n;
+}
+
+function phoneToEmail(phone: string) {
+  return `p${phone}@aliparts.local`;
+}
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -17,8 +34,11 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const storeName = useSetting("store_name", "Ali Parts");
+  const storeTagline = useSetting("store_tagline", "قطع أصلية · العراق");
+  const storeLogo = useSetting("store_logo", "");
   const [mode, setMode] = useState<"login" | "signup">("login");
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,22 +51,38 @@ function AuthPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Admin backdoor: allow "aliskoda" username login by legacy admin email
+    const raw = phone.trim();
+    if (mode === "login" && raw.toLowerCase() === "aliskoda") {
+      setLoading(true);
+      try {
+        const { error } = await supabase.auth.signInWithPassword({ email: "aliskoda@admin.local", password });
+        if (error) throw error;
+        toast.success("مرحباً بك");
+        navigate({ to: "/" });
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "حدث خطأ");
+      } finally { setLoading(false); }
+      return;
+    }
+    const normalized = normalizePhone(raw);
+    if (!normalized) {
+      toast.error("رقم الهاتف غير صحيح — مثال: 07XX XXX XXXX");
+      return;
+    }
+    const loginEmail = phoneToEmail(normalized);
     setLoading(true);
     try {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
-          email,
+          email: loginEmail,
           password,
-          options: { emailRedirectTo: window.location.origin, data: { full_name: fullName } },
+          options: { emailRedirectTo: window.location.origin, data: { full_name: fullName, phone: "+" + normalized } },
         });
         if (error) throw error;
         toast.success("تم إنشاء الحساب بنجاح");
         navigate({ to: "/" });
       } else {
-        const identifier = email.trim();
-        const loginEmail = identifier.toLowerCase() === "aliskoda"
-          ? "aliskoda@admin.local"
-          : identifier;
         const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
         if (error) throw error;
         toast.success("مرحباً بعودتك");
@@ -76,10 +112,18 @@ function AuthPage() {
         </Link>
 
         <div className="flex items-center gap-3 mb-8">
-          <div className="size-14 rounded-2xl bg-gradient-gold grid place-items-center font-black text-navy text-2xl shadow-gold">A</div>
+          {storeLogo ? (
+            <div className="size-14 rounded-2xl overflow-hidden shadow-gold bg-white">
+              <img src={storeLogo} alt={storeName} className="size-full object-cover" />
+            </div>
+          ) : (
+            <div className="size-14 rounded-2xl bg-gradient-gold grid place-items-center font-black text-navy text-2xl shadow-gold">
+              {storeName.charAt(0).toUpperCase()}
+            </div>
+          )}
           <div>
-            <div className="text-2xl font-black">Ali Parts</div>
-            <div className="text-xs text-gold">قطع أصلية · العراق</div>
+            <div className="text-2xl font-black">{storeName}</div>
+            <div className="text-xs text-gold">{storeTagline}</div>
           </div>
         </div>
 
@@ -106,7 +150,7 @@ function AuthPage() {
           {mode === "signup" && (
             <Field icon={<UserIcon className="size-4" />} placeholder="الاسم الكامل" value={fullName} onChange={setFullName} />
           )}
-          <Field icon={<Mail className="size-4" />} placeholder={mode === "login" ? "البريد الإلكتروني أو اسم المستخدم" : "البريد الإلكتروني"} type={mode === "login" ? "text" : "email"} required value={email} onChange={setEmail} />
+          <Field icon={<Phone className="size-4" />} placeholder="رقم الهاتف (07XX XXX XXXX)" type="tel" required value={phone} onChange={setPhone} />
           <Field icon={<Lock className="size-4" />} placeholder="كلمة المرور" type="password" required value={password} onChange={setPassword} />
 
           <button
