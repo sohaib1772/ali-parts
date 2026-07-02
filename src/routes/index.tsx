@@ -189,3 +189,88 @@ function CategoryEmoji({ icon }: { icon: string | null }) {
   };
   return <span>{icon ? map[icon] ?? "🔧" : "🔧"}</span>;
 }
+
+function HeroCarousel({ banners }: { banners: Banner[] }) {
+  const [idx, setIdx] = useState(0);
+  const slides = banners.length > 0 ? banners : null;
+
+  useEffect(() => {
+    if (!slides || slides.length <= 1) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % slides.length), 4500);
+    return () => clearInterval(t);
+  }, [slides]);
+
+  if (!slides) {
+    return (
+      <div className="px-4 mt-4">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-hero text-primary-foreground p-5 shadow-luxe">
+          <div className="absolute -top-10 -end-10 size-40 rounded-full bg-gold/20 blur-2xl" />
+          <div className="absolute -bottom-16 -start-8 size-40 rounded-full bg-gold/10 blur-3xl" />
+          <div className="relative">
+            <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-gold bg-gold/10 border border-gold/30 rounded-full px-3 py-1 mb-3">
+              <Sparkles className="size-3.5" /> قطع أصلية ١٠٠٪
+            </div>
+            <h1 className="text-2xl font-black leading-tight mb-1">
+              قطع غيار <span className="text-gold">شفروليه</span> و<span className="text-gold">GMC</span> و<span className="text-gold">كاديلاك</span>
+            </h1>
+            <p className="text-sm text-primary-foreground/80 mb-4">توصيل سريع لجميع محافظات العراق</p>
+            <Link
+              to="/search"
+              className="inline-flex items-center gap-2 bg-gradient-gold text-navy font-bold text-sm px-4 py-2.5 rounded-xl shadow-gold hover:brightness-105 transition"
+            >
+              <Search className="size-4" /> ابحث الآن
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const current = slides[idx];
+  const content = (
+    <div className="relative overflow-hidden rounded-3xl bg-gradient-hero text-primary-foreground shadow-luxe aspect-[16/10]">
+      {slides.map((b, i) => (
+        <img
+          key={b.id}
+          src={b.image_url}
+          alt={b.title_ar ?? ""}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === idx ? "opacity-100" : "opacity-0"}`}
+        />
+      ))}
+      <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/40 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 p-4">
+        <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-gold bg-gold/10 border border-gold/30 rounded-full px-3 py-1 mb-2">
+          <Sparkles className="size-3.5" /> قطع أصلية ١٠٠٪
+        </div>
+        {current.title_ar && (
+          <h1 className="text-xl font-black leading-tight mb-1 text-primary-foreground">{current.title_ar}</h1>
+        )}
+        {current.subtitle_ar && (
+          <p className="text-xs text-primary-foreground/85 mb-2">{current.subtitle_ar}</p>
+        )}
+        {slides.length > 1 && (
+          <div className="flex gap-1.5 mt-2">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIdx(i); }}
+                aria-label={`slide ${i + 1}`}
+                className={`h-1.5 rounded-full transition-all ${i === idx ? "w-6 bg-gold" : "w-1.5 bg-white/40"}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="px-4 mt-4">
+      {current.link ? (
+        <a href={current.link}>{content}</a>
+      ) : (
+        content
+      )}
+    </div>
+  );
+}
