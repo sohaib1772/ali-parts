@@ -830,11 +830,29 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function ImageUploader({ images, onChange, max = 6 }: { images: string[]; onChange: (imgs: string[]) => void; max?: number }) {
-  return <ImageUploaderInner images={images} onChange={onChange} max={max} />;
+async function resizeImageFile(file: File, size: number): Promise<File> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.clearRect(0, 0, size, size);
+    // contain: keep aspect ratio, center
+    const scale = Math.min(size / bitmap.width, size / bitmap.height);
+    const w = bitmap.width * scale;
+    const h = bitmap.height * scale;
+    ctx.drawImage(bitmap, (size - w) / 2, (size - h) / 2, w, h);
+    const blob: Blob | null = await new Promise((res) => canvas.toBlob(res, "image/png", 0.92));
+    if (!blob) return file;
+    return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".png", { type: "image/png" });
+  } catch {
+    return file;
+  }
 }
 
-function ImageUploaderInner({ images, onChange, max = 6, resizeTo }: { images: string[]; onChange: (imgs: string[]) => void; max?: number; resizeTo?: number }) {
+function ImageUploader({ images, onChange, max = 6, resizeTo }: { images: string[]; onChange: (imgs: string[]) => void; max?: number; resizeTo?: number }) {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
