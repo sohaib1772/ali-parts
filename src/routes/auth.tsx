@@ -105,11 +105,11 @@ function AuthPage() {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#050505] text-white flex flex-col items-center justify-center p-6 selection:bg-gold/30">
+    <div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-b from-[#0f172a] to-[#1e293b] text-white flex flex-col items-center justify-center p-6 selection:bg-gold/30">
       {/* Ambient background glows */}
-      <div className="pointer-events-none fixed top-[-10%] left-[-10%] w-[45%] h-[45%] rounded-full bg-amber-500/10 blur-[120px]" />
-      <div className="pointer-events-none fixed bottom-[-10%] right-[-10%] w-[45%] h-[45%] rounded-full bg-white/5 blur-[120px]" />
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:32px_32px] opacity-[0.03]" />
+      <div className="pointer-events-none fixed top-[-10%] left-[-10%] w-[45%] h-[45%] rounded-full bg-amber-500/12 blur-[120px]" />
+      <div className="pointer-events-none fixed bottom-[-10%] right-[-10%] w-[45%] h-[45%] rounded-full bg-blue-400/8 blur-[120px]" />
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:32px_32px] opacity-[0.02]" />
 
       <div className="relative w-full max-w-[420px]">
         <Link
