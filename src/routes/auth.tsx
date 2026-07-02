@@ -106,7 +106,7 @@ function AuthPage() {
           {mode === "signup" && (
             <Field icon={<UserIcon className="size-4" />} placeholder="الاسم الكامل" value={fullName} onChange={setFullName} />
           )}
-          <Field icon={<Mail className="size-4" />} placeholder="البريد الإلكتروني" type="email" required value={email} onChange={setEmail} />
+          <Field icon={<Mail className="size-4" />} placeholder={mode === "login" ? "البريد الإلكتروني أو اسم المستخدم" : "البريد الإلكتروني"} type={mode === "login" ? "text" : "email"} required value={email} onChange={setEmail} />
           <Field icon={<Lock className="size-4" />} placeholder="كلمة المرور" type="password" required value={password} onChange={setPassword} />
 
           <button
