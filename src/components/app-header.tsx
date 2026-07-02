@@ -11,17 +11,21 @@ export function AppHeader({ title }: { title?: string }) {
   const storeLogo = useSetting("store_logo", "");
   useEffect(() => {
     let mounted = true;
-    const load = async () => {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return;
+    const load = async (userId?: string | null) => {
+      let uid = userId;
+      if (uid === undefined) {
+        const { data } = await supabase.auth.getSession();
+        uid = data.session?.user.id ?? null;
+      }
+      if (!uid) { if (mounted) setCount(0); return; }
       const { count } = await supabase
         .from("cart_items")
         .select("*", { count: "exact", head: true })
-        .eq("user_id", user.user.id);
+        .eq("user_id", uid);
       if (mounted) setCount(count ?? 0);
     };
     load();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => load());
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => load(session?.user.id ?? null));
     return () => { mounted = false; sub.subscription.unsubscribe(); };
   }, []);
 
