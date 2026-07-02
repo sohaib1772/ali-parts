@@ -62,19 +62,19 @@ function HomePage() {
       <HeroCarousel banners={banners} />
 
       {/* Categories */}
-      <Section title="التصنيفات" href="/categories">
-        <div className="flex gap-3 overflow-x-auto no-scrollbar px-4 pb-1">
+      <Section title="التصنيفات">
+        <div className="grid grid-cols-3 gap-3 px-4">
           {categories.map((c) => (
             <Link
               key={c.id}
               to="/category/$id"
               params={{ id: c.id }}
-              className="flex-shrink-0 w-20 flex flex-col items-center gap-2"
+              className="aspect-square rounded-2xl bg-card border border-border shadow-card flex flex-col items-center justify-center gap-2 p-2 transition hover:border-gold hover:shadow-gold"
             >
-              <div className="size-16 rounded-2xl bg-card border border-border shadow-card grid place-items-center text-2xl transition hover:border-gold hover:shadow-gold">
+              <div className="text-3xl">
                 <CategoryEmoji icon={c.icon} />
               </div>
-              <span className="text-[11px] font-semibold text-center leading-tight">{c.name_ar}</span>
+              <span className="text-[11px] font-bold text-center leading-tight text-navy">{c.name_ar}</span>
             </Link>
           ))}
         </div>
