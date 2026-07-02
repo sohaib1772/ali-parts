@@ -536,10 +536,10 @@ function TaxonomyAdmin() {
             <Field label="الاسم بالعربي *"><Input value={catForm.name_ar} onChange={(e) => setCatForm({ ...catForm, name_ar: e.target.value })} /></Field>
             <Field label="الاسم بالإنجليزي"><Input value={catForm.name_en} onChange={(e) => setCatForm({ ...catForm, name_en: e.target.value })} /></Field>
             <Field label="الأيقونة (اختياري)">
-              <Select value={catForm.icon} onValueChange={(v) => setCatForm({ ...catForm, icon: v })}>
+              <Select value={catForm.icon || "__none__"} onValueChange={(v) => setCatForm({ ...catForm, icon: v === "__none__" ? "" : v })}>
                 <SelectTrigger><SelectValue placeholder="اختر أيقونة" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">بدون</SelectItem>
+                  <SelectItem value="__none__">بدون</SelectItem>
                   {ICON_OPTIONS.map((opt) => <SelectItem key={opt.key} value={opt.key}>{opt.label}</SelectItem>)}
                 </SelectContent>
               </Select>
