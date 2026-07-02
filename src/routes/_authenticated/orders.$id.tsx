@@ -1,6 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, PackageCheck, Package as PackageIcon, PackageOpen, Truck, MapPin, Home, XCircle } from "lucide-react";
 import { orderByIdQuery } from "@/lib/queries";
 import { formatIQD, formatArabicDate } from "@/lib/format";
@@ -26,6 +27,24 @@ function OrderDetail() {
   const { data } = useSuspenseQuery(orderByIdQuery(id));
   const { order, items } = data;
   const router = useRouter();
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    const ch = supabase
+      .channel(`order-${id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${id}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["order", id] });
+          qc.invalidateQueries({ queryKey: ["orders"] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [id, qc]);
 
   useEffect(() => {
     markOrderSeen(order.id, (order as any).updated_at ?? order.created_at);

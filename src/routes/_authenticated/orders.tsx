@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Package, ChevronLeft } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { ordersQuery } from "@/lib/queries";
@@ -16,6 +18,22 @@ function OrdersPage() {
   const { userId } = useAuth();
   const { data: orders = [] } = useQuery(ordersQuery(userId));
   const seen = useOrderSeenMap();
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (!userId) return;
+    const ch = supabase
+      .channel(`orders-${userId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders", filter: `user_id=eq.${userId}` },
+        () => qc.invalidateQueries({ queryKey: ["orders", userId] }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [userId, qc]);
 
   return (
     <PageShell title="طلباتي">
