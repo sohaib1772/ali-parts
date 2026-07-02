@@ -9,7 +9,6 @@ import { VehiclePicker, VehicleBar, getSavedVehicle, useSavedVehicle, filterProd
 import {
   bannersQuery,
   brandsQuery,
-  carModelsQuery,
   categoriesQuery,
   dealsQuery,
   featuredProductsQuery,
@@ -23,7 +22,6 @@ export const Route = createFileRoute("/")({
     context.queryClient.ensureQueryData(dealsQuery());
     context.queryClient.ensureQueryData(bannersQuery());
     context.queryClient.ensureQueryData(brandsQuery());
-    context.queryClient.ensureQueryData(carModelsQuery());
   },
   component: HomePage,
 });
@@ -33,7 +31,6 @@ function HomePage() {
   const { data: featured } = useSuspenseQuery(featuredProductsQuery());
   const { data: deals } = useSuspenseQuery(dealsQuery());
   const { data: banners } = useSuspenseQuery(bannersQuery());
-  const { data: models } = useSuspenseQuery(carModelsQuery());
 
   const vehicle = useSavedVehicle();
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -63,35 +60,18 @@ function HomePage() {
 
       {/* Categories */}
       <Section title="التصنيفات">
-        <div className="grid grid-cols-3 gap-3 px-4">
-          {categories.map((c) => (
+        <div className="flex gap-4 overflow-x-auto no-scrollbar px-4 pb-2">
+          {categories.map((c, i) => (
             <Link
               key={c.id}
               to="/category/$id"
               params={{ id: c.id }}
-              className="aspect-square rounded-2xl bg-card border border-border shadow-card flex flex-col items-center justify-center gap-2 p-2 transition hover:border-gold hover:shadow-gold"
+              className="flex-shrink-0 flex flex-col items-center gap-2 min-w-[72px] group"
             >
-              <div className="text-3xl">
+              <div className={`size-16 rounded-full flex items-center justify-center text-2xl shadow-card transition-transform group-hover:scale-105 ${categoryBg(i)}`}>
                 <CategoryEmoji icon={c.icon} />
               </div>
-              <span className="text-[11px] font-bold text-center leading-tight text-navy">{c.name_ar}</span>
-            </Link>
-          ))}
-        </div>
-      </Section>
-
-      {/* Popular Cars */}
-      <Section title="السيارات الأكثر طلباً">
-        <div className="flex gap-3 overflow-x-auto no-scrollbar px-4 pb-1">
-          {models.slice(0, 10).map((m) => (
-            <Link
-              key={m.id}
-              to="/search"
-              search={{ q: m.name_ar }}
-              className="flex-shrink-0 px-4 py-3 rounded-2xl bg-gradient-navy text-primary-foreground shadow-card hover:shadow-luxe transition min-w-[110px] text-center"
-            >
-              <div className="text-xs text-gold/80 mb-0.5">شفروليه</div>
-              <div className="text-sm font-bold">{m.name_ar}</div>
+              <span className="text-[11px] font-bold text-center leading-tight text-foreground whitespace-nowrap">{c.name_ar}</span>
             </Link>
           ))}
         </div>
@@ -165,6 +145,22 @@ function Section({ title, href, icon, children }: { title: string; href?: string
       {children}
     </section>
   );
+}
+
+function categoryBg(index: number) {
+  const styles = [
+    "bg-amber-100 text-amber-600",
+    "bg-rose-100 text-rose-600",
+    "bg-slate-100 text-slate-600",
+    "bg-yellow-100 text-yellow-600",
+    "bg-sky-100 text-sky-600",
+    "bg-emerald-100 text-emerald-600",
+    "bg-indigo-100 text-indigo-600",
+    "bg-orange-100 text-orange-600",
+    "bg-violet-100 text-violet-600",
+    "bg-teal-100 text-teal-600",
+  ];
+  return styles[index % styles.length];
 }
 
 function CategoryEmoji({ icon }: { icon: string | null }) {
