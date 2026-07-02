@@ -105,11 +105,11 @@ function AuthPage() {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#050505] text-white flex flex-col items-center justify-center p-6 selection:bg-gold/30">
+    <div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-b from-[#0f172a] to-[#1e293b] text-white flex flex-col items-center justify-center p-6 selection:bg-gold/30">
       {/* Ambient background glows */}
-      <div className="pointer-events-none fixed top-[-10%] left-[-10%] w-[45%] h-[45%] rounded-full bg-amber-500/10 blur-[120px]" />
-      <div className="pointer-events-none fixed bottom-[-10%] right-[-10%] w-[45%] h-[45%] rounded-full bg-white/5 blur-[120px]" />
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:32px_32px] opacity-[0.03]" />
+      <div className="pointer-events-none fixed top-[-10%] left-[-10%] w-[45%] h-[45%] rounded-full bg-amber-500/12 blur-[120px]" />
+      <div className="pointer-events-none fixed bottom-[-10%] right-[-10%] w-[45%] h-[45%] rounded-full bg-blue-400/8 blur-[120px]" />
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:32px_32px] opacity-[0.02]" />
 
       <div className="relative w-full max-w-[420px]">
         <Link
@@ -119,15 +119,15 @@ function AuthPage() {
           <ArrowRight className="size-3.5" /> العودة للرئيسية
         </Link>
 
-        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-gradient-to-b from-[#141414] to-[#0a0a0a] p-8 shadow-2xl">
+        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-gradient-to-b from-[#1a2332] to-[#111827] p-8 shadow-2xl">
           {/* Top golden shine line */}
-          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent" />
+          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gold/70 to-transparent" />
 
           {/* Logo / Brand */}
           <div className="flex flex-col items-center mb-10">
             <div className="relative mb-6">
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-300 rotate-45 opacity-25 blur-xl" />
-              <div className="relative size-20 rounded-2xl bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] border border-white/10 flex items-center justify-center shadow-[0_0_30px_rgba(201,162,39,0.15)]">
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-300 rotate-45 opacity-30 blur-xl" />
+              <div className="relative size-20 rounded-2xl bg-gradient-to-br from-[#1e293b] to-[#0f172a] border border-white/15 flex items-center justify-center shadow-[0_0_30px_rgba(201,162,39,0.18)]">
                 {storeLogo ? (
                   <img src={storeLogo} alt={storeName} className="max-h-14 max-w-14 object-contain" />
                 ) : (
@@ -146,8 +146,8 @@ function AuthPage() {
             <h2 className="font-luxury text-2xl font-semibold mb-2">
               {mode === "login" ? "تسجيل الدخول" : "إنشاء حساب"}
             </h2>
-            <p className="font-body-lux text-sm text-white/40">
-              {mode === "login" ? "بوابة النخبة لقطع غيار السيارات الفاخرة" : "انضم إلى عالم التميز لسيارتك"}
+            <p className="font-body-lux text-sm text-white/50">
+              {mode === "login" ? "شوفرليت — قطع غيار سيارات مستعمل و جديد" : "شوفرليت — قطع غيار سيارات مستعمل و جديد"}
             </p>
           </div>
 
@@ -183,7 +183,7 @@ function AuthPage() {
               disabled={loading}
               className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-gold to-amber-500 p-px shadow-[0_0_24px_rgba(201,162,39,0.25)] active:scale-[0.98] transition-transform disabled:opacity-50"
             >
-              <div className="relative flex items-center justify-center gap-2 rounded-[15px] bg-[#0a0a0a] py-4 transition-colors group-hover:bg-transparent">
+              <div className="relative flex items-center justify-center gap-2 rounded-[15px] bg-[#0f172a] py-4 transition-colors group-hover:bg-transparent">
                 {loading ? <Loader2 className="size-4 animate-spin text-white" /> : <Sparkles className="size-4 text-gold" />}
                 <span className="font-body-lux font-bold text-white">
                   {mode === "login" ? "دخول المتجر" : "إنشاء حساب"}
@@ -248,7 +248,7 @@ function LuxuryField({ icon, placeholder, type = "text", value, onChange, requir
   return (
     <div className="group relative">
       <div className="absolute inset-0 rounded-2xl bg-gold/5 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity" />
-      <div className="relative flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0a0a0a]/60 px-4 py-3.5 focus-within:border-gold/50 focus-within:ring-1 focus-within:ring-gold/20 transition-all">
+      <div className="relative flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0f172a]/50 px-4 py-3.5 focus-within:border-gold/50 focus-within:ring-1 focus-within:ring-gold/20 transition-all">
         <span className="text-gold/80 shrink-0">{icon}</span>
         <input
           type={type}
