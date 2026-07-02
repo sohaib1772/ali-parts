@@ -49,8 +49,6 @@ function HomePage() {
 
   return (
     <PageShell>
-      <SearchBar />
-
       <div className="px-4 mt-3">
         <VehicleBar onOpen={() => setPickerOpen(true)} />
       </div>
@@ -113,20 +111,6 @@ function HomePage() {
       <FloatingWhatsapp />
       <VehiclePicker open={pickerOpen} onOpenChange={setPickerOpen} />
     </PageShell>
-  );
-}
-
-function SearchBar() {
-  return (
-    <div className="px-4 pt-3 space-y-2">
-      <Link
-        to="/search"
-        className="flex items-center gap-2 bg-card border border-border rounded-2xl px-4 py-3 shadow-card"
-      >
-        <Search className="size-5 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground flex-1">ابحث عن قطعة، ماركة، أو رقم OEM…</span>
-      </Link>
-    </div>
   );
 }
 

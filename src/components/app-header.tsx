@@ -30,11 +30,11 @@ export function AppHeader({ title }: { title?: string }) {
       <div className="mx-auto max-w-md px-4 py-3 flex items-center gap-3">
         <Link to="/" className="flex items-center gap-2">
           {storeLogo ? (
-            <div className="size-9 rounded-xl overflow-hidden shadow-gold bg-white">
+            <div className="size-11 rounded-xl overflow-hidden shadow-gold bg-white">
               <img src={storeLogo} alt={storeName} className="size-full object-cover" />
             </div>
           ) : (
-            <div className="size-9 rounded-xl bg-gradient-gold flex items-center justify-center font-black text-navy text-lg shadow-gold">
+            <div className="size-11 rounded-xl bg-gradient-gold flex items-center justify-center font-black text-navy text-xl shadow-gold">
               {storeName.charAt(0).toUpperCase()}
             </div>
           )}
