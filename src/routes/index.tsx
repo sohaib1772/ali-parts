@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Search, ChevronLeft, Sparkles, Flame, Cpu, Disc, CircleDot, Zap, Filter, Car, Circle, Gift, Wrench, Cog, Fuel, Droplets, WindshieldWiper } from "lucide-react";
+import { Search, ChevronLeft, Sparkles, Flame, CircleDot } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { FloatingWhatsapp } from "@/components/floating-whatsapp";
 import { ProductCard } from "@/components/product-card";
