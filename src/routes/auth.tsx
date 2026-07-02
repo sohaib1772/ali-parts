@@ -146,8 +146,8 @@ function AuthPage() {
             <h2 className="font-luxury text-2xl font-semibold mb-2">
               {mode === "login" ? "تسجيل الدخول" : "إنشاء حساب"}
             </h2>
-            <p className="font-body-lux text-sm text-white/40">
-              {mode === "login" ? "بوابة النخبة لقطع غيار السيارات الفاخرة" : "انضم إلى عالم التميز لسيارتك"}
+            <p className="font-body-lux text-sm text-white/50">
+              {mode === "login" ? "شوفرليت — قطع غيار سيارات مستعمل و جديد" : "شوفرليت — قطع غيار سيارات مستعمل و جديد"}
             </p>
           </div>
 
