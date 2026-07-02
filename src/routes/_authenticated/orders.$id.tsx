@@ -1,9 +1,11 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { ArrowRight, PackageCheck, Package as PackageIcon, PackageOpen, Truck, MapPin, Home, XCircle } from "lucide-react";
 import { orderByIdQuery } from "@/lib/queries";
 import { formatIQD, formatArabicDate } from "@/lib/format";
 import { statusLabel } from "@/lib/order-status";
+import { markOrderSeen } from "@/lib/order-updates";
 
 export const Route = createFileRoute("/_authenticated/orders/$id")({
   loader: ({ context, params }) => context.queryClient.ensureQueryData(orderByIdQuery(params.id)),
@@ -24,6 +26,10 @@ function OrderDetail() {
   const { data } = useSuspenseQuery(orderByIdQuery(id));
   const { order, items } = data;
   const router = useRouter();
+
+  useEffect(() => {
+    markOrderSeen(order.id, (order as any).updated_at ?? order.created_at);
+  }, [order.id, (order as any).updated_at, order.created_at]);
 
   const activeIdx = TIMELINE.findIndex((t) => t.key === order.status);
   const cancelled = order.status === "cancelled";
