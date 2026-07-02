@@ -59,7 +59,7 @@ function HomePage() {
       {/* Categories — square illustrated cards */}
       <Section title="الأقسام" href="/categories" icon={<CircleDot className="size-4 text-gold" />}>
         <div className="grid grid-cols-3 gap-3 px-4">
-          {categories.map((c) => (
+          {categories.map((c, i) => (
             <Link
               key={c.id}
               to="/category/$id"
@@ -67,7 +67,7 @@ function HomePage() {
               className="group flex flex-col items-center gap-2.5 p-3 rounded-2xl bg-card border border-border/60 shadow-card hover:shadow-luxe hover:-translate-y-0.5 transition-all active:scale-95"
             >
               <div className="w-full aspect-square rounded-xl bg-gradient-to-br from-muted/80 to-background flex items-center justify-center overflow-hidden">
-                <CategoryIcon category={c} />
+                <CategoryIcon category={c} index={i} />
               </div>
               <span className="text-[11px] font-bold text-center leading-tight text-foreground line-clamp-2 min-h-[2rem] flex items-center justify-center">{c.name_ar}</span>
             </Link>
