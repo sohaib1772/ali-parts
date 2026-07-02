@@ -60,35 +60,18 @@ function HomePage() {
 
       {/* Categories */}
       <Section title="التصنيفات">
-        <div className="grid grid-cols-3 gap-3 px-4">
+        <div className="flex gap-4 overflow-x-auto no-scrollbar px-4 pb-2">
           {categories.map((c) => (
             <Link
               key={c.id}
               to="/category/$id"
               params={{ id: c.id }}
-              className="aspect-square rounded-2xl bg-card border border-border shadow-card flex flex-col items-center justify-center gap-2 p-2 transition hover:border-gold hover:shadow-gold"
+              className="flex-shrink-0 flex flex-col items-center gap-2 min-w-[72px] group"
             >
-              <div className="text-3xl">
+              <div className={`size-16 rounded-full flex items-center justify-center text-2xl shadow-card transition-transform group-hover:scale-105 ${categoryBg(c.icon)}`}>
                 <CategoryEmoji icon={c.icon} />
               </div>
-              <span className="text-[11px] font-bold text-center leading-tight text-navy">{c.name_ar}</span>
-            </Link>
-          ))}
-        </div>
-      </Section>
-
-      {/* Popular Cars */}
-      <Section title="السيارات الأكثر طلباً">
-        <div className="flex gap-3 overflow-x-auto no-scrollbar px-4 pb-1">
-          {models.slice(0, 10).map((m) => (
-            <Link
-              key={m.id}
-              to="/search"
-              search={{ q: m.name_ar }}
-              className="flex-shrink-0 px-4 py-3 rounded-2xl bg-gradient-navy text-primary-foreground shadow-card hover:shadow-luxe transition min-w-[110px] text-center"
-            >
-              <div className="text-xs text-gold/80 mb-0.5">شفروليه</div>
-              <div className="text-sm font-bold">{m.name_ar}</div>
+              <span className="text-[11px] font-bold text-center leading-tight text-foreground whitespace-nowrap">{c.name_ar}</span>
             </Link>
           ))}
         </div>
