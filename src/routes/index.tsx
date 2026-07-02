@@ -57,7 +57,7 @@ function HomePage() {
       <HeroCarousel banners={banners} />
 
       {/* Categories — square illustrated cards */}
-      <Section title="الأقسام" href="/categories" icon={<CircleDot className="size-4 text-gold" />}>
+      <Section title="الأقسام" icon={<CircleDot className="size-4 text-gold" />}>
         <div className="grid grid-cols-3 gap-3 px-4">
           {categories.map((c, i) => (
             <Link
