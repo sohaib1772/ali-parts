@@ -5,7 +5,7 @@ import { Search, ChevronLeft, Sparkles, Flame, CircleDot } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { FloatingWhatsapp } from "@/components/floating-whatsapp";
 import { ProductCard } from "@/components/product-card";
-import { VehiclePicker, VehicleBar, getSavedVehicle, useSavedVehicle, filterProductsByVehicle } from "@/components/vehicle-picker";
+import { VehiclePicker, VehicleBar, useSavedVehicle, filterProductsByVehicle } from "@/components/vehicle-picker";
 import {
   bannersQuery,
   brandsQuery,
