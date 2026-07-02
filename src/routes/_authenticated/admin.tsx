@@ -21,8 +21,9 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList } from "lucide-react";
-import { formatIQD } from "@/lib/format";
+import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy } from "lucide-react";
+import { WhatsappIcon } from "@/components/icons";
+import { formatIQD, whatsappLink } from "@/lib/format";
 import { statusLabel, statusColor } from "@/lib/order-status";
 
 const STATUSES = ["received", "preparing", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"] as const;
@@ -526,24 +527,75 @@ function OrdersAdmin() {
   return (
     <div className="space-y-2">
       {orders.map((o: any) => (
-        <div key={o.id} className="bg-card border border-border rounded-2xl p-3 space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="text-xs font-mono text-muted-foreground">#{o.id.slice(0, 8)}</div>
-          <div className={`text-xs font-bold px-2 py-0.5 rounded-full ${statusColor(o.status)}`}>
-              {statusLabel(o.status)}
+        <OrderAdminCard key={o.id} order={o} onStatusChange={updateStatus} />
+      ))}
+    </div>
+  );
+}
+
+function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChange: (id: string, status: string) => void }) {
+  const addr = (o.address ?? {}) as { full_name?: string; phone?: string; city?: string; area?: string; street?: string; notes?: string };
+  const phoneDigits = String(addr.phone ?? "").replace(/\D/g, "");
+  const fullAddress = [addr.city, addr.area, addr.street].filter(Boolean).join(" · ");
+  const copy = async (text: string, label: string) => {
+    try { await navigator.clipboard.writeText(text); toast.success(`تم نسخ ${label}`); } catch { toast.error("تعذّر النسخ"); }
+  };
+  return (
+    <div className="bg-card border border-border rounded-2xl p-3 space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-xs font-mono text-muted-foreground">#{(o.order_number ?? o.id).toString().slice(0, 10)}</div>
+        <div className={`text-xs font-bold px-2 py-0.5 rounded-full ${statusColor(o.status)}`}>{statusLabel(o.status)}</div>
+      </div>
+
+      <div className="rounded-xl bg-muted/40 p-3 space-y-2 text-sm">
+        <div className="flex items-center gap-2">
+          <UserIcon className="size-4 text-gold shrink-0" />
+          <span className="font-bold">{addr.full_name || "—"}</span>
+        </div>
+        {phoneDigits && (
+          <div className="flex items-center gap-2">
+            <Phone className="size-4 text-gold shrink-0" />
+            <span dir="ltr" className="font-mono">+{phoneDigits}</span>
+            <button onClick={() => copy(phoneDigits, "الرقم")} className="ms-auto text-muted-foreground hover:text-gold" aria-label="نسخ">
+              <Copy className="size-4" />
+            </button>
+          </div>
+        )}
+        {(fullAddress || addr.notes) && (
+          <div className="flex items-start gap-2">
+            <MapPin className="size-4 text-gold shrink-0 mt-0.5" />
+            <div className="text-xs leading-relaxed">
+              {fullAddress && <div>{fullAddress}</div>}
+              {addr.notes && <div className="text-muted-foreground">{addr.notes}</div>}
             </div>
           </div>
-          <div className="text-sm">{formatIQD(o.total_iqd)}</div>
-          <Select value={o.status} onValueChange={(v) => updateStatus(o.id, v)}>
-            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {STATUSES.map((k) => (
-                <SelectItem key={k} value={k}>{statusLabel(k)}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        )}
+      </div>
+
+      {phoneDigits && (
+        <div className="grid grid-cols-2 gap-2">
+          <a href={whatsappLink(`مرحباً، بخصوص طلبك #${(o.order_number ?? o.id).toString().slice(0, 10)}`, phoneDigits)} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-whatsapp text-white text-xs font-bold">
+            <WhatsappIcon className="size-4" /> واتساب
+          </a>
+          <a href={`tel:+${phoneDigits}`} className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-navy text-primary-foreground text-xs font-bold">
+            <Phone className="size-4" /> اتصال
+          </a>
         </div>
-      ))}
+      )}
+
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-muted-foreground text-xs">الإجمالي</span>
+        <span className="font-bold">{formatIQD(o.total_iqd)}</span>
+      </div>
+
+      <Select value={o.status} onValueChange={(v) => onStatusChange(o.id, v)}>
+        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          {STATUSES.map((k) => (
+            <SelectItem key={k} value={k}>{statusLabel(k)}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
