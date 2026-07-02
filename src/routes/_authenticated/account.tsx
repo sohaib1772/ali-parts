@@ -87,6 +87,7 @@ function AccountPage() {
           <LogOut className="size-4" /> تسجيل الخروج
         </button>
       </div>
+      <VehiclePicker open={pickerOpen} onOpenChange={setPickerOpen} />
     </PageShell>
   );
 }
