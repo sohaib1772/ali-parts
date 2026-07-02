@@ -434,18 +434,59 @@ function BannersAdmin() {
 
 /* ---------------- Taxonomy (Categories + Brands) ---------------- */
 
+const ICON_OPTIONS = [
+  { key: "engine", label: "محرك" },
+  { key: "brake", label: "فرامل" },
+  { key: "electrical", label: "كهرباء" },
+  { key: "filter", label: "فلتر" },
+  { key: "oil", label: "زيوت" },
+  { key: "suspension", label: "محرك/تعليق" },
+  { key: "body", label: "بدي" },
+  { key: "wheel", label: "إطار" },
+  { key: "wiper", label: "مساحات" },
+  { key: "light", label: "إنارة" },
+  { key: "tool", label: "أدوات" },
+];
+
 function TaxonomyAdmin() {
   const qc = useQueryClient();
   const { data: categories = [] } = useQuery(categoriesQuery());
   const { data: brands = [] } = useQuery(brandsQuery());
+  const [catOpen, setCatOpen] = useState(false);
+  const [catForm, setCatForm] = useState<{ id?: string; name_ar: string; name_en: string; icon: string; image_url: string }>({ name_ar: "", name_en: "", icon: "", image_url: "" });
 
-  const addCategory = async () => {
-    const name = prompt("اسم التصنيف بالعربي:");
-    if (!name) return;
-    const { error } = await supabase.from("categories").insert({ name_ar: name, name_en: name });
-    if (error) toast.error(error.message);
-    else { toast.success("تمت الإضافة"); qc.invalidateQueries({ queryKey: ["categories"] }); }
+  const openCat = (c?: any) => {
+    setCatForm({
+      id: c?.id,
+      name_ar: c?.name_ar ?? "",
+      name_en: c?.name_en ?? "",
+      icon: c?.icon ?? "",
+      image_url: c?.image_url ?? "",
+    });
+    setCatOpen(true);
   };
+
+  const saveCategory = async () => {
+    if (!catForm.name_ar.trim()) {
+      toast.error("اسم التصنيف مطلوب");
+      return;
+    }
+    const payload = {
+      name_ar: catForm.name_ar,
+      name_en: catForm.name_en || catForm.name_ar,
+      icon: catForm.icon || null,
+      image_url: catForm.image_url || null,
+    };
+    const res = catForm.id
+      ? await supabase.from("categories").update(payload).eq("id", catForm.id)
+      : await supabase.from("categories").insert(payload);
+    if (res.error) { toast.error(res.error.message); return; }
+    toast.success(catForm.id ? "تم التحديث" : "تمت الإضافة");
+    setCatOpen(false);
+    qc.invalidateQueries({ queryKey: ["categories"] });
+  };
+
+  const addCategory = () => openCat();
   const removeCategory = async (id: string) => {
     if (!confirm("حذف التصنيف؟")) return;
     const { error } = await supabase.from("categories").delete().eq("id", id);
@@ -475,13 +516,38 @@ function TaxonomyAdmin() {
         </div>
         <div className="space-y-2">
           {categories.map((c) => (
-            <div key={c.id} className="bg-card border border-border rounded-xl p-3 flex items-center gap-2">
-              <span className="flex-1 text-sm font-semibold">{c.name_ar}</span>
+            <div key={c.id} className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
+              <div className="size-12 rounded-lg bg-muted overflow-hidden shrink-0 flex items-center justify-center">
+                {c.image_url ? <img src={c.image_url} alt="" className="size-full object-cover" /> : <span className="text-xl">{categoryEmoji(c.icon)}</span>}
+              </div>
+              <span className="flex-1 text-sm font-semibold truncate">{c.name_ar}</span>
+              <Button size="icon" variant="ghost" onClick={() => openCat(c)}><Pencil className="size-4" /></Button>
               <Button size="icon" variant="ghost" onClick={() => removeCategory(c.id)}><Trash2 className="size-4 text-destructive" /></Button>
             </div>
           ))}
         </div>
       </section>
+
+      <Dialog open={catOpen} onOpenChange={setCatOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{catForm.id ? "تعديل تصنيف" : "إضافة تصنيف"}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <ImageUploader images={catForm.image_url ? [catForm.image_url] : []} max={1} onChange={(imgs) => setCatForm({ ...catForm, image_url: imgs[0] ?? "" })} />
+            <Field label="الاسم بالعربي *"><Input value={catForm.name_ar} onChange={(e) => setCatForm({ ...catForm, name_ar: e.target.value })} /></Field>
+            <Field label="الاسم بالإنجليزي"><Input value={catForm.name_en} onChange={(e) => setCatForm({ ...catForm, name_en: e.target.value })} /></Field>
+            <Field label="الأيقونة (اختياري)">
+              <Select value={catForm.icon} onValueChange={(v) => setCatForm({ ...catForm, icon: v })}>
+                <SelectTrigger><SelectValue placeholder="اختر أيقونة" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">بدون</SelectItem>
+                  {ICON_OPTIONS.map((opt) => <SelectItem key={opt.key} value={opt.key}>{opt.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Button className="w-full" onClick={saveCategory}>حفظ</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <section>
         <div className="flex items-center justify-between mb-2">
@@ -499,6 +565,24 @@ function TaxonomyAdmin() {
       </section>
     </div>
   );
+}
+
+function categoryEmoji(icon: string | null) {
+  const map: Record<string, string> = {
+    engine: "⚙️",
+    brake: "🛞",
+    braking: "🛞",
+    electrical: "⚡",
+    filter: "🌀",
+    oil: "🛢️",
+    suspension: "🔩",
+    body: "🚙",
+    wheel: "🛞",
+    wiper: "🌧️",
+    light: "💡",
+    tool: "🛠️",
+  };
+  return map[icon ?? ""] ?? "🏷️";
 }
 
 /* ---------------- Orders ---------------- */
