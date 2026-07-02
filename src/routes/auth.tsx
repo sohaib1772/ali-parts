@@ -43,7 +43,11 @@ function AuthPage() {
         toast.success("تم إنشاء الحساب بنجاح");
         navigate({ to: "/" });
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const identifier = email.trim();
+        const loginEmail = identifier.toLowerCase() === "aliskoda"
+          ? "aliskoda@admin.local"
+          : identifier;
+        const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
         if (error) throw error;
         toast.success("مرحباً بعودتك");
         navigate({ to: "/" });
