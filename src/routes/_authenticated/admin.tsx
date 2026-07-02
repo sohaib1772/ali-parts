@@ -381,9 +381,10 @@ function BannersAdmin() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm("حذف هذا العرض؟")) return;
+    if (!window.confirm("هل أنت متأكد من حذف هذا العرض؟")) return;
     const { error } = await supabase.from("banners").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error("تعذّر الحذف: " + error.message); return; }
+    toast.success("تم حذف العرض");
     qc.invalidateQueries({ queryKey: ["banners"] });
   };
 
@@ -403,8 +404,8 @@ function BannersAdmin() {
             <Button size="icon" variant="ghost" onClick={() => { setForm({ id: b.id, title_ar: b.title_ar ?? "", subtitle_ar: b.subtitle_ar ?? "", image_url: b.image_url, link: b.link ?? "" }); setOpen(true); }}>
               <Pencil className="size-4" />
             </Button>
-            <Button size="icon" variant="ghost" onClick={() => remove(b.id)}>
-              <Trash2 className="size-4 text-destructive" />
+            <Button size="sm" variant="destructive" onClick={() => remove(b.id)} className="gap-1">
+              <Trash2 className="size-4" /> حذف
             </Button>
           </div>
         </div>
