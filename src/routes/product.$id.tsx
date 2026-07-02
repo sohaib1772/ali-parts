@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ArrowRight, Heart, Minus, Plus, Share2, Shield, ShoppingCart, Truck, CheckCircle2, XCircle } from "lucide-react";
 import { productByIdQuery } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
-import { formatIQD, formatUSD, whatsappLink } from "@/lib/format";
+import { formatIQD, whatsappLink } from "@/lib/format";
 import { useAuth } from "@/lib/use-auth";
 import { useSetting } from "@/lib/admin";
 import { toast } from "sonner";
@@ -131,7 +131,6 @@ function ProductPage() {
         <div className="flex items-end gap-3">
           <div>
             <div className="text-3xl font-black text-navy">{formatIQD(product.price_iqd)}</div>
-            <div className="text-sm text-muted-foreground">{formatUSD(product.price_usd)}</div>
           </div>
           <div className="ms-auto">
             {product.in_stock ? (

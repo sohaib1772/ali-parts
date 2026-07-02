@@ -3,7 +3,7 @@ import { Heart, ShoppingCart } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { formatIQD, formatUSD, whatsappLink } from "@/lib/format";
+import { formatIQD, whatsappLink } from "@/lib/format";
 import type { Product } from "@/lib/queries";
 import { useAuth } from "@/lib/use-auth";
 import { useSetting } from "@/lib/admin";
@@ -92,7 +92,6 @@ export function ProductCard({ product }: { product: Product }) {
           <div className="flex items-baseline gap-2">
             <span className="text-base font-extrabold text-navy">{formatIQD(product.price_iqd)}</span>
           </div>
-          <div className="text-[11px] text-muted-foreground">{formatUSD(product.price_usd)}</div>
         </div>
         <div className="flex items-center gap-1.5 pt-1">
           <button
