@@ -6,6 +6,7 @@ import { ordersQuery } from "@/lib/queries";
 import { useAuth } from "@/lib/use-auth";
 import { formatIQD, formatArabicDate } from "@/lib/format";
 import { statusLabel, statusColor } from "@/lib/order-status";
+import { isOrderUnseen, useOrderSeenMap } from "@/lib/order-updates";
 
 export const Route = createFileRoute("/_authenticated/orders")({
   component: OrdersPage,
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/orders")({
 function OrdersPage() {
   const { userId } = useAuth();
   const { data: orders = [] } = useQuery(ordersQuery(userId));
+  const seen = useOrderSeenMap();
 
   return (
     <PageShell title="طلباتي">
@@ -28,15 +30,20 @@ function OrdersPage() {
             <Link to="/" className="inline-flex px-6 py-3 rounded-2xl bg-gradient-gold text-navy font-bold shadow-gold">ابدأ التسوق</Link>
           </div>
         ) : (
-          orders.map((o: any) => (
+          orders.map((o: any) => {
+            const updated = isOrderUnseen(seen, o.id, o.updated_at, o.created_at);
+            return (
             <Link
               key={o.id}
               to="/orders/$id"
               params={{ id: o.id }}
-              className="block bg-card rounded-2xl border border-border p-4 shadow-card hover:shadow-luxe transition"
+              className={`block bg-card rounded-2xl border p-4 shadow-card hover:shadow-luxe transition ${updated ? "border-gold ring-1 ring-gold/40" : "border-border"}`}
             >
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xs font-mono text-muted-foreground">{o.order_number}</span>
+                {updated && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500 text-white">تحديث جديد</span>
+                )}
                 <span className={`ms-auto text-[10px] font-bold px-2 py-1 rounded-full ${statusColor(o.status)}`}>{statusLabel(o.status)}</span>
               </div>
               <div className="text-xs text-muted-foreground mb-2">{formatArabicDate(o.created_at)}</div>
@@ -45,7 +52,8 @@ function OrdersPage() {
                 <ChevronLeft className="size-4 text-muted-foreground" />
               </div>
             </Link>
-          ))
+            );
+          })
         )}
       </div>
     </PageShell>
