@@ -248,7 +248,7 @@ function LuxuryField({ icon, placeholder, type = "text", value, onChange, requir
   return (
     <div className="group relative">
       <div className="absolute inset-0 rounded-2xl bg-gold/5 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity" />
-      <div className="relative flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0a0a0a]/60 px-4 py-3.5 focus-within:border-gold/50 focus-within:ring-1 focus-within:ring-gold/20 transition-all">
+      <div className="relative flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0f172a]/50 px-4 py-3.5 focus-within:border-gold/50 focus-within:ring-1 focus-within:ring-gold/20 transition-all">
         <span className="text-gold/80 shrink-0">{icon}</span>
         <input
           type={type}
