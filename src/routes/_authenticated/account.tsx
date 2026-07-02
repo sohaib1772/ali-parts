@@ -1,7 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { ChevronLeft, LogOut, MapPin, Heart, Package, Bell, Info, Shield, MessageCircle, ShieldCheck } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
+import { VehicleBar, VehiclePicker } from "@/components/vehicle-picker";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 import { profileQuery } from "@/lib/queries";
@@ -18,6 +20,7 @@ function AccountPage() {
   const isAdmin = useIsAdmin();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const signOut = async () => {
     await qc.cancelQueries();
@@ -52,6 +55,10 @@ function AccountPage() {
               {profile?.phone && <div className="text-xs text-primary-foreground/70">{profile.phone}</div>}
             </div>
           </div>
+        </div>
+
+        <div className="mt-4">
+          <VehicleBar onOpen={() => setPickerOpen(true)} />
         </div>
 
         <div className="mt-4 bg-card rounded-2xl border border-border shadow-card overflow-hidden">
