@@ -61,14 +61,14 @@ function HomePage() {
       {/* Categories */}
       <Section title="التصنيفات">
         <div className="flex gap-4 overflow-x-auto no-scrollbar px-4 pb-2">
-          {categories.map((c) => (
+          {categories.map((c, i) => (
             <Link
               key={c.id}
               to="/category/$id"
               params={{ id: c.id }}
               className="flex-shrink-0 flex flex-col items-center gap-2 min-w-[72px] group"
             >
-              <div className={`size-16 rounded-full flex items-center justify-center text-2xl shadow-card transition-transform group-hover:scale-105 ${categoryBg(c.icon)}`}>
+              <div className={`size-16 rounded-full flex items-center justify-center text-2xl shadow-card transition-transform group-hover:scale-105 ${categoryBg(i)}`}>
                 <CategoryEmoji icon={c.icon} />
               </div>
               <span className="text-[11px] font-bold text-center leading-tight text-foreground whitespace-nowrap">{c.name_ar}</span>
