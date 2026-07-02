@@ -147,7 +147,7 @@ function CategoryIcon({ category, index }: { category: { id: string; name_ar: st
       <img
         src={category.image_url}
         alt={category.name_ar}
-        className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
+        className="w-full h-full object-cover transition-transform group-hover:scale-105"
         loading="lazy"
       />
     );
