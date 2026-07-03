@@ -763,19 +763,22 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
   const toggleBlock = async () => {
     if (!o.user_id) return;
     const next = !isBlocked;
-    const confirmMsg = next
-      ? "حظر هذا الزبون من إرسال طلبات جديدة؟ سيبقى يشاهد المتجر بشكل عادي."
-      : "رفع الحظر عن هذا الزبون؟";
-    if (!window.confirm(confirmMsg)) return;
-    const { error } = await supabase.from("profiles").update({ is_blocked: next }).eq("id", o.user_id);
-    if (error) { toast.error(error.message || "تعذّر تحديث الحالة"); return; }
-    const { data: sess } = await supabase.auth.getUser();
-    await supabase.from("user_block_log").insert({
-      user_id: o.user_id,
-      actor_id: sess.user?.id ?? null,
-      action: next ? "block" : "unblock",
+    let reason: string | undefined = undefined;
+    if (next) {
+      const defaultReason = "تم حظر حسابك لأنك قمت بإرسال أكثر من طلب وهمي. يرجى التواصل مع قسم المبيعات.";
+      const input = window.prompt("سبب الحظر (سيصل كإشعار للزبون):", defaultReason);
+      if (input === null) return;
+      reason = input.trim() || defaultReason;
+    } else {
+      if (!window.confirm("رفع الحظر عن هذا الزبون؟")) return;
+    }
+    const { error } = await supabase.rpc("admin_set_user_blocked", {
+      p_user_id: o.user_id,
+      p_blocked: next,
+      p_reason: reason,
     });
-    toast.success(next ? "تم حظر الزبون" : "تم رفع الحظر");
+    if (error) { toast.error(error.message || "تعذّر تحديث الحالة"); return; }
+    toast.success(next ? "تم حظر الزبون وإرسال الإشعار" : "تم رفع الحظر");
     qcCard.invalidateQueries({ queryKey: ["admin", "order-customer", o.user_id] });
     qcCard.invalidateQueries({ queryKey: ["admin", "block-log"] });
   };
