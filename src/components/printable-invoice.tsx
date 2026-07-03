@@ -9,10 +9,12 @@ import logoAsset from "@/assets/ali-chevrolet-logo.jpeg.asset.json";
 
 const LOGO_URL = logoAsset.url;
 
-export function PrintableInvoice({ order, items, domId }: { order: any; items: any[]; domId?: string }) {
+type Customer = { full_name?: string | null; phone?: string | null } | null | undefined;
+
+export function PrintableInvoice({ order, items, domId, customer }: { order: any; items: any[]; domId?: string; customer?: Customer }) {
   return (
     <div id={domId} className="print-only invoice-print" dir="rtl" style={{ fontFamily: "'IBM Plex Sans Arabic', system-ui, sans-serif" }}>
-      <InvoiceBody order={order} items={items} />
+      <InvoiceBody order={order} items={items} customer={customer} />
     </div>
   );
 }
@@ -185,12 +187,14 @@ export async function downloadInvoicePdf(elementId: string, filename: string) {
 export function InvoicePreviewDialog({
   order,
   items,
+  customer,
   open,
   onOpenChange,
   domId,
 }: {
   order: any;
   items: any[];
+  customer?: Customer;
   open: boolean;
   onOpenChange: (v: boolean) => void;
   domId: string;
@@ -210,19 +214,7 @@ export function InvoicePreviewDialog({
   };
 
   const handlePrint = () => {
-    const el = document.getElementById(domId);
-    if (!el) return;
-    el.classList.add("pdf-capture");
-    const prev = document.body.dataset.printInvoiceId;
-    document.body.dataset.printInvoiceId = domId;
-    setTimeout(() => {
-      window.print();
-      setTimeout(() => {
-        el.classList.remove("pdf-capture");
-        if (prev) document.body.dataset.printInvoiceId = prev;
-        else delete document.body.dataset.printInvoiceId;
-      }, 300);
-    }, 50);
+    printOnlyThisInvoice(domId);
   };
 
   return (
@@ -268,7 +260,7 @@ export function InvoicePreviewDialog({
             style={{ width: "780px", transformOrigin: "top center" }}
           >
             <div id={domId} dir="rtl" style={{ fontFamily: "'IBM Plex Sans Arabic', system-ui, sans-serif" }}>
-              <InvoiceBody order={order} items={items} />
+              <InvoiceBody order={order} items={items} customer={customer} />
             </div>
           </div>
         </div>
@@ -278,13 +270,46 @@ export function InvoicePreviewDialog({
 }
 
 /**
+ * printOnlyThisInvoice — clones the invoice DOM into a dedicated hidden
+ * container flagged with the .print-only.pdf-capture combo. The CSS in
+ * src/styles.css hides every OTHER .print-only during print, so only this
+ * clone appears on paper — no other admin cards, no dialog chrome, no
+ * neighbouring invoices.
+ */
+export function printOnlyThisInvoice(sourceId: string) {
+  const src = document.getElementById(sourceId);
+  if (!src) { window.print(); return; }
+  const host = document.createElement("div");
+  host.className = "print-only pdf-capture invoice-print";
+  host.setAttribute("dir", "rtl");
+  host.style.fontFamily = "'IBM Plex Sans Arabic', system-ui, sans-serif";
+  const clone = src.cloneNode(true) as HTMLElement;
+  clone.removeAttribute("id");
+  host.appendChild(clone);
+  document.body.appendChild(host);
+  const cleanup = () => host.remove();
+  const onAfter = () => { window.removeEventListener("afterprint", onAfter); cleanup(); };
+  window.addEventListener("afterprint", onAfter);
+  setTimeout(() => {
+    window.print();
+    // Safety fallback in case afterprint is not fired (some mobile browsers).
+    setTimeout(cleanup, 2000);
+  }, 50);
+}
+
+/**
  * Shared invoice body that the printable and preview both render.
  * Extracted so preview shows the exact same layout without the
  * display:none .print-only wrapper.
  */
-function InvoiceBody({ order, items }: { order: any; items: any[] }) {
+function InvoiceBody({ order, items, customer }: { order: any; items: any[]; customer?: Customer }) {
   const addr = (order.address ?? {}) as Record<string, string | undefined>;
   const pointsDiscount = Number(order.points_used ?? 0) * 10;
+  const registeredPhone = customer?.phone?.trim() || null;
+  const registeredName = customer?.full_name?.trim() || null;
+  const primaryPhone = (addr.phone?.trim() || registeredPhone) ?? "-";
+  const showRegisteredFallback =
+    registeredPhone && registeredPhone !== (addr.phone?.trim() || "");
   return (
     <div style={{ maxWidth: "780px", margin: "0 auto", padding: "0", color: "#0a1a3a", background: "#ffffff", position: "relative", overflow: "hidden" }}>
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", opacity: 0.05, zIndex: 0 }}>
