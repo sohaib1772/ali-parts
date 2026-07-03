@@ -192,3 +192,14 @@
   background-size: 800px 100%;
   animation: shimmer 1.4s infinite linear;
 }
+
+/* Print (invoice) */
+.print-only { display: none; }
+@media print {
+  @page { size: A4; margin: 14mm; }
+  html, body { background: white !important; }
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  .invoice-print { color: #0a1a3a; }
+  .invoice-print * { box-shadow: none !important; }
+}
