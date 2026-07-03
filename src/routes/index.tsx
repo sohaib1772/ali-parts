@@ -283,3 +283,33 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
     </div>
   );
 }
+
+function Countdown({ to }: { to: string }) {
+  const target = new Date(to).getTime();
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const diff = Math.max(0, target - now);
+  if (diff <= 0) return null;
+  const s = Math.floor(diff / 1000);
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  const Box = ({ v, l }: { v: number; l: string }) => (
+    <div className="flex flex-col items-center px-2 py-1 rounded-lg bg-gold/20 border border-gold/40 min-w-[38px]">
+      <span className="text-sm font-black text-gold leading-none tabular-nums">{String(v).padStart(2, "0")}</span>
+      <span className="text-[8px] text-gold/80 mt-0.5">{l}</span>
+    </div>
+  );
+  return (
+    <div className="inline-flex items-center gap-1.5" dir="ltr">
+      {d > 0 && <Box v={d} l="يوم" />}
+      <Box v={h} l="ساعة" />
+      <Box v={m} l="دقيقة" />
+      <Box v={sec} l="ثانية" />
+    </div>
+  );
+}
