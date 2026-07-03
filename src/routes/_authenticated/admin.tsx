@@ -21,13 +21,83 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote, Receipt, Search as SearchIcon, Ban, CheckCircle2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote, Receipt, Search as SearchIcon, Ban, CheckCircle2, History } from "lucide-react";
 import { WhatsappIcon } from "@/components/icons";
 import { formatIQD, whatsappLink } from "@/lib/format";
 import { statusLabel, statusColor } from "@/lib/order-status";
 import { PrintableInvoice, InvoicePreviewDialog } from "@/components/printable-invoice";
 
 const STATUSES = ["received", "preparing", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"] as const;
+
+/* ---------------- Block Log ---------------- */
+
+function BlockLogAdmin() {
+  const { data: entries = [], isLoading } = useQuery({
+    queryKey: ["admin", "block-log"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_block_log")
+        .select("id, user_id, actor_id, action, created_at")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const ids = Array.from(new Set(entries.flatMap((e: any) => [e.user_id, e.actor_id]).filter(Boolean)));
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["admin", "block-log-profiles", ids],
+    enabled: ids.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("id, full_name, phone").in("id", ids);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const nameMap = new Map((profiles as any[]).map((p) => [p.id, p]));
+
+  const fmt = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleString("ar-IQ", { dateStyle: "medium", timeStyle: "short" });
+    } catch { return iso; }
+  };
+  const nameOf = (id: string | null) => {
+    if (!id) return "—";
+    const p: any = nameMap.get(id);
+    return p?.full_name || p?.phone || id.slice(0, 8);
+  };
+
+  if (isLoading) return <div className="text-center text-sm text-muted-foreground py-8">جاري التحميل…</div>;
+  if (!entries.length) return <div className="text-center text-sm text-muted-foreground py-8">لا توجد سجلات بعد</div>;
+
+  return (
+    <div className="space-y-2">
+      {entries.map((e: any) => {
+        const isBlock = e.action === "block";
+        return (
+          <div key={e.id} className="bg-card border border-border rounded-2xl p-3 flex items-start gap-3">
+            <div className={`size-9 rounded-full grid place-items-center shrink-0 ${isBlock ? "bg-destructive/10 text-destructive" : "bg-success/10 text-success"}`}>
+              {isBlock ? <Ban className="size-4" /> : <CheckCircle2 className="size-4" />}
+            </div>
+            <div className="flex-1 min-w-0 text-sm">
+              <div className="font-bold">
+                {isBlock ? "حظر زبون" : "رفع الحظر عن زبون"}
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                الزبون: <span className="font-semibold text-foreground">{nameOf(e.user_id)}</span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                بواسطة: <span className="font-semibold text-foreground">{nameOf(e.actor_id)}</span>
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-1">{fmt(e.created_at)}</div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
@@ -56,11 +126,12 @@ function AdminPage() {
     <PageShell title="لوحة الإدارة">
       <div className="px-4 pt-3 pb-6">
         <Tabs defaultValue="products">
-          <TabsList className="w-full grid grid-cols-5 h-auto">
+          <TabsList className="w-full grid grid-cols-6 h-auto">
             <TabsTrigger value="products" className="flex-col gap-1 py-2 text-[10px]"><Package className="size-4" />منتجات</TabsTrigger>
             <TabsTrigger value="banners" className="flex-col gap-1 py-2 text-[10px]"><ImageIcon className="size-4" />عروض</TabsTrigger>
             <TabsTrigger value="taxonomy" className="flex-col gap-1 py-2 text-[10px]"><Tags className="size-4" />تصنيفات</TabsTrigger>
             <TabsTrigger value="orders" className="flex-col gap-1 py-2 text-[10px]"><ClipboardList className="size-4" />طلبات</TabsTrigger>
+            <TabsTrigger value="block-log" className="flex-col gap-1 py-2 text-[10px]"><History className="size-4" />سجل الحظر</TabsTrigger>
             <TabsTrigger value="settings" className="flex-col gap-1 py-2 text-[10px]"><SettingsIcon className="size-4" />إعدادات</TabsTrigger>
           </TabsList>
 
@@ -68,6 +139,7 @@ function AdminPage() {
           <TabsContent value="banners" className="mt-4"><BannersAdmin /></TabsContent>
           <TabsContent value="taxonomy" className="mt-4"><TaxonomyAdmin /></TabsContent>
           <TabsContent value="orders" className="mt-4"><OrdersAdmin /></TabsContent>
+          <TabsContent value="block-log" className="mt-4"><BlockLogAdmin /></TabsContent>
           <TabsContent value="settings" className="mt-4"><SettingsAdmin /></TabsContent>
         </Tabs>
       </div>
@@ -697,8 +769,15 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
     if (!window.confirm(confirmMsg)) return;
     const { error } = await supabase.from("profiles").update({ is_blocked: next }).eq("id", o.user_id);
     if (error) { toast.error(error.message || "تعذّر تحديث الحالة"); return; }
+    const { data: sess } = await supabase.auth.getUser();
+    await supabase.from("user_block_log").insert({
+      user_id: o.user_id,
+      actor_id: sess.user?.id ?? null,
+      action: next ? "block" : "unblock",
+    });
     toast.success(next ? "تم حظر الزبون" : "تم رفع الحظر");
     qcCard.invalidateQueries({ queryKey: ["admin", "order-customer", o.user_id] });
+    qcCard.invalidateQueries({ queryKey: ["admin", "block-log"] });
   };
   const addressRows = [
     { key: "label", label: "التسمية", value: addr.label || "—" },
