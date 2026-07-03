@@ -343,13 +343,21 @@ function InvoiceBody({ order, items, customer }: { order: any; items: any[]; cus
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: 0 }}>
             <div style={{ padding: "12px 14px", borderLeft: "1px solid #eee5c9" }}>
-              <InfoRow label="الاسم" value={addr.full_name ?? "-"} bold />
+              <InfoRow label="الاسم" value={addr.full_name ?? registeredName ?? "-"} bold />
               <InfoRow
                 label="📞 رقم الهاتف"
-                value={addr.phone ?? "-"}
+                value={primaryPhone}
                 mono
                 highlight
               />
+              {showRegisteredFallback && (
+                <InfoRow
+                  label="هاتف الحساب المسجّل"
+                  value={registeredPhone!}
+                  mono
+                  muted
+                />
+              )}
               {addr.label && <InfoRow label="التسمية" value={addr.label} />}
             </div>
             <div style={{ padding: "12px 14px" }}>
