@@ -142,6 +142,19 @@ export const searchProductsQuery = (q: string) =>
     enabled: q.trim().length > 0,
   });
 
+export const productsByIdsQuery = (ids: string[]) =>
+  queryOptions({
+    queryKey: ["products", "by-ids", ids],
+    queryFn: async () => {
+      if (!ids.length) return [] as Product[];
+      const { data, error } = await supabase.from("products").select("*").in("id", ids);
+      if (error) throw error;
+      const map = new Map((data ?? []).map((p) => [p.id, p as Product]));
+      return ids.map((id) => map.get(id)).filter((v): v is Product => !!v);
+    },
+    enabled: ids.length > 0,
+  });
+
 export const cartQuery = (userId: string | null) =>
   queryOptions({
     queryKey: ["cart", userId],

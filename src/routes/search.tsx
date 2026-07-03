@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { PageShell } from "@/components/page-shell";
 import { ProductCard } from "@/components/product-card";
-import { searchProductsQuery } from "@/lib/queries";
+import { searchProductsQuery, productsByIdsQuery } from "@/lib/queries";
 import { useSavedVehicle, filterProductsByVehicle } from "@/components/vehicle-picker";
 import { analyzeProductImage } from "@/lib/image-search.functions";
 
@@ -26,8 +26,13 @@ function SearchPage() {
   const [q, setQ] = useState(initialQ ?? "");
   const [analyzing, setAnalyzing] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageMatchIds, setImageMatchIds] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
-  const { data: results, isFetching } = useQuery(searchProductsQuery(q));
+  const { data: textResults, isFetching: textFetching } = useQuery(searchProductsQuery(q));
+  const { data: imageResults, isFetching: imageFetching } = useQuery(productsByIdsQuery(imageMatchIds));
+  const usingImage = imageMatchIds.length > 0;
+  const results = usingImage ? imageResults : textResults;
+  const isFetching = usingImage ? imageFetching : textFetching;
   const vehicle = useSavedVehicle();
   const filtered = filterProductsByVehicle(results ?? [], vehicle);
 
@@ -59,12 +64,14 @@ function SearchPage() {
       const dataUrl = await compress(file);
       setImagePreview(dataUrl);
       const result = await analyzeProductImage({ data: { imageDataUrl: dataUrl } });
-      if (!result.query) {
-        toast.error("تعذر التعرف على القطعة، حاول بصورة أوضح");
+      if (!result.productIds.length) {
+        setImageMatchIds([]);
+        toast.error("لم نجد منتجاً مطابقاً في المتجر");
         return;
       }
-      setQ(result.query);
-      toast.success(`تم التعرف: ${result.name_ar || result.query}`);
+      setQ("");
+      setImageMatchIds(result.productIds);
+      toast.success(`تم العثور على ${result.productIds.length} منتج${result.name_ar ? ` — ${result.name_ar}` : ""}`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "تعذر تحليل الصورة");
     } finally {
@@ -115,7 +122,7 @@ function SearchPage() {
               {analyzing ? "جاري تحليل الصورة…" : "تم البحث بالصورة"}
             </div>
             <button
-              onClick={() => { setImagePreview(null); setQ(""); }}
+              onClick={() => { setImagePreview(null); setImageMatchIds([]); }}
               className="text-xs text-muted-foreground hover:text-destructive px-2"
             >
               إزالة
@@ -125,7 +132,7 @@ function SearchPage() {
       </div>
 
       <div className="mt-5 px-4">
-        {!q.trim() ? (
+        {!q.trim() && !usingImage ? (
           <div className="text-center text-muted-foreground text-sm py-16">
             ابدأ بكتابة اسم القطعة أو رقمها للبحث
           </div>
