@@ -133,44 +133,55 @@ function TotalRow({ label, value }: { label: string; value: string }) {
 export async function downloadInvoicePdf(elementId: string, filename: string) {
   const source = document.getElementById(elementId);
   if (!source) return;
+  const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+    import("html2canvas"),
+    import("jspdf"),
+  ]);
+  const frame = document.createElement("iframe");
+  frame.setAttribute("aria-hidden", "true");
+  frame.style.cssText = [
+    "position:fixed",
+    "left:-10000px",
+    "top:0",
+    "width:900px",
+    "height:1300px",
+    "border:0",
+    "background:#ffffff",
+  ].join(";");
+  document.body.appendChild(frame);
+  const frameDoc = frame.contentDocument;
+  if (!frameDoc) {
+    frame.remove();
+    throw new Error("PDF frame unavailable");
+  }
+  frameDoc.open();
+  frameDoc.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><style>
+    html,body{margin:0;padding:0;background:#fff;color:#0a1a3a;font-family:'IBM Plex Sans Arabic',Arial,sans-serif;}
+    *{box-sizing:border-box;box-shadow:none!important;text-shadow:none!important;}
+    table{border-collapse:collapse;}
+  </style></head><body></body></html>`);
+  frameDoc.close();
   const captureNode = source.cloneNode(true) as HTMLElement;
   captureNode.removeAttribute("id");
-  captureNode.dataset.pdfCaptureRoot = "true";
   captureNode.className = "";
   captureNode.style.cssText = [
     "display:block!important",
-    "position:absolute!important",
-    "left:0!important",
-    "top:0!important",
-    "width:794px!important",
+    "position:relative!important",
+    "width:820px!important",
     "min-height:1123px!important",
     "background:#ffffff!important",
     "color:#0a1a3a!important",
-    "z-index:2147483647!important",
     "opacity:1!important",
-    "pointer-events:none!important",
     "transform:none!important",
     "font-family:'IBM Plex Sans Arabic', system-ui, sans-serif!important",
   ].join(";");
-  document.body.appendChild(captureNode);
-  const previousHtmlBg = document.documentElement.style.backgroundColor;
-  const previousHtmlColor = document.documentElement.style.color;
-  const previousBodyBg = document.body.style.backgroundColor;
-  const previousBodyColor = document.body.style.color;
-  document.documentElement.style.backgroundColor = "#ffffff";
-  document.documentElement.style.color = "#0a1a3a";
-  document.body.style.backgroundColor = "#ffffff";
-  document.body.style.color = "#0a1a3a";
   captureNode.querySelectorAll<HTMLElement>("*").forEach((node) => {
     node.style.borderColor ||= "#e6e2d5";
     node.style.outlineColor ||= "#e6e2d5";
   });
+  frameDoc.body.appendChild(captureNode);
   try {
-    const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
-      import("html2canvas"),
-      import("jspdf"),
-    ]);
-    await document.fonts?.ready;
+    await frameDoc.fonts?.ready;
     await new Promise((r) => requestAnimationFrame(() => r(null)));
     const canvas = await html2canvas(captureNode, {
       scale: 2,
@@ -184,12 +195,6 @@ export async function downloadInvoicePdf(elementId: string, filename: string) {
       scrollX: 0,
       scrollY: 0,
       logging: false,
-      ignoreElements: (element) => {
-        if (!(element instanceof HTMLElement)) return false;
-        const tag = element.tagName.toLowerCase();
-        if (tag === "html" || tag === "body") return false;
-        return !element.closest('[data-pdf-capture-root="true"]');
-      },
     });
     const imgData = canvas.toDataURL("image/png");
     const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
@@ -210,10 +215,6 @@ export async function downloadInvoicePdf(elementId: string, filename: string) {
     }
     pdf.save(filename);
   } finally {
-    document.documentElement.style.backgroundColor = previousHtmlBg;
-    document.documentElement.style.color = previousHtmlColor;
-    document.body.style.backgroundColor = previousBodyBg;
-    document.body.style.color = previousBodyColor;
-    captureNode.remove();
+    frame.remove();
   }
 }
