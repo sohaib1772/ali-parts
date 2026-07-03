@@ -23,12 +23,45 @@ export function BottomNav() {
   const qc = useQueryClient();
   useEffect(() => {
     if (!userId) return;
+    // اطلب إذن الإشعارات مرة وحدة
+    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission().catch(() => {});
+    }
     const ch = supabase
       .channel(`nav-orders-${userId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "orders", filter: `user_id=eq.${userId}` },
-        () => qc.invalidateQueries({ queryKey: ["orders", userId] }),
+        (payload: any) => {
+          qc.invalidateQueries({ queryKey: ["orders", userId] });
+          try {
+            const oldRow = payload?.old ?? {};
+            const newRow = payload?.new ?? {};
+            if (
+              payload?.eventType === "UPDATE" &&
+              oldRow.status !== "delivered" &&
+              newRow.status === "delivered" &&
+              typeof window !== "undefined" &&
+              "Notification" in window &&
+              Notification.permission === "granted"
+            ) {
+              const pts = Number(newRow.points_earned || 0);
+              const body = pts > 0
+                ? `تم تسليم طلبك 🎉 وربحت ${pts} نقطة`
+                : `تم تسليم طلبك 🎉`;
+              const n = new Notification("Ali Parts — تم التسليم", {
+                body,
+                icon: "/icon-192.png",
+                badge: "/icon-192.png",
+                tag: `order-${newRow.id}`,
+              });
+              n.onclick = () => {
+                window.focus();
+                window.location.href = `/orders/${newRow.id}`;
+              };
+            }
+          } catch {}
+        },
       )
       .subscribe();
     return () => {
