@@ -763,7 +763,7 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
   const toggleBlock = async () => {
     if (!o.user_id) return;
     const next = !isBlocked;
-    let reason: string | null = null;
+    let reason: string | undefined = undefined;
     if (next) {
       const defaultReason = "تم حظر حسابك لأنك قمت بإرسال أكثر من طلب وهمي. يرجى التواصل مع قسم المبيعات.";
       const input = window.prompt("سبب الحظر (سيصل كإشعار للزبون):", defaultReason);
