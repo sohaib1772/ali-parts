@@ -135,18 +135,36 @@ export async function downloadInvoicePdf(elementId: string, filename: string) {
   if (!el) return;
   el.classList.add("pdf-capture");
   try {
-    const mod = await import("html2pdf.js");
-    const html2pdf = (mod as any).default ?? (mod as any);
-    await html2pdf()
-      .set({
-        margin: [10, 8, 10, 8],
-        filename,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      })
-      .from(el)
-      .save();
+    const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+      import("html2canvas"),
+      import("jspdf"),
+    ]);
+    // Wait a tick so layout applies after adding .pdf-capture
+    await new Promise((r) => setTimeout(r, 50));
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      windowWidth: 820,
+    });
+    const imgData = canvas.toDataURL("image/jpeg", 0.95);
+    const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 8;
+    const imgW = pageW - margin * 2;
+    const imgH = (canvas.height * imgW) / canvas.width;
+    let heightLeft = imgH;
+    let position = margin;
+    pdf.addImage(imgData, "JPEG", margin, position, imgW, imgH);
+    heightLeft -= pageH - margin * 2;
+    while (heightLeft > 0) {
+      pdf.addPage();
+      position = margin - (imgH - heightLeft);
+      pdf.addImage(imgData, "JPEG", margin, position, imgW, imgH);
+      heightLeft -= pageH - margin * 2;
+    }
+    pdf.save(filename);
   } finally {
     el.classList.remove("pdf-capture");
   }
