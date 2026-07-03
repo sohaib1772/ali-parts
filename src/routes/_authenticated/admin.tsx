@@ -776,12 +776,12 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
         </SelectContent>
       </Select>
 
-      <InvoiceActions order={o} items={items} />
+      <InvoiceActions order={o} items={items} customer={customer ?? null} />
     </div>
   );
 }
 
-function InvoiceActions({ order, items }: { order: any; items: any[] }) {
+function InvoiceActions({ order, items, customer }: { order: any; items: any[]; customer: { full_name: string | null; phone: string | null } | null }) {
   const [open, setOpen] = useState(false);
   const domId = `admin-invoice-${order.id}`;
   const previewId = `admin-invoice-preview-${order.id}`;
@@ -793,10 +793,11 @@ function InvoiceActions({ order, items }: { order: any; items: any[] }) {
       >
         <Receipt className="size-4" /> معاينة الفاتورة
       </button>
-      <PrintableInvoice order={order} items={items} domId={domId} />
+      <PrintableInvoice order={order} items={items} customer={customer} domId={domId} />
       <InvoicePreviewDialog
         order={order}
         items={items}
+        customer={customer}
         open={open}
         onOpenChange={setOpen}
         domId={previewId}
