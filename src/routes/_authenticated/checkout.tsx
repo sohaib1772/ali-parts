@@ -149,6 +149,17 @@ function CheckoutPage() {
           </Section>
         )}
 
+        <Section title="ملاحظة على الطلب" icon={<StickyNote className="size-4 text-gold" />}>
+          <textarea
+            value={orderNote}
+            onChange={(e) => setOrderNote(e.target.value)}
+            rows={3}
+            maxLength={500}
+            placeholder="أي تعليمات إضافية للتوصيل أو التجهيز..."
+            className="w-full rounded-xl border-2 border-border bg-background p-3 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-gold"
+          />
+        </Section>
+
         <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
           <div className="text-xs font-bold text-gold mb-3">ملخص الطلب</div>
           <div className="flex justify-between text-sm py-1"><span className="text-muted-foreground">{items.length} منتج</span><span>{formatIQD(subtotal)}</span></div>
