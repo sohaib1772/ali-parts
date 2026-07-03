@@ -137,3 +137,45 @@ function CartPage() {
     </PageShell>
   );
 }
+
+function ItemNote({ initial, onSave }: { initial: string; onSave: (v: string) => void | Promise<void> }) {
+  const [open, setOpen] = useState(!!initial);
+  const [value, setValue] = useState(initial);
+  const original = useRef(initial);
+  useEffect(() => {
+    setValue(initial);
+    original.current = initial;
+  }, [initial]);
+  const commit = () => {
+    if (value === original.current) return;
+    original.current = value;
+    onSave(value);
+  };
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-2 inline-flex items-center gap-1 text-[11px] text-gold font-bold"
+      >
+        <StickyNote className="size-3.5" /> إضافة ملاحظة
+      </button>
+    );
+  }
+  return (
+    <div className="mt-2">
+      <div className="flex items-center gap-1 text-[11px] text-muted-foreground mb-1">
+        <StickyNote className="size-3.5 text-gold" /> ملاحظة لهذا المنتج
+      </div>
+      <textarea
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={commit}
+        rows={2}
+        maxLength={300}
+        placeholder="لون، مقاس، تفاصيل إضافية..."
+        className="w-full rounded-lg border border-border bg-background p-2 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-gold"
+      />
+    </div>
+  );
+}
