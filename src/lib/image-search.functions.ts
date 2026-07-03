@@ -16,15 +16,19 @@ export const analyzeProductImage = createServerFn({ method: "POST" })
       process.env.SUPABASE_PUBLISHABLE_KEY!,
       { auth: { persistSession: false, autoRefreshToken: false } },
     );
-    const { data: products } = await sb
-      .from("products")
-      .select("id, name_ar, name_en, oem_number, category_id")
-      .limit(500);
-    const catalog = (products ?? []).map((p, i) => ({
-      idx: i,
-      id: p.id,
-      label: `${p.name_ar}${p.oem_number ? ` (OEM: ${p.oem_number})` : ""}`,
-    }));
+    const [{ data: products }, { data: cats }] = await Promise.all([
+      sb.from("products").select("id, name_ar, name_en, oem_number, category_id, brand_id, compatible_models").limit(1000),
+      sb.from("categories").select("id, name_ar"),
+    ]);
+    const catMap = new Map((cats ?? []).map((c) => [c.id, c.name_ar]));
+    const catalog = (products ?? []).map((p, i) => {
+      const parts = [p.name_ar];
+      if (p.name_en) parts.push(`/ ${p.name_en}`);
+      const catName = p.category_id ? catMap.get(p.category_id) : null;
+      if (catName) parts.push(`[${catName}]`);
+      if (p.oem_number) parts.push(`OEM:${p.oem_number}`);
+      return { idx: i, id: p.id, label: parts.join(" ") };
+    });
     const catalogText = catalog.map((c) => `${c.idx}. ${c.label}`).join("\n");
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -34,17 +38,17 @@ export const analyzeProductImage = createServerFn({ method: "POST" })
         "Lovable-API-Key": key,
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-pro",
         messages: [
           {
             role: "system",
             content:
-              "أنت خبير قطع غيار سيارات. لديك قائمة منتجات المتجر. حلل صورة القطعة واختر فقط المنتجات المطابقة من القائمة (0 إلى 8 منتجات). أعد JSON فقط: {\"matches\":[<idx>,...],\"name_ar\":\"...\"}. لا تخترع منتجات خارج القائمة. إذا لا يوجد تطابق أعد matches فارغة.",
+              "أنت خبير قطع غيار سيارات محترف. مهمتك: تحديد نوع القطعة في الصورة بدقة عالية ثم اختيار المنتجات المطابقة فعلياً من قائمة متجرنا فقط.\n\nخطوات التحليل:\n1. حدد نوع القطعة بدقة (مثال: فلتر زيت، مساعد، دسك فرامل، رديتر، شمعة، حساس، إلخ).\n2. لاحظ الشكل واللون والمعالم المميزة.\n3. طابق فقط مع منتجات القائمة التي تنتمي لنفس النوع/الفئة. لا تطابق قطعة بأخرى مختلفة النوع حتى لو تشابهت بالشكل.\n4. رتّب النتائج من الأكثر تطابقاً للأقل، بحد أقصى 6 منتجات.\n5. إذا لم يوجد أي منتج من نفس النوع في القائمة، أعد matches فارغة — لا تخمّن.\n\nأعد JSON فقط بهذا الشكل: {\"name_ar\":\"اسم القطعة المكتشفة\",\"matches\":[<idx>,<idx>,...]}",
           },
           {
             role: "user",
             content: [
-              { type: "text", text: `قائمة المنتجات:\n${catalogText}\n\nاختر المطابقين للصورة. أعد JSON فقط.` },
+              { type: "text", text: `قائمة منتجات المتجر (idx. الاسم [الفئة] OEM):\n${catalogText}\n\nحلل الصورة واختر فقط منتجات من نفس نوع/فئة القطعة الظاهرة. JSON فقط.` },
               { type: "image_url", image_url: { url: data.imageDataUrl } },
             ],
           },
