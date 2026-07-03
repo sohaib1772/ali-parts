@@ -95,7 +95,11 @@ export const bestSellersQuery = () =>
   queryOptions({
     queryKey: ["products", "best-sellers"],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("best_selling_products");
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("sales_count", { ascending: false })
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as (Product & { sales_count: number })[];
     },
