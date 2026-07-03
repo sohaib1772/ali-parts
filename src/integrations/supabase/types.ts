@@ -496,6 +496,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      best_selling_products: {
+        Args: never
+        Returns: {
+          brand_id: string
+          category_id: string
+          compare_price_iqd: number
+          compatible_models: string[]
+          deal_expires_at: string
+          description_ar: string
+          id: string
+          images: string[]
+          in_stock: boolean
+          is_deal: boolean
+          is_featured: boolean
+          name_ar: string
+          name_en: string
+          oem_number: string
+          price_iqd: number
+          price_usd: number
+          sales_count: number
+          shipping_iqd: number
+          specs: Json
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
