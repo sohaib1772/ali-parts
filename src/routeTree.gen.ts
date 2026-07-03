@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as DealsRouteImport } from './routes/deals'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -34,6 +35,11 @@ import { Route as AuthenticatedOrdersIdRouteImport } from './routes/_authenticat
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductsRoute = ProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/deals': typeof DealsRoute
   '/privacy': typeof PrivacyRoute
+  '/products': typeof ProductsRoute
   '/search': typeof SearchRoute
   '/account': typeof AuthenticatedAccountRoute
   '/addresses': typeof AuthenticatedAddressesRoute
@@ -166,6 +173,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/deals': typeof DealsRoute
   '/privacy': typeof PrivacyRoute
+  '/products': typeof ProductsRoute
   '/search': typeof SearchRoute
   '/account': typeof AuthenticatedAccountRoute
   '/addresses': typeof AuthenticatedAddressesRoute
@@ -190,6 +198,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/deals': typeof DealsRoute
   '/privacy': typeof PrivacyRoute
+  '/products': typeof ProductsRoute
   '/search': typeof SearchRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/addresses': typeof AuthenticatedAddressesRoute
@@ -214,6 +223,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/deals'
     | '/privacy'
+    | '/products'
     | '/search'
     | '/account'
     | '/addresses'
@@ -236,6 +246,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/deals'
     | '/privacy'
+    | '/products'
     | '/search'
     | '/account'
     | '/addresses'
@@ -259,6 +270,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/deals'
     | '/privacy'
+    | '/products'
     | '/search'
     | '/_authenticated/account'
     | '/_authenticated/addresses'
@@ -283,6 +295,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   DealsRoute: typeof DealsRoute
   PrivacyRoute: typeof PrivacyRoute
+  ProductsRoute: typeof ProductsRoute
   SearchRoute: typeof SearchRoute
   CategoryIdRoute: typeof CategoryIdRoute
   OrderSuccessIdRoute: typeof OrderSuccessIdRoute
@@ -296,6 +309,13 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/products': {
+      id: '/products'
+      path: '/products'
+      fullPath: '/products'
+      preLoaderRoute: typeof ProductsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -487,6 +507,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   DealsRoute: DealsRoute,
   PrivacyRoute: PrivacyRoute,
+  ProductsRoute: ProductsRoute,
   SearchRoute: SearchRoute,
   CategoryIdRoute: CategoryIdRoute,
   OrderSuccessIdRoute: OrderSuccessIdRoute,

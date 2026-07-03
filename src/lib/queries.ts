@@ -91,6 +91,16 @@ export const dealsQuery = () =>
     },
   });
 
+export const bestSellersQuery = () =>
+  queryOptions({
+    queryKey: ["products", "best-sellers"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Product[];
+    },
+  });
+
 export const productByIdQuery = (id: string) =>
   queryOptions({
     queryKey: ["product", id],

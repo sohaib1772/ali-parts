@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Search, ChevronLeft, Sparkles, CircleDot, Timer } from "lucide-react";
+import { Search, ChevronLeft, Sparkles, CircleDot, Timer, Flame } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import { PageShell } from "@/components/page-shell";
@@ -14,6 +14,7 @@ import {
   categoriesQuery,
   dealsQuery,
   featuredProductsQuery,
+  bestSellersQuery,
 } from "@/lib/queries";
 import type { Banner, Product } from "@/lib/queries";
 import { formatIQD } from "@/lib/format";
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/")({
     context.queryClient.ensureQueryData(dealsQuery());
     context.queryClient.ensureQueryData(bannersQuery());
     context.queryClient.ensureQueryData(brandsQuery());
+    context.queryClient.ensureQueryData(bestSellersQuery());
   },
   component: HomePage,
 });
@@ -34,6 +36,7 @@ function HomePage() {
   const { data: featured } = useSuspenseQuery(featuredProductsQuery());
   const { data: deals } = useSuspenseQuery(dealsQuery());
   const { data: banners } = useSuspenseQuery(bannersQuery());
+  const { data: bestSellers } = useSuspenseQuery(bestSellersQuery());
 
   const vehicle = useSavedVehicle();
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -43,6 +46,7 @@ function HomePage() {
   const filteredFeatured = filterProductsByVehicle(featured, vehicle).filter(
     (p) => !dealIds.has(p.id),
   );
+  const filteredBestSellers = filterProductsByVehicle(bestSellers, vehicle);
 
   return (
     <PageShell>
@@ -97,6 +101,21 @@ function HomePage() {
           </div>
         )}
       </Section>
+
+      {/* Best Sellers — all products */}
+      {filteredBestSellers.length > 0 && (
+        <Section
+          title="الأكثر مبيعاً"
+          icon={<Flame className="size-4 text-destructive" />}
+          href="/products"
+        >
+          <div className="grid grid-cols-2 gap-3 px-4">
+            {filteredBestSellers.slice(0, 6).map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        </Section>
+      )}
 
       <div className="h-6" />
       <FloatingWhatsapp />
