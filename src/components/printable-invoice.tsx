@@ -135,6 +135,7 @@ export async function downloadInvoicePdf(elementId: string, filename: string) {
   if (!source) return;
   const captureNode = source.cloneNode(true) as HTMLElement;
   captureNode.removeAttribute("id");
+  captureNode.dataset.pdfCaptureRoot = "true";
   captureNode.className = "";
   captureNode.style.cssText = [
     "display:block!important",
@@ -183,6 +184,12 @@ export async function downloadInvoicePdf(elementId: string, filename: string) {
       scrollX: 0,
       scrollY: 0,
       logging: false,
+      ignoreElements: (element) => {
+        if (!(element instanceof HTMLElement)) return false;
+        const tag = element.tagName.toLowerCase();
+        if (tag === "html" || tag === "body") return false;
+        return !element.closest('[data-pdf-capture-root="true"]');
+      },
     });
     const imgData = canvas.toDataURL("image/png");
     const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
