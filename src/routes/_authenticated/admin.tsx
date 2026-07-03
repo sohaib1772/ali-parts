@@ -654,6 +654,18 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
       return data ?? [];
     },
   });
+  const { data: customer } = useQuery({
+    queryKey: ["admin", "order-customer", o.user_id],
+    enabled: !!o.user_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, phone")
+        .eq("id", o.user_id)
+        .maybeSingle();
+      return data ?? null;
+    },
+  });
   const addressRows = [
     { key: "label", label: "التسمية", value: addr.label || "—" },
     { key: "full_name", label: "الاسم الكامل", value: addr.full_name || "—" },
