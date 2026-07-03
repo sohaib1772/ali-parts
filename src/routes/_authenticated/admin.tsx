@@ -766,11 +766,6 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
     const next = !isBlocked;
     const defaultReason = "تم حظر حسابك لأنك قمت بإرسال أكثر من طلب وهمي. يرجى التواصل مع قسم المبيعات.";
     let reason: string | undefined = next ? defaultReason : undefined;
-    if (next) {
-      if (!window.confirm("حظر هذا الزبون من إرسال طلبات جديدة؟")) return;
-    } else {
-      if (!window.confirm("رفع الحظر عن هذا الزبون؟")) return;
-    }
     setBlockSaving(true);
     try {
       const { error } = await supabase.rpc("admin_set_user_blocked", {
