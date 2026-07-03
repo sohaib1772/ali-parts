@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { CreditCard, Truck, MapPin, Loader2, Plus, Sparkles } from "lucide-react";
+import { CreditCard, Truck, MapPin, Loader2, Plus, Sparkles, StickyNote } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
@@ -22,6 +22,7 @@ function CheckoutPage() {
   const [payment, setPayment] = useState<"cod" | "transfer">("cod");
   const [placing, setPlacing] = useState(false);
   const [pointsInput, setPointsInput] = useState<string>("");
+  const [orderNote, setOrderNote] = useState<string>("");
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -54,6 +55,7 @@ function CheckoutPage() {
         shipping_iqd: shippingCost,
         total_iqd: total,
         points_used: parsedPoints,
+        notes: orderNote.trim() || null,
       }).select().single();
       if (error || !order) throw error;
 
@@ -63,6 +65,7 @@ function CheckoutPage() {
         image_url: i.product?.images?.[0] ?? null,
         unit_price_iqd: Number(i.product?.price_iqd ?? 0), quantity: i.quantity,
         side: i.side ?? null,
+        note: i.note ?? null,
       }));
       await supabase.from("order_items").insert(orderItems);
       await supabase.from("cart_items").delete().eq("user_id", userId!);
