@@ -195,7 +195,16 @@ export const orderByIdQuery = (id: string) =>
       const { data: order, error } = await supabase.from("orders").select("*").eq("id", id).single();
       if (error) throw error;
       const { data: items } = await supabase.from("order_items").select("*").eq("order_id", id);
-      return { order, items: items ?? [] };
+      let customer: { full_name: string | null; phone: string | null } | null = null;
+      if (order?.user_id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name, phone")
+          .eq("id", order.user_id)
+          .maybeSingle();
+        if (profile) customer = { full_name: profile.full_name, phone: profile.phone };
+      }
+      return { order, items: items ?? [], customer };
     },
   });
 

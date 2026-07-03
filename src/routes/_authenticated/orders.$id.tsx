@@ -39,7 +39,7 @@ function AddressRow({ label, value, mono, muted }: { label: string; value?: stri
 function OrderDetail() {
   const { id } = Route.useParams();
   const { data } = useSuspenseQuery(orderByIdQuery(id));
-  const { order, items } = data;
+  const { order, items, customer } = data;
   const router = useRouter();
   const qc = useQueryClient();
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -226,10 +226,11 @@ function OrderDetail() {
         )}
       </div>
 
-      <PrintableInvoice order={order} items={items} domId="invoice-print-target" />
+      <PrintableInvoice order={order} items={items} customer={customer} domId="invoice-print-target" />
       <InvoicePreviewDialog
         order={order}
         items={items}
+        customer={customer}
         open={previewOpen}
         onOpenChange={setPreviewOpen}
         domId="invoice-preview-target"
