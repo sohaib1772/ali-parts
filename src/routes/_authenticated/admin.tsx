@@ -149,13 +149,14 @@ type ProductForm = {
   is_featured: boolean;
   is_deal: boolean;
   compatible_models: string[];
+  deal_expires_at: string;
 };
 
 const emptyProduct: ProductForm = {
   name_ar: "", name_en: "", description_ar: "", oem_number: "",
   price_iqd: "", compare_price_iqd: "", shipping_iqd: "", category_id: "", brand_id: "",
   images: [], in_stock: true, is_featured: false, is_deal: false,
-  compatible_models: [],
+  compatible_models: [], deal_expires_at: "",
 };
 
 function ProductsAdmin() {
@@ -195,6 +196,7 @@ function ProductsAdmin() {
       is_featured: !!p.is_featured,
       is_deal: !!p.is_deal,
       compatible_models: p.compatible_models ?? [],
+      deal_expires_at: p.deal_expires_at ? new Date(p.deal_expires_at).toISOString().slice(0, 16) : "",
     });
     setOpen(true);
   };
@@ -222,6 +224,7 @@ function ProductsAdmin() {
         is_featured: form.is_featured,
         is_deal: form.is_deal,
         compatible_models: form.compatible_models.length > 0 ? form.compatible_models : null,
+        deal_expires_at: form.is_deal && form.deal_expires_at ? new Date(form.deal_expires_at).toISOString() : null,
       };
       const res = form.id
         ? await supabase.from("products").update(payload).eq("id", form.id)
@@ -343,6 +346,15 @@ function ProductsAdmin() {
               <Label>عرض / تخفيض</Label>
               <Switch checked={form.is_deal} onCheckedChange={(v) => setForm({ ...form, is_deal: v })} />
             </div>
+            {form.is_deal && (
+              <Field label="ينتهي العرض في (اختياري)">
+                <Input
+                  type="datetime-local"
+                  value={form.deal_expires_at}
+                  onChange={(e) => setForm({ ...form, deal_expires_at: e.target.value })}
+                />
+              </Field>
+            )}
             <Button className="w-full" onClick={save} disabled={saving}>
               {saving ? "جاري الحفظ..." : "حفظ"}
             </Button>
