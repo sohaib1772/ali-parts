@@ -72,15 +72,9 @@ function HomePage() {
         </div>
       </Section>
 
-      {/* Deals */}
+      {/* Limited-time offers — auto-scrolling carousel */}
       {filteredDeals.length > 0 && (
-        <Section title="عروض اليوم" icon={<Flame className="size-4 text-destructive" />}>
-          <div className="grid grid-cols-2 gap-3 px-4">
-            {filteredDeals.slice(0, 4).map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        </Section>
+        <LimitedOffers deals={filteredDeals} />
       )}
 
       {/* Featured */}
