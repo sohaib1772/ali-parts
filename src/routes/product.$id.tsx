@@ -38,6 +38,7 @@ function ProductPage() {
   const qc = useQueryClient();
   const [qty, setQty] = useState(1);
   const [activeImg, setActiveImg] = useState(0);
+  const [side, setSide] = useState<"LH" | "RH" | null>(null);
   const router = useRouter();
   const navigate = useNavigate();
   const goBack = () => {
@@ -63,11 +64,12 @@ function ProductPage() {
 
   const addToCart = async () => {
     if (!requireAuth()) return;
-    const { data: existing } = await supabase.from("cart_items").select("id, quantity").eq("user_id", userId!).eq("product_id", product.id).maybeSingle();
+    if (!side) { toast.error("اختر الجهة LH أو RH"); return; }
+    const { data: existing } = await supabase.from("cart_items").select("id, quantity").eq("user_id", userId!).eq("product_id", product.id).eq("side", side).maybeSingle();
     if (existing) {
       await supabase.from("cart_items").update({ quantity: existing.quantity + qty }).eq("id", existing.id);
     } else {
-      await supabase.from("cart_items").insert({ user_id: userId!, product_id: product.id, quantity: qty });
+      await supabase.from("cart_items").insert({ user_id: userId!, product_id: product.id, quantity: qty, side });
     }
     toast.success("تمت الإضافة إلى السلة");
     qc.invalidateQueries({ queryKey: ["cart"] });
@@ -188,6 +190,26 @@ function ProductPage() {
             <p className="text-sm text-foreground/80 leading-relaxed">{product.description_ar}</p>
           </div>
         )}
+
+        <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
+          <div className="text-xs font-bold text-gold mb-2">اختر الجهة</div>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setSide("LH")}
+              className={`h-11 rounded-xl font-black text-sm border-2 transition ${side === "LH" ? "bg-navy text-primary-foreground border-navy" : "bg-card text-navy border-border"}`}
+            >
+              LH · يسار
+            </button>
+            <button
+              type="button"
+              onClick={() => setSide("RH")}
+              className={`h-11 rounded-xl font-black text-sm border-2 transition ${side === "RH" ? "bg-navy text-primary-foreground border-navy" : "bg-card text-navy border-border"}`}
+            >
+              RH · يمين
+            </button>
+          </div>
+        </div>
 
         {product.compatible_models && product.compatible_models.length > 0 && (
           <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
