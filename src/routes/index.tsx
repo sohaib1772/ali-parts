@@ -200,7 +200,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
 
   useEffect(() => {
     if (!slides || slides.length <= 1) return;
-    const t = setInterval(() => setIdx((i) => (i + 1) % slides.length), 4500);
+    const t = setInterval(() => setIdx((i) => (i + 1) % slides.length), 3500);
     return () => clearInterval(t);
   }, [slides]);
 
@@ -246,6 +246,11 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
         <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-gold bg-gold/10 border border-gold/30 rounded-full px-3 py-1 mb-2">
           <Sparkles className="size-3.5" /> قطع أصلية ١٠٠٪
         </div>
+        {current.expires_at && (
+          <div className="mb-2">
+            <Countdown to={current.expires_at} />
+          </div>
+        )}
         {current.title_ar && (
           <h1 className="text-xl font-black leading-tight mb-1 text-primary-foreground">{current.title_ar}</h1>
         )}
