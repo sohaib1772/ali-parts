@@ -2,7 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, PackageCheck, Package as PackageIcon, PackageOpen, Truck, MapPin, Home, XCircle } from "lucide-react";
+import { ArrowRight, PackageCheck, Package as PackageIcon, PackageOpen, Truck, MapPin, Home, XCircle, StickyNote } from "lucide-react";
 import { orderByIdQuery } from "@/lib/queries";
 import { formatIQD, formatArabicDate } from "@/lib/format";
 import { statusLabel } from "@/lib/order-status";
@@ -145,12 +145,28 @@ function OrderDetail() {
                       </span>
                     )}
                   </div>
+                  {(it as any).note && (
+                    <div className="mt-1 flex items-start gap-1 text-[11px] text-muted-foreground bg-muted/50 rounded-md p-1.5">
+                      <StickyNote className="size-3 text-gold shrink-0 mt-0.5" />
+                      <span className="whitespace-pre-wrap">{(it as any).note}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="text-sm font-bold self-center">{formatIQD(Number(it.unit_price_iqd) * it.quantity)}</div>
               </div>
             ))}
           </div>
         </div>
+
+        {(order as any).notes && (
+          <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
+            <div className="flex items-center gap-2 mb-2">
+              <StickyNote className="size-4 text-gold" />
+              <span className="text-xs font-bold text-gold">ملاحظة الزبون على الطلب</span>
+            </div>
+            <div className="text-sm whitespace-pre-wrap">{(order as any).notes}</div>
+          </div>
+        )}
 
         <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
           <div className="text-xs font-bold text-gold mb-3">عنوان التوصيل</div>
