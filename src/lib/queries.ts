@@ -19,6 +19,7 @@ export type Product = {
   is_featured: boolean;
   is_deal: boolean;
   specs: Record<string, unknown> | null;
+  deal_expires_at?: string | null;
 };
 
 export type Category = { id: string; name_ar: string; name_en: string; icon: string | null; image_url: string | null; sort_order: number | null };
@@ -81,9 +82,12 @@ export const dealsQuery = () =>
   queryOptions({
     queryKey: ["products", "deals"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("*").eq("is_deal", true).order("created_at", { ascending: false }).limit(10);
+      const { data, error } = await supabase.from("products").select("*").eq("is_deal", true).order("created_at", { ascending: false }).limit(20);
       if (error) throw error;
-      return (data ?? []) as Product[];
+      const now = Date.now();
+      return ((data ?? []) as Product[]).filter(
+        (p) => !p.deal_expires_at || new Date(p.deal_expires_at).getTime() > now,
+      );
     },
   });
 
