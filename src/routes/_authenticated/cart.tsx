@@ -38,7 +38,7 @@ function CartPage() {
     qc.invalidateQueries({ queryKey: ["cart"] });
   };
 
-  const changeSide = async (row: any, newSide: "LH" | "RH" | null) => {
+  const changeSide = async (row: any, newSide: "LH" | "RH" | "PAIR" | null) => {
     if (row.side === newSide) return;
     // Merge with an existing line for the same (product, side) — treat null as its own slot.
     let existingQuery = supabase
@@ -99,7 +99,7 @@ function CartPage() {
               <h3 className="text-sm font-bold line-clamp-2">{it.product?.name_ar}</h3>
               {it.product?.oem_number && <div className="text-[10px] text-muted-foreground font-mono">OEM: {it.product.oem_number}</div>}
               <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-muted p-0.5">
-                {(["LH", "RH"] as const).map((s) => (
+                {(["LH", "RH", "PAIR"] as const).map((s) => (
                   <button
                     key={s}
                     onClick={() => changeSide(it, it.side === s ? null : s)}
@@ -109,7 +109,7 @@ function CartPage() {
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    {s === "LH" ? "LH · يسار" : "RH · يمين"}
+                    {s === "LH" ? "LH · يسار" : s === "RH" ? "RH · يمين" : "تخم"}
                   </button>
                 ))}
                 {!it.side && (
