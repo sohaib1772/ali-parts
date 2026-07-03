@@ -38,6 +38,52 @@ function TotalRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function InfoRow({
+  label,
+  value,
+  bold,
+  mono,
+  muted,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  bold?: boolean;
+  mono?: boolean;
+  muted?: boolean;
+  highlight?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "baseline",
+        gap: "10px",
+        padding: highlight ? "5px 8px" : "3px 0",
+        margin: highlight ? "4px 0" : 0,
+        background: highlight ? "linear-gradient(90deg,#0a1a3a,#142451)" : "transparent",
+        borderRadius: highlight ? "5px" : 0,
+        color: highlight ? "#f5c96a" : muted ? "#5c6c8a" : "#334063",
+        fontSize: highlight ? "13px" : "11px",
+      }}
+    >
+      <span style={{ fontSize: highlight ? "10px" : "10px", fontWeight: highlight ? 800 : 600, letterSpacing: "0.05em", opacity: highlight ? 0.9 : 1 }}>{label}</span>
+      <span
+        style={{
+          fontFamily: mono ? "ui-monospace, monospace" : "inherit",
+          fontWeight: bold || highlight ? 900 : 700,
+          color: highlight ? "#ffffff" : "#0a1a3a",
+          textAlign: "left",
+          direction: mono ? "ltr" : "inherit",
+        }}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
 export async function downloadInvoicePdf(elementId: string, filename: string) {
   const source = document.getElementById(elementId);
   if (!source) return;
