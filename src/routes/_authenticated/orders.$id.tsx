@@ -2,7 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, PackageCheck, Package as PackageIcon, PackageOpen, Truck, MapPin, Home, XCircle, StickyNote, Printer } from "lucide-react";
+import { ArrowRight, PackageCheck, Package as PackageIcon, PackageOpen, Truck, MapPin, Home, XCircle, StickyNote, Printer, FileDown } from "lucide-react";
 import { orderByIdQuery } from "@/lib/queries";
 import { formatIQD, formatArabicDate } from "@/lib/format";
 import { statusLabel } from "@/lib/order-status";
@@ -41,6 +41,34 @@ function OrderDetail() {
   const { order, items } = data;
   const router = useRouter();
   const qc = useQueryClient();
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    const el = document.getElementById("invoice-print-target");
+    if (!el) return;
+    setDownloading(true);
+    try {
+      const mod = await import("html2pdf.js");
+      const html2pdf = (mod as any).default ?? (mod as any);
+      // Temporarily reveal the printable node for capture
+      el.classList.add("pdf-capture");
+      await html2pdf()
+        .set({
+          margin: [10, 8, 10, 8],
+          filename: `invoice-${order.order_number}.pdf`,
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        })
+        .from(el)
+        .save();
+    } catch {
+      toast.error("تعذّر توليد ملف PDF");
+    } finally {
+      el.classList.remove("pdf-capture");
+      setDownloading(false);
+    }
+  };
 
   useEffect(() => {
     const ch = supabase
@@ -97,6 +125,14 @@ function OrderDetail() {
             aria-label="طباعة الفاتورة"
           >
             <Printer className="size-4" /> طباعة
+          </button>
+          <button
+            onClick={handleDownloadPdf}
+            disabled={downloading}
+            className="inline-flex items-center gap-1.5 px-3 h-9 rounded-full bg-white/10 text-white font-bold text-xs border border-white/20 hover:bg-white/15 transition disabled:opacity-50"
+            aria-label="تنزيل PDF"
+          >
+            <FileDown className="size-4" /> {downloading ? "جاري..." : "PDF"}
           </button>
         </div>
       </div>
@@ -233,7 +269,7 @@ function PrintableInvoice({ order, items }: { order: any; items: any[] }) {
   const addr = (order.address ?? {}) as Record<string, string | undefined>;
   const pointsDiscount = Number(order.points_used ?? 0) * 10;
   return (
-    <div className="print-only invoice-print" dir="rtl" style={{ fontFamily: "'IBM Plex Sans Arabic', system-ui, sans-serif" }}>
+    <div id="invoice-print-target" className="print-only invoice-print" dir="rtl" style={{ fontFamily: "'IBM Plex Sans Arabic', system-ui, sans-serif" }}>
       <div style={{ maxWidth: "780px", margin: "0 auto", padding: "0 4mm", color: "#0a1a3a" }}>
         {/* Masthead */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "3px double #c9a24a", paddingBottom: "12px", marginBottom: "18px" }}>
