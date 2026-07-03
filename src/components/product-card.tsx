@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import { Heart, ShoppingCart } from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +12,6 @@ import { WhatsappIcon } from "./icons";
 export function ProductCard({ product }: { product: Product }) {
   const { userId } = useAuth();
   const qc = useQueryClient();
-  const navigate = useNavigate();
   const img = product.images?.[0];
   const waNumber = useSetting("whatsapp_number");
 
