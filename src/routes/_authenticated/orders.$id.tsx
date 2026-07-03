@@ -269,7 +269,7 @@ function PrintableInvoice({ order, items }: { order: any; items: any[] }) {
   const addr = (order.address ?? {}) as Record<string, string | undefined>;
   const pointsDiscount = Number(order.points_used ?? 0) * 10;
   return (
-    <div className="print-only invoice-print" dir="rtl" style={{ fontFamily: "'IBM Plex Sans Arabic', system-ui, sans-serif" }}>
+    <div id="invoice-print-target" className="print-only invoice-print" dir="rtl" style={{ fontFamily: "'IBM Plex Sans Arabic', system-ui, sans-serif" }}>
       <div style={{ maxWidth: "780px", margin: "0 auto", padding: "0 4mm", color: "#0a1a3a" }}>
         {/* Masthead */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "3px double #c9a24a", paddingBottom: "12px", marginBottom: "18px" }}>
