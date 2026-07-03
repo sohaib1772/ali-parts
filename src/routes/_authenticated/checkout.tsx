@@ -44,37 +44,22 @@ function CheckoutPage() {
     if (items.length === 0) return toast.error("السلة فارغة");
     setPlacing(true);
     try {
-      const { data: order, error } = await supabase.from("orders").insert({
-        user_id: userId!,
-        address: {
-          label: activeAddr.label, full_name: activeAddr.full_name, phone: activeAddr.phone, city: activeAddr.city,
-          area: activeAddr.area, street: activeAddr.street, notes: activeAddr.notes,
+      const { data: orderId, error } = await supabase.rpc("place_order", {
+        p_address: {
+          label: activeAddr.label, full_name: activeAddr.full_name, phone: activeAddr.phone,
+          city: activeAddr.city, area: activeAddr.area, street: activeAddr.street, notes: activeAddr.notes,
         },
-        payment_method: payment,
-        subtotal_iqd: subtotal,
-        shipping_iqd: shippingCost,
-        total_iqd: total,
-        points_used: parsedPoints,
-        notes: orderNote.trim() || null,
-      }).select().single();
-      if (error || !order) throw error;
-
-      const orderItems = items.map((i: any) => ({
-        order_id: order.id, product_id: i.product?.id ?? null,
-        name_ar: i.product?.name_ar ?? "", oem_number: i.product?.oem_number ?? null,
-        image_url: i.product?.images?.[0] ?? null,
-        unit_price_iqd: Number(i.product?.price_iqd ?? 0), quantity: i.quantity,
-        side: i.side ?? null,
-        note: i.note ?? null,
-      }));
-      await supabase.from("order_items").insert(orderItems);
-      await supabase.from("cart_items").delete().eq("user_id", userId!);
+        p_payment: payment,
+        p_points_used: parsedPoints,
+        p_notes: orderNote.trim() || "",
+      });
+      if (error || !orderId) throw error;
 
       qc.invalidateQueries({ queryKey: ["cart"] });
       qc.invalidateQueries({ queryKey: ["orders"] });
       qc.invalidateQueries({ queryKey: ["profile"] });
       toast.success("تم تأكيد الطلب بنجاح");
-      navigate({ to: "/order-success/$id", params: { id: order.id } });
+      navigate({ to: "/order-success/$id", params: { id: orderId as string } });
     } catch {
       toast.error("تعذّر إتمام الطلب");
       setPlacing(false);
