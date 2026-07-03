@@ -131,41 +131,93 @@ function TotalRow({ label, value }: { label: string; value: string }) {
 }
 
 export async function downloadInvoicePdf(elementId: string, filename: string) {
-  const el = document.getElementById(elementId);
-  if (!el) return;
-  el.classList.add("pdf-capture");
+  const source = document.getElementById(elementId);
+  if (!source) return;
+  const [{ toPng }, { jsPDF }] = await Promise.all([
+    import("html-to-image"),
+    import("jspdf"),
+  ]);
+  const frame = document.createElement("iframe");
+  frame.setAttribute("aria-hidden", "true");
+  frame.style.cssText = [
+    "position:fixed",
+    "left:-10000px",
+    "top:0",
+    "width:900px",
+    "height:1300px",
+    "border:0",
+    "background:#ffffff",
+  ].join(";");
+  document.body.appendChild(frame);
+  const frameDoc = frame.contentDocument;
+  if (!frameDoc) {
+    frame.remove();
+    throw new Error("PDF frame unavailable");
+  }
+  frameDoc.open();
+  frameDoc.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><style>
+    html,body{margin:0;padding:0;background:#fff;color:#0a1a3a;font-family:'IBM Plex Sans Arabic',Arial,sans-serif;}
+    *{box-sizing:border-box;box-shadow:none!important;text-shadow:none!important;}
+    table{border-collapse:collapse;}
+  </style></head><body></body></html>`);
+  frameDoc.close();
+  const captureNode = source.cloneNode(true) as HTMLElement;
+  captureNode.removeAttribute("id");
+  captureNode.className = "";
+  captureNode.style.cssText = [
+    "display:block!important",
+    "position:relative!important",
+    "width:820px!important",
+    "min-height:1123px!important",
+    "background:#ffffff!important",
+    "color:#0a1a3a!important",
+    "opacity:1!important",
+    "transform:none!important",
+    "font-family:'IBM Plex Sans Arabic', system-ui, sans-serif!important",
+  ].join(";");
+  captureNode.querySelectorAll<HTMLElement>("*").forEach((node) => {
+    node.style.borderColor ||= "#e6e2d5";
+    node.style.outlineColor ||= "#e6e2d5";
+  });
+  frameDoc.body.appendChild(captureNode);
   try {
-    const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
-      import("html2canvas"),
-      import("jspdf"),
-    ]);
-    // Wait a tick so layout applies after adding .pdf-capture
-    await new Promise((r) => setTimeout(r, 50));
-    const canvas = await html2canvas(el, {
-      scale: 2,
-      useCORS: true,
+    await frameDoc.fonts?.ready;
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    const captureWidth = captureNode.scrollWidth || 820;
+    const captureHeight = captureNode.scrollHeight || 1123;
+    const imgData = await toPng(captureNode, {
       backgroundColor: "#ffffff",
-      windowWidth: 820,
+      cacheBust: true,
+      pixelRatio: 2,
+      width: captureWidth,
+      height: captureHeight,
     });
-    const imgData = canvas.toDataURL("image/jpeg", 0.95);
     const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
     const pageW = pdf.internal.pageSize.getWidth();
     const pageH = pdf.internal.pageSize.getHeight();
     const margin = 8;
     const imgW = pageW - margin * 2;
-    const imgH = (canvas.height * imgW) / canvas.width;
+    const imgH = (captureHeight * imgW) / captureWidth;
     let heightLeft = imgH;
     let position = margin;
-    pdf.addImage(imgData, "JPEG", margin, position, imgW, imgH);
+    pdf.addImage(imgData, "PNG", margin, position, imgW, imgH);
     heightLeft -= pageH - margin * 2;
     while (heightLeft > 0) {
       pdf.addPage();
       position = margin - (imgH - heightLeft);
-      pdf.addImage(imgData, "JPEG", margin, position, imgW, imgH);
+      pdf.addImage(imgData, "PNG", margin, position, imgW, imgH);
       heightLeft -= pageH - margin * 2;
     }
-    pdf.save(filename);
+    const blob = pdf.output("blob");
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   } finally {
-    el.classList.remove("pdf-capture");
+    frame.remove();
   }
 }
