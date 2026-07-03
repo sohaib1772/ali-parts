@@ -1001,7 +1001,7 @@ function SettingsAdmin() {
   return (
     <div className="space-y-4">
       <Field label="اسم المتجر">
-        <Input value={nameVal} onChange={(e) => setName(e.target.value)} placeholder="Ali Parts" />
+        <Input value={nameVal} onChange={(e) => setName(e.target.value)} placeholder="مكتب علي شوفرليت" />
       </Field>
       <Field label="الشعار الفرعي (تحت الاسم)">
         <Input value={taglineVal} onChange={(e) => setTagline(e.target.value)} placeholder="قطع أصلية · العراق" />

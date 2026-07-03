@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageShell } from "@/components/page-shell";
 
 export const Route = createFileRoute("/privacy")({
-  head: () => ({ meta: [{ title: "سياسة الخصوصية — Ali Parts" }] }),
+  head: () => ({ meta: [{ title: "سياسة الخصوصية — مكتب علي شوفرليت" }] }),
   component: PrivacyPage,
 });
 
