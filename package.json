@@ -8,6 +8,8 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
+    "mobile:resources": "capacitor-assets generate",
+    "mobile:sync": "capacitor-assets generate && npx cap sync",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
