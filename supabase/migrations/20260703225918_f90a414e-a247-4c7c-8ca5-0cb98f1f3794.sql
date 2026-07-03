@@ -1,0 +1,2 @@
+UPDATE public.brands SET logo_url = '/__l5e/assets-v1/736db720-0d50-4b21-911d-df40604fd70e/chevrolet-logo.jpeg' WHERE id = 'fe12a5c7-87f6-4f12-84ad-af5531f0d9a1';
+UPDATE public.brands SET logo_url = '/__l5e/assets-v1/38248d8d-2d55-4e41-b5af-d44309193a1f/gmc-logo.png' WHERE id = 'c0896b3c-bea2-41f1-bcff-1eb9ef87b7cf';
