@@ -2,13 +2,13 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, PackageCheck, Package as PackageIcon, PackageOpen, Truck, MapPin, Home, XCircle, StickyNote, Printer, FileDown } from "lucide-react";
+import { ArrowRight, PackageCheck, Package as PackageIcon, PackageOpen, Truck, MapPin, Home, XCircle, StickyNote, Receipt } from "lucide-react";
 import { orderByIdQuery } from "@/lib/queries";
 import { formatIQD, formatArabicDate } from "@/lib/format";
 import { statusLabel } from "@/lib/order-status";
 import { markOrderSeen } from "@/lib/order-updates";
 import { toast } from "sonner";
-import { PrintableInvoice, downloadInvoicePdf } from "@/components/printable-invoice";
+import { PrintableInvoice, InvoicePreviewDialog } from "@/components/printable-invoice";
 
 export const Route = createFileRoute("/_authenticated/orders/$id")({
   loader: ({ context, params }) => context.queryClient.ensureQueryData(orderByIdQuery(params.id)),
@@ -42,28 +42,7 @@ function OrderDetail() {
   const { order, items } = data;
   const router = useRouter();
   const qc = useQueryClient();
-  const [downloading, setDownloading] = useState(false);
-
-  const handlePrint = () => {
-    const el = document.getElementById("invoice-print-target");
-    if (!el) { window.print(); return; }
-    el.classList.add("pdf-capture");
-    setTimeout(() => {
-      window.print();
-      setTimeout(() => el.classList.remove("pdf-capture"), 300);
-    }, 50);
-  };
-
-  const handleDownloadPdf = async () => {
-    setDownloading(true);
-    try {
-      await downloadInvoicePdf("invoice-print-target", `invoice-${order.order_number}.pdf`);
-    } catch {
-      toast.error("تعذّر توليد ملف PDF");
-    } finally {
-      setDownloading(false);
-    }
-  };
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
     const ch = supabase
@@ -115,19 +94,11 @@ function OrderDetail() {
             <div className="text-[10px] text-gold font-mono">{order.order_number}</div>
           </div>
           <button
-            onClick={handlePrint}
+            onClick={() => setPreviewOpen(true)}
             className="inline-flex items-center gap-1.5 px-3 h-9 rounded-full bg-gradient-gold text-navy font-bold text-xs shadow-gold hover:brightness-105 transition"
-            aria-label="طباعة الفاتورة"
+            aria-label="معاينة الفاتورة"
           >
-            <Printer className="size-4" /> طباعة
-          </button>
-          <button
-            onClick={handleDownloadPdf}
-            disabled={downloading}
-            className="inline-flex items-center gap-1.5 px-3 h-9 rounded-full bg-white/10 text-white font-bold text-xs border border-white/20 hover:bg-white/15 transition disabled:opacity-50"
-            aria-label="تنزيل PDF"
-          >
-            <FileDown className="size-4" /> {downloading ? "جاري..." : "PDF"}
+            <Receipt className="size-4" /> الفاتورة
           </button>
         </div>
       </div>
@@ -256,6 +227,13 @@ function OrderDetail() {
       </div>
 
       <PrintableInvoice order={order} items={items} domId="invoice-print-target" />
+      <InvoicePreviewDialog
+        order={order}
+        items={items}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        domId="invoice-preview-target"
+      />
     </div>
   );
 }
