@@ -35,9 +35,9 @@ export function PrintableInvoice({ order, items, domId }: { order: any; items: a
           <div style={{ textAlign: "left" }}>
             <div style={{ display: "inline-block", padding: "6px 14px", background: "linear-gradient(135deg,#f5c96a,#c9a24a)", color: "#0a1a3a", fontWeight: 900, fontSize: "12px", letterSpacing: "0.18em", borderRadius: "4px", boxShadow: "0 3px 10px rgba(201,162,74,0.4)" }}>INVOICE · فاتورة</div>
             <div style={{ marginTop: "10px", fontSize: "11px", color: "#cfd6e6" }}>
-              <div>رقم الفاتورة: <span style={{ fontFamily: "ui-monospace, monospace", color: "#0a1a3a", fontWeight: 700 }}>{order.order_number}</span></div>
-              <div>التاريخ: <span style={{ color: "#0a1a3a", fontWeight: 700 }}>{formatArabicDate(order.created_at)}</span></div>
-              <div>الحالة: <span style={{ color: "#0a1a3a", fontWeight: 700 }}>{statusLabel(order.status)}</span></div>
+              <div>رقم الفاتورة: <span style={{ fontFamily: "ui-monospace, monospace", color: "#f5c96a", fontWeight: 700 }}>{order.order_number}</span></div>
+              <div>التاريخ: <span style={{ color: "#ffffff", fontWeight: 700 }}>{formatArabicDate(order.created_at)}</span></div>
+              <div>الحالة: <span style={{ color: "#ffffff", fontWeight: 700 }}>{statusLabel(order.status)}</span></div>
             </div>
           </div>
         </div>
