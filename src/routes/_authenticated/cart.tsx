@@ -63,6 +63,11 @@ function CartPage() {
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-bold line-clamp-2">{it.product?.name_ar}</h3>
               {it.product?.oem_number && <div className="text-[10px] text-muted-foreground font-mono">OEM: {it.product.oem_number}</div>}
+              {it.side && (
+                <div className="mt-1 inline-flex items-center gap-1 text-[10px] font-black bg-navy text-primary-foreground rounded-full px-2 py-0.5">
+                  {it.side === "LH" ? "LH · يسار" : "RH · يمين"}
+                </div>
+              )}
               <div className="text-navy font-extrabold text-sm mt-1">{formatIQD(it.product?.price_iqd)}</div>
               <div className="flex items-center gap-2 mt-2">
                 <div className="flex items-center bg-muted rounded-lg">
