@@ -64,12 +64,18 @@ function ProductPage() {
 
   const addToCart = async () => {
     if (!requireAuth()) return;
-    if (!side) { toast.error("اختر الجهة LH أو RH"); return; }
-    const { data: existing } = await supabase.from("cart_items").select("id, quantity").eq("user_id", userId!).eq("product_id", product.id).eq("side", side).maybeSingle();
+    // Side is optional. Merge on (user, product, side) — treat null side as its own slot.
+    let existingQuery = supabase
+      .from("cart_items")
+      .select("id, quantity")
+      .eq("user_id", userId!)
+      .eq("product_id", product.id);
+    existingQuery = side ? existingQuery.eq("side", side) : existingQuery.is("side", null);
+    const { data: existing } = await existingQuery.maybeSingle();
     if (existing) {
       await supabase.from("cart_items").update({ quantity: existing.quantity + qty }).eq("id", existing.id);
     } else {
-      await supabase.from("cart_items").insert({ user_id: userId!, product_id: product.id, quantity: qty, side });
+      await supabase.from("cart_items").insert({ user_id: userId!, product_id: product.id, quantity: qty, side: side ?? null });
     }
     toast.success("تمت الإضافة إلى السلة");
     qc.invalidateQueries({ queryKey: ["cart"] });
@@ -192,7 +198,18 @@ function ProductPage() {
         )}
 
         <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
-          <div className="text-xs font-bold text-gold mb-2">اختر الجهة</div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs font-bold text-gold">الجهة <span className="text-muted-foreground font-normal">(اختياري)</span></div>
+            {side && (
+              <button
+                type="button"
+                onClick={() => setSide(null)}
+                className="text-[10px] font-bold text-muted-foreground hover:text-destructive"
+              >
+                إلغاء الاختيار
+              </button>
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"

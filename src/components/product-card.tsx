@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import { Heart, ShoppingCart } from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +12,6 @@ import { WhatsappIcon } from "./icons";
 export function ProductCard({ product }: { product: Product }) {
   const { userId } = useAuth();
   const qc = useQueryClient();
-  const navigate = useNavigate();
   const img = product.images?.[0];
   const waNumber = useSetting("whatsapp_number");
 
@@ -29,9 +27,21 @@ export function ProductCard({ product }: { product: Product }) {
     e.preventDefault();
     e.stopPropagation();
     if (!requireAuth()) return;
-    // Side (LH/RH) required — pick on product page
-    toast.message("اختر الجهة LH أو RH من صفحة المنتج");
-    navigate({ to: "/product/$id", params: { id: product.id } });
+    // Side is optional now: add directly with null side.
+    const { data: existing } = await supabase
+      .from("cart_items")
+      .select("id, quantity")
+      .eq("user_id", userId!)
+      .eq("product_id", product.id)
+      .is("side", null)
+      .maybeSingle();
+    if (existing) {
+      await supabase.from("cart_items").update({ quantity: existing.quantity + 1 }).eq("id", existing.id);
+    } else {
+      await supabase.from("cart_items").insert({ user_id: userId!, product_id: product.id, quantity: 1, side: null });
+    }
+    toast.success("تمت الإضافة إلى السلة");
+    qc.invalidateQueries({ queryKey: ["cart"] });
   };
 
   const toggleFav = async (e: React.MouseEvent) => {

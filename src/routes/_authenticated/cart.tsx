@@ -38,16 +38,16 @@ function CartPage() {
     qc.invalidateQueries({ queryKey: ["cart"] });
   };
 
-  const changeSide = async (row: any, newSide: "LH" | "RH") => {
+  const changeSide = async (row: any, newSide: "LH" | "RH" | null) => {
     if (row.side === newSide) return;
-    // إذا يوجد سطر ثاني لنفس المنتج بنفس الجهة الجديدة → دمج الكميات
-    const { data: existing } = await supabase
+    // Merge with an existing line for the same (product, side) — treat null as its own slot.
+    let existingQuery = supabase
       .from("cart_items")
       .select("id, quantity")
       .eq("user_id", userId!)
-      .eq("product_id", row.product_id)
-      .eq("side", newSide)
-      .maybeSingle();
+      .eq("product_id", row.product_id);
+    existingQuery = newSide ? existingQuery.eq("side", newSide) : existingQuery.is("side", null);
+    const { data: existing } = await existingQuery.maybeSingle();
     if (existing && existing.id !== row.id) {
       await supabase
         .from("cart_items")
@@ -61,7 +61,7 @@ function CartPage() {
         toast.error("تعذر تغيير الجهة");
         return;
       }
-      toast.success(`تم التغيير إلى ${newSide}`);
+      toast.success(newSide ? `تم التغيير إلى ${newSide}` : "أُلغيت الجهة");
     }
     qc.invalidateQueries({ queryKey: ["cart"] });
   };
@@ -98,23 +98,24 @@ function CartPage() {
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-bold line-clamp-2">{it.product?.name_ar}</h3>
               {it.product?.oem_number && <div className="text-[10px] text-muted-foreground font-mono">OEM: {it.product.oem_number}</div>}
-              {it.side && (
-                <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-muted p-0.5">
-                  {(["LH", "RH"] as const).map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => changeSide(it, s)}
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-black transition ${
-                        it.side === s
-                          ? "bg-navy text-primary-foreground shadow"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {s === "LH" ? "LH · يسار" : "RH · يمين"}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-muted p-0.5">
+                {(["LH", "RH"] as const).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => changeSide(it, it.side === s ? null : s)}
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-black transition ${
+                      it.side === s
+                        ? "bg-navy text-primary-foreground shadow"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {s === "LH" ? "LH · يسار" : "RH · يمين"}
+                  </button>
+                ))}
+                {!it.side && (
+                  <span className="px-2 text-[10px] text-muted-foreground">اختياري</span>
+                )}
+              </div>
               <div className="text-navy font-extrabold text-sm mt-1">{formatIQD(it.product?.price_iqd)}</div>
               <div className="flex items-center gap-2 mt-2">
                 <div className="flex items-center bg-muted rounded-lg">

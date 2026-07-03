@@ -53,15 +53,19 @@ function CheckoutPage() {
         p_points_used: parsedPoints,
         p_notes: orderNote.trim() || "",
       });
-      if (error || !orderId) throw error;
+      if (error) throw error;
+      if (!orderId) throw new Error("لم يُنشأ الطلب");
 
       qc.invalidateQueries({ queryKey: ["cart"] });
       qc.invalidateQueries({ queryKey: ["orders"] });
       qc.invalidateQueries({ queryKey: ["profile"] });
       toast.success("تم تأكيد الطلب بنجاح");
       navigate({ to: "/order-success/$id", params: { id: orderId as string } });
-    } catch {
-      toast.error("تعذّر إتمام الطلب");
+    } catch (err: any) {
+      const msg = err?.message || err?.error_description || err?.hint || "";
+      // eslint-disable-next-line no-console
+      console.error("place_order failed", err);
+      toast.error(msg ? `تعذّر إتمام الطلب: ${msg}` : "تعذّر إتمام الطلب");
       setPlacing(false);
     }
   };
