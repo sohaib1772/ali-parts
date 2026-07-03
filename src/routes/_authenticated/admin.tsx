@@ -624,6 +624,17 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
   const copy = async (text: string, label: string) => {
     try { await navigator.clipboard.writeText(text); toast.success(`تم نسخ ${label}`); } catch { toast.error("تعذّر النسخ"); }
   };
+  const { data: items = [] } = useQuery({
+    queryKey: ["admin", "order-items", o.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("order_items")
+        .select("id,name_ar,oem_number,image_url,unit_price_iqd,quantity,side")
+        .eq("order_id", o.id);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
   return (
     <div className="bg-card border border-border rounded-2xl p-3 space-y-3">
       <div className="flex items-center justify-between gap-2">
@@ -655,6 +666,38 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
           </div>
         )}
       </div>
+
+      {items.length > 0 && (
+        <div className="rounded-xl border border-border/70 divide-y divide-border/60">
+          <div className="px-3 py-1.5 text-[11px] font-bold text-muted-foreground bg-muted/30 rounded-t-xl">
+            القطع ({items.length})
+          </div>
+          {items.map((it: any) => (
+            <div key={it.id} className="flex gap-2 p-2">
+              <div className="size-12 rounded-lg bg-muted overflow-hidden shrink-0">
+                {it.image_url && <img src={it.image_url} alt="" className="size-full object-cover" />}
+              </div>
+              <div className="flex-1 min-w-0 text-xs">
+                <div className="font-bold line-clamp-2">{it.name_ar}</div>
+                <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                  {it.side && (
+                    <span className="inline-flex items-center rounded-full bg-navy text-primary-foreground px-2 py-0.5 text-[10px] font-black">
+                      {it.side === "LH" ? "LH · يسار" : "RH · يمين"}
+                    </span>
+                  )}
+                  {it.oem_number && (
+                    <span className="font-mono text-[10px] text-muted-foreground">OEM: {it.oem_number}</span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-muted-foreground">×{it.quantity}</span>
+                  <span className="font-bold">{formatIQD(Number(it.unit_price_iqd) * it.quantity)}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {phoneDigits && (
         <div className="grid grid-cols-2 gap-2">
