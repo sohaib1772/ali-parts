@@ -38,7 +38,7 @@ function ProductPage() {
   const qc = useQueryClient();
   const [qty, setQty] = useState(1);
   const [activeImg, setActiveImg] = useState(0);
-  const [side, setSide] = useState<"LH" | "RH" | null>(null);
+  const [side, setSide] = useState<"LH" | "RH" | "PAIR" | null>(null);
   const router = useRouter();
   const navigate = useNavigate();
   const goBack = () => {
@@ -210,7 +210,7 @@ function ProductPage() {
               </button>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
               onClick={() => setSide("LH")}
@@ -224,6 +224,13 @@ function ProductPage() {
               className={`h-11 rounded-xl font-black text-sm border-2 transition ${side === "RH" ? "bg-navy text-primary-foreground border-navy" : "bg-card text-navy border-border"}`}
             >
               RH · يمين
+            </button>
+            <button
+              type="button"
+              onClick={() => setSide("PAIR")}
+              className={`h-11 rounded-xl font-black text-sm border-2 transition ${side === "PAIR" ? "bg-gradient-gold text-navy border-gold" : "bg-card text-navy border-border"}`}
+            >
+              تخم · طقم
             </button>
           </div>
         </div>
