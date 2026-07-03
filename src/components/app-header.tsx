@@ -13,13 +13,9 @@ export function AppHeader({ title }: { title?: string }) {
   useEffect(() => {
     let mounted = true;
     let channel: ReturnType<typeof supabase.channel> | null = null;
-    const load = async (userId?: string | null) => {
-      let uid = userId;
-      if (uid === undefined) {
-        const { data } = await supabase.auth.getSession();
-        uid = data.session?.user.id ?? null;
-      }
-      if (!uid) { if (mounted) { setCount(0); setUnread(0); } return; }
+    let currentUid: string | null = null;
+
+    const refreshCounts = async (uid: string) => {
       const { count } = await supabase
         .from("cart_items")
         .select("*", { count: "exact", head: true })
@@ -31,18 +27,37 @@ export function AppHeader({ title }: { title?: string }) {
         .eq("user_id", uid)
         .is("read_at", null);
       if (mounted) setUnread(nCount ?? 0);
-      if (channel) supabase.removeChannel(channel);
+    };
+
+    const setup = async (uid: string | null) => {
+      if (uid === currentUid) {
+        if (uid) refreshCounts(uid);
+        return;
+      }
+      currentUid = uid;
+      if (channel) { supabase.removeChannel(channel); channel = null; }
+      if (!uid) { if (mounted) { setCount(0); setUnread(0); } return; }
+      refreshCounts(uid);
       channel = supabase
         .channel(`notif-badge-${uid}`)
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${uid}` },
-          () => load(uid),
+          () => refreshCounts(uid),
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "cart_items", filter: `user_id=eq.${uid}` },
+          () => refreshCounts(uid),
         )
         .subscribe();
     };
-    load();
-    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => load(session?.user.id ?? null));
+
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      setup(data.session?.user.id ?? null);
+    })();
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => setup(session?.user.id ?? null));
     return () => {
       mounted = false;
       sub.subscription.unsubscribe();
