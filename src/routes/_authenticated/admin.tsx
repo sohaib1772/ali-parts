@@ -365,7 +365,7 @@ function BannersAdmin() {
 
   const save = async () => {
     if (!form.image_url) { toast.error("الصورة مطلوبة"); return; }
-    const payload: Record<string, unknown> = {
+    const payload = {
       title_ar: form.title_ar || null,
       subtitle_ar: form.subtitle_ar || null,
       image_url: form.image_url,
