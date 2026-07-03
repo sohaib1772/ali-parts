@@ -208,7 +208,15 @@ export async function downloadInvoicePdf(elementId: string, filename: string) {
       pdf.addImage(imgData, "PNG", margin, position, imgW, imgH);
       heightLeft -= pageH - margin * 2;
     }
-    pdf.save(filename);
+    const blob = pdf.output("blob");
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   } finally {
     frame.remove();
   }
