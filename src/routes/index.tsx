@@ -361,7 +361,7 @@ function LimitedOffers({ deals }: { deals: Product[] }) {
           <h2 className="text-base font-extrabold leading-tight">عروض لفترة محدودة</h2>
           <p className="text-[11px] text-muted-foreground">أسعار خاصة لفترة قصيرة</p>
         </div>
-        <Link to="/search" className="text-xs font-semibold text-gold flex items-center gap-0.5">
+        <Link to="/deals" className="text-xs font-semibold text-gold flex items-center gap-0.5">
           عرض الكل <ChevronLeft className="size-3.5" />
         </Link>
       </div>
