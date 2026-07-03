@@ -32,6 +32,12 @@ function CartPage() {
     qc.invalidateQueries({ queryKey: ["cart"] });
   };
 
+  const saveNote = async (id: string, note: string) => {
+    const value = note.trim() || null;
+    await supabase.from("cart_items").update({ note: value }).eq("id", id);
+    qc.invalidateQueries({ queryKey: ["cart"] });
+  };
+
   const changeSide = async (row: any, newSide: "LH" | "RH") => {
     if (row.side === newSide) return;
     // إذا يوجد سطر ثاني لنفس المنتج بنفس الجهة الجديدة → دمج الكميات
@@ -118,6 +124,7 @@ function CartPage() {
                 </div>
                 <button onClick={() => remove(it.id)} className="ms-auto size-8 grid place-items-center text-destructive"><Trash2 className="size-4" /></button>
               </div>
+              <ItemNote initial={it.note ?? ""} onSave={(v) => saveNote(it.id, v)} />
             </div>
           </div>
         ))}
