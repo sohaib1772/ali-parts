@@ -44,6 +44,16 @@ function OrderDetail() {
   const qc = useQueryClient();
   const [downloading, setDownloading] = useState(false);
 
+  const handlePrint = () => {
+    const el = document.getElementById("invoice-print-target");
+    if (!el) { window.print(); return; }
+    el.classList.add("pdf-capture");
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => el.classList.remove("pdf-capture"), 300);
+    }, 50);
+  };
+
   const handleDownloadPdf = async () => {
     setDownloading(true);
     try {
@@ -105,7 +115,7 @@ function OrderDetail() {
             <div className="text-[10px] text-gold font-mono">{order.order_number}</div>
           </div>
           <button
-            onClick={() => window.print()}
+            onClick={handlePrint}
             className="inline-flex items-center gap-1.5 px-3 h-9 rounded-full bg-gradient-gold text-navy font-bold text-xs shadow-gold hover:brightness-105 transition"
             aria-label="طباعة الفاتورة"
           >
