@@ -152,6 +152,18 @@ export async function downloadInvoicePdf(elementId: string, filename: string) {
     "font-family:'IBM Plex Sans Arabic', system-ui, sans-serif!important",
   ].join(";");
   document.body.appendChild(captureNode);
+  const previousHtmlBg = document.documentElement.style.backgroundColor;
+  const previousHtmlColor = document.documentElement.style.color;
+  const previousBodyBg = document.body.style.backgroundColor;
+  const previousBodyColor = document.body.style.color;
+  document.documentElement.style.backgroundColor = "#ffffff";
+  document.documentElement.style.color = "#0a1a3a";
+  document.body.style.backgroundColor = "#ffffff";
+  document.body.style.color = "#0a1a3a";
+  captureNode.querySelectorAll<HTMLElement>("*").forEach((node) => {
+    node.style.borderColor ||= "#e6e2d5";
+    node.style.outlineColor ||= "#e6e2d5";
+  });
   try {
     const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
       import("html2canvas"),
@@ -191,6 +203,10 @@ export async function downloadInvoicePdf(elementId: string, filename: string) {
     }
     pdf.save(filename);
   } finally {
+    document.documentElement.style.backgroundColor = previousHtmlBg;
+    document.documentElement.style.color = previousHtmlColor;
+    document.body.style.backgroundColor = previousBodyBg;
+    document.body.style.color = previousBodyColor;
     captureNode.remove();
   }
 }
