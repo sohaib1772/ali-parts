@@ -11,7 +11,7 @@ function PrivacyPage() {
     <PageShell title="سياسة الخصوصية">
       <div className="px-4 pt-4">
         <div className="bg-card rounded-2xl border border-border p-5 shadow-card space-y-4 text-sm leading-relaxed">
-          <p>نحن في Ali Parts نحترم خصوصيتك ونلتزم بحماية بياناتك الشخصية.</p>
+          <p>نحن في مكتب علي شوفرليت نحترم خصوصيتك ونلتزم بحماية بياناتك الشخصية.</p>
           <div>
             <div className="font-bold text-gold mb-1">جمع البيانات</div>
             <p>نجمع فقط البيانات اللازمة لإتمام طلبك: الاسم، رقم الهاتف، والعنوان.</p>

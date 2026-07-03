@@ -6,7 +6,7 @@ import { whatsappLink, WHATSAPP_NUMBER } from "@/lib/format";
 import { useSetting } from "@/lib/admin";
 
 export const Route = createFileRoute("/contact")({
-  head: () => ({ meta: [{ title: "اتصل بنا — Ali Parts" }] }),
+  head: () => ({ meta: [{ title: "اتصل بنا — مكتب علي شوفرليت" }] }),
   component: ContactPage,
 });
 
