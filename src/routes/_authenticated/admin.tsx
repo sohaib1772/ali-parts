@@ -21,7 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote, Receipt, Search as SearchIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote, Receipt, Search as SearchIcon, Ban, CheckCircle2 } from "lucide-react";
 import { WhatsappIcon } from "@/components/icons";
 import { formatIQD, whatsappLink } from "@/lib/format";
 import { statusLabel, statusColor } from "@/lib/order-status";
@@ -680,12 +680,26 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, phone")
+        .select("full_name, phone, is_blocked")
         .eq("id", o.user_id)
         .maybeSingle();
       return data ?? null;
     },
   });
+  const qcCard = useQueryClient();
+  const isBlocked = !!(customer as any)?.is_blocked;
+  const toggleBlock = async () => {
+    if (!o.user_id) return;
+    const next = !isBlocked;
+    const confirmMsg = next
+      ? "حظر هذا الزبون من إرسال طلبات جديدة؟ سيبقى يشاهد المتجر بشكل عادي."
+      : "رفع الحظر عن هذا الزبون؟";
+    if (!window.confirm(confirmMsg)) return;
+    const { error } = await supabase.from("profiles").update({ is_blocked: next }).eq("id", o.user_id);
+    if (error) { toast.error(error.message || "تعذّر تحديث الحالة"); return; }
+    toast.success(next ? "تم حظر الزبون" : "تم رفع الحظر");
+    qcCard.invalidateQueries({ queryKey: ["admin", "order-customer", o.user_id] });
+  };
   const addressRows = [
     { key: "label", label: "التسمية", value: addr.label || "—" },
     { key: "full_name", label: "الاسم الكامل", value: addr.full_name || "—" },
@@ -797,6 +811,19 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
       </Select>
 
       <InvoiceActions order={o} items={items} customer={customer ?? null} />
+
+      {o.user_id && (
+        <button
+          onClick={toggleBlock}
+          className={`w-full h-10 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition ${
+            isBlocked
+              ? "border-success/40 text-success bg-success/5 hover:bg-success/10"
+              : "border-destructive/40 text-destructive bg-destructive/5 hover:bg-destructive/10"
+          }`}
+        >
+          {isBlocked ? (<><CheckCircle2 className="size-4" /> رفع الحظر عن الزبون</>) : (<><Ban className="size-4" /> حظر الزبون من الطلبات</>)}
+        </button>
+      )}
     </div>
   );
 }
