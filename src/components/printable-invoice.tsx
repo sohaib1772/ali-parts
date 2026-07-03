@@ -149,6 +149,7 @@ export async function downloadInvoicePdf(elementId: string, filename: string) {
     "opacity:1!important",
     "pointer-events:none!important",
     "transform:none!important",
+    "font-family:'IBM Plex Sans Arabic', system-ui, sans-serif!important",
   ].join(";");
   document.body.appendChild(captureNode);
   try {
