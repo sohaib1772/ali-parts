@@ -107,7 +107,7 @@ function HomePage() {
         <Section
           title="الأكثر مبيعاً"
           icon={<Flame className="size-4 text-destructive" />}
-          href="/products"
+          href="/best-sellers"
         >
           <div className="grid grid-cols-2 gap-3 px-4">
             {filteredBestSellers.slice(0, 6).map((p) => (
