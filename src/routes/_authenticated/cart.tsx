@@ -31,6 +31,34 @@ function CartPage() {
     qc.invalidateQueries({ queryKey: ["cart"] });
   };
 
+  const changeSide = async (row: any, newSide: "LH" | "RH") => {
+    if (row.side === newSide) return;
+    // إذا يوجد سطر ثاني لنفس المنتج بنفس الجهة الجديدة → دمج الكميات
+    const { data: existing } = await supabase
+      .from("cart_items")
+      .select("id, quantity")
+      .eq("user_id", userId!)
+      .eq("product_id", row.product_id)
+      .eq("side", newSide)
+      .maybeSingle();
+    if (existing && existing.id !== row.id) {
+      await supabase
+        .from("cart_items")
+        .update({ quantity: existing.quantity + row.quantity })
+        .eq("id", existing.id);
+      await supabase.from("cart_items").delete().eq("id", row.id);
+      toast.success("تم دمج السطر مع نفس الجهة");
+    } else {
+      const { error } = await supabase.from("cart_items").update({ side: newSide }).eq("id", row.id);
+      if (error) {
+        toast.error("تعذر تغيير الجهة");
+        return;
+      }
+      toast.success(`تم التغيير إلى ${newSide}`);
+    }
+    qc.invalidateQueries({ queryKey: ["cart"] });
+  };
+
   if (isLoading) {
     return <PageShell title="السلة"><div className="p-8 text-center text-muted-foreground">جاري التحميل…</div></PageShell>;
   }
@@ -64,8 +92,20 @@ function CartPage() {
               <h3 className="text-sm font-bold line-clamp-2">{it.product?.name_ar}</h3>
               {it.product?.oem_number && <div className="text-[10px] text-muted-foreground font-mono">OEM: {it.product.oem_number}</div>}
               {it.side && (
-                <div className="mt-1 inline-flex items-center gap-1 text-[10px] font-black bg-navy text-primary-foreground rounded-full px-2 py-0.5">
-                  {it.side === "LH" ? "LH · يسار" : "RH · يمين"}
+                <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-muted p-0.5">
+                  {(["LH", "RH"] as const).map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => changeSide(it, s)}
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-black transition ${
+                        it.side === s
+                          ? "bg-navy text-primary-foreground shadow"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {s === "LH" ? "LH · يسار" : "RH · يمين"}
+                    </button>
+                  ))}
                 </div>
               )}
               <div className="text-navy font-extrabold text-sm mt-1">{formatIQD(it.product?.price_iqd)}</div>
