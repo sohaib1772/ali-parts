@@ -131,23 +131,47 @@ function TotalRow({ label, value }: { label: string; value: string }) {
 }
 
 export async function downloadInvoicePdf(elementId: string, filename: string) {
-  const el = document.getElementById(elementId);
-  if (!el) return;
-  el.classList.add("pdf-capture");
+  const source = document.getElementById(elementId);
+  if (!source) return;
+  const captureNode = source.cloneNode(true) as HTMLElement;
+  captureNode.removeAttribute("id");
+  captureNode.className = "";
+  captureNode.style.cssText = [
+    "display:block!important",
+    "position:absolute!important",
+    "left:0!important",
+    "top:0!important",
+    "width:794px!important",
+    "min-height:1123px!important",
+    "background:#ffffff!important",
+    "color:#0a1a3a!important",
+    "z-index:2147483647!important",
+    "opacity:1!important",
+    "pointer-events:none!important",
+    "transform:none!important",
+  ].join(";");
+  document.body.appendChild(captureNode);
   try {
     const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
       import("html2canvas"),
       import("jspdf"),
     ]);
-    // Wait a tick so layout applies after adding .pdf-capture
-    await new Promise((r) => setTimeout(r, 50));
-    const canvas = await html2canvas(el, {
+    await document.fonts?.ready;
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    const canvas = await html2canvas(captureNode, {
       scale: 2,
       useCORS: true,
+      allowTaint: true,
       backgroundColor: "#ffffff",
-      windowWidth: 820,
+      width: captureNode.scrollWidth,
+      height: captureNode.scrollHeight,
+      windowWidth: 900,
+      windowHeight: Math.max(1300, captureNode.scrollHeight + 80),
+      scrollX: 0,
+      scrollY: 0,
+      logging: false,
     });
-    const imgData = canvas.toDataURL("image/jpeg", 0.95);
+    const imgData = canvas.toDataURL("image/png");
     const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
     const pageW = pdf.internal.pageSize.getWidth();
     const pageH = pdf.internal.pageSize.getHeight();
@@ -156,16 +180,16 @@ export async function downloadInvoicePdf(elementId: string, filename: string) {
     const imgH = (canvas.height * imgW) / canvas.width;
     let heightLeft = imgH;
     let position = margin;
-    pdf.addImage(imgData, "JPEG", margin, position, imgW, imgH);
+    pdf.addImage(imgData, "PNG", margin, position, imgW, imgH);
     heightLeft -= pageH - margin * 2;
     while (heightLeft > 0) {
       pdf.addPage();
       position = margin - (imgH - heightLeft);
-      pdf.addImage(imgData, "JPEG", margin, position, imgW, imgH);
+      pdf.addImage(imgData, "PNG", margin, position, imgW, imgH);
       heightLeft -= pageH - margin * 2;
     }
     pdf.save(filename);
   } finally {
-    el.classList.remove("pdf-capture");
+    captureNode.remove();
   }
 }
