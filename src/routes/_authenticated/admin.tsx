@@ -618,9 +618,8 @@ function OrdersAdmin() {
 }
 
 function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChange: (id: string, status: string) => void }) {
-  const addr = (o.address ?? {}) as { full_name?: string; phone?: string; city?: string; area?: string; street?: string; notes?: string };
+  const addr = (o.address ?? {}) as { label?: string; full_name?: string; phone?: string; city?: string; area?: string; street?: string; notes?: string };
   const phoneDigits = String(addr.phone ?? "").replace(/\D/g, "");
-  const fullAddress = [addr.city, addr.area, addr.street].filter(Boolean).join(" · ");
   const copy = async (text: string, label: string) => {
     try { await navigator.clipboard.writeText(text); toast.success(`تم نسخ ${label}`); } catch { toast.error("تعذّر النسخ"); }
   };
@@ -635,6 +634,15 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
       return data ?? [];
     },
   });
+  const addressRows = [
+    { key: "label", label: "التسمية", value: addr.label || "—" },
+    { key: "full_name", label: "الاسم الكامل", value: addr.full_name || "—" },
+    { key: "phone", label: "رقم الهاتف", value: phoneDigits ? `+${phoneDigits}` : "—", mono: true },
+    { key: "city", label: "المحافظة", value: addr.city || "—" },
+    { key: "area", label: "المنطقة / القضاء", value: addr.area || "—" },
+    { key: "street", label: "الشارع / تفاصيل", value: addr.street || "—" },
+    { key: "notes", label: "ملاحظات إضافية", value: addr.notes || "—", muted: true },
+  ];
   return (
     <div className="bg-card border border-border rounded-2xl p-3 space-y-3">
       <div className="flex items-center justify-between gap-2">
@@ -642,28 +650,25 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
         <div className={`text-xs font-bold px-2 py-0.5 rounded-full ${statusColor(o.status)}`}>{statusLabel(o.status)}</div>
       </div>
 
-      <div className="rounded-xl bg-muted/40 p-3 space-y-2 text-sm">
-        <div className="flex items-center gap-2">
-          <UserIcon className="size-4 text-gold shrink-0" />
-          <span className="font-bold">{addr.full_name || "—"}</span>
+      <div className="rounded-xl border border-border/80 bg-muted/30 p-3 space-y-2">
+        <div className="flex items-center gap-2 text-xs font-bold text-gold mb-1">
+          <MapPin className="size-4" /> تفاصيل عنوان التوصيل
         </div>
-        {phoneDigits && (
-          <div className="flex items-center gap-2">
-            <Phone className="size-4 text-gold shrink-0" />
-            <span dir="ltr" className="font-mono">+{phoneDigits}</span>
-            <button onClick={() => copy(phoneDigits, "الرقم")} className="ms-auto text-muted-foreground hover:text-gold" aria-label="نسخ">
-              <Copy className="size-4" />
-            </button>
-          </div>
-        )}
-        {(fullAddress || addr.notes) && (
-          <div className="flex items-start gap-2">
-            <MapPin className="size-4 text-gold shrink-0 mt-0.5" />
-            <div className="text-xs leading-relaxed">
-              {fullAddress && <div>{fullAddress}</div>}
-              {addr.notes && <div className="text-muted-foreground">{addr.notes}</div>}
+        {addressRows.map((row) => (
+          <div key={row.key} className="flex items-start justify-between gap-2 text-sm">
+            <span className="text-muted-foreground text-xs shrink-0">{row.label}</span>
+            <div className={`flex-1 text-end ${row.mono ? "font-mono" : ""} ${row.muted ? "text-muted-foreground text-xs" : "font-semibold"}`}>
+              {row.value}
             </div>
           </div>
+        ))}
+        {phoneDigits && (
+          <button
+            onClick={() => copy([addr.label, addr.full_name, `+${phoneDigits}`, addr.city, addr.area, addr.street, addr.notes].filter(Boolean).join("\n"), "تفاصيل العنوان")}
+            className="w-full mt-1 h-8 rounded-lg border border-border text-muted-foreground text-xs font-bold flex items-center justify-center gap-1.5 hover:text-gold hover:border-gold/50 transition"
+          >
+            <Copy className="size-3.5" /> نسخ العنوان كاملاً
+          </button>
         )}
       </div>
 
