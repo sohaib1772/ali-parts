@@ -3,7 +3,7 @@ import { Bell, Check, Package, Truck, PackageCheck, XCircle, ClipboardCheck } fr
 import { PageShell } from "@/components/page-shell";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/lib/use-auth";
 import { statusColor, statusLabel } from "@/lib/order-status";
 
 type Notif = {
