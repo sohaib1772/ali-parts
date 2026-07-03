@@ -265,24 +265,34 @@ function InvoiceBody({ order, items }: { order: any; items: any[] }) {
         </div>
       </div>
       <div style={{ position: "relative", zIndex: 1, padding: "0 22px 22px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
-          <div style={{ border: "1px solid #e6e2d5", borderRadius: "6px", padding: "10px 12px", background: "#fff" }}>
-            <div style={{ fontSize: "9px", fontWeight: 800, letterSpacing: "0.2em", color: "#c9a24a", marginBottom: "6px" }}>BILL TO · فاتورة إلى</div>
-            <div style={{ fontSize: "13px", fontWeight: 800 }}>{addr.full_name ?? "-"}</div>
-            <div style={{ fontSize: "11px", color: "#334063", marginTop: "4px", lineHeight: 1.7 }}>
-              {addr.phone && <div>📞 <span style={{ fontFamily: "ui-monospace, monospace" }}>{addr.phone}</span></div>}
-              {addr.label && <div>التسمية: {addr.label}</div>}
+        {/* ---- Customer card (unified, phone highlighted) ---- */}
+        <div style={{ border: "1px solid #e6e2d5", borderRadius: "8px", background: "#fff", marginBottom: "14px", overflow: "hidden" }}>
+          <div style={{ background: "linear-gradient(90deg,#f8f3e3,#fff)", padding: "6px 12px", fontSize: "9px", fontWeight: 800, letterSpacing: "0.22em", color: "#8a6a1a", borderBottom: "1px solid #eee5c9" }}>
+            CUSTOMER · معلومات الزبون
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: 0 }}>
+            <div style={{ padding: "12px 14px", borderLeft: "1px solid #eee5c9" }}>
+              <InfoRow label="الاسم" value={addr.full_name ?? "-"} bold />
+              <InfoRow
+                label="📞 رقم الهاتف"
+                value={addr.phone ?? "-"}
+                mono
+                highlight
+              />
+              {addr.label && <InfoRow label="التسمية" value={addr.label} />}
+            </div>
+            <div style={{ padding: "12px 14px" }}>
+              <InfoRow label="المحافظة" value={addr.city ?? "-"} bold />
+              {addr.area && <InfoRow label="القضاء" value={addr.area} />}
+              {addr.street && <InfoRow label="الشارع" value={addr.street} />}
+              {addr.notes && <InfoRow label="ملاحظة العنوان" value={addr.notes} muted />}
             </div>
           </div>
-          <div style={{ border: "1px solid #e6e2d5", borderRadius: "6px", padding: "10px 12px", background: "#fff" }}>
-            <div style={{ fontSize: "9px", fontWeight: 800, letterSpacing: "0.2em", color: "#c9a24a", marginBottom: "6px" }}>SHIP TO · عنوان التوصيل</div>
-            <div style={{ fontSize: "11px", color: "#0a1a3a", lineHeight: 1.7 }}>
-              {addr.city && <div><b>المحافظة:</b> {addr.city}</div>}
-              {addr.area && <div><b>القضاء:</b> {addr.area}</div>}
-              {addr.street && <div><b>الشارع:</b> {addr.street}</div>}
-              {addr.notes && <div style={{ color: "#5c6c8a", fontSize: "10px", marginTop: "2px" }}>{addr.notes}</div>}
-            </div>
-          </div>
+        </div>
+
+        {/* ---- Items title ---- */}
+        <div style={{ fontSize: "10px", fontWeight: 900, letterSpacing: "0.22em", color: "#8a6a1a", margin: "0 0 6px 0" }}>
+          ITEMS · المنتجات
         </div>
         <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "14px", fontSize: "12px", background: "#fff" }}>
           <thead>
