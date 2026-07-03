@@ -23,6 +23,18 @@ const TIMELINE = [
   { key: "delivered", label: "تم التسليم", icon: Home },
 ] as const;
 
+function AddressRow({ label, value, mono, muted }: { label: string; value?: string; mono?: boolean; muted?: boolean }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-start justify-between gap-2">
+      <span className="text-xs text-muted-foreground shrink-0">{label}</span>
+      <span className={`text-end ${mono ? "font-mono" : ""} ${muted ? "text-muted-foreground text-xs" : "font-semibold"}`}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
 function OrderDetail() {
   const { id } = Route.useParams();
   const { data } = useSuspenseQuery(orderByIdQuery(id));
@@ -142,12 +154,14 @@ function OrderDetail() {
 
         <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
           <div className="text-xs font-bold text-gold mb-3">عنوان التوصيل</div>
-          <div className="text-sm space-y-1">
-            <div className="font-bold">{(order.address as any)?.full_name}</div>
-            <div className="text-muted-foreground">{(order.address as any)?.phone}</div>
-            <div className="text-muted-foreground">
-              {(order.address as any)?.city} · {(order.address as any)?.area} · {(order.address as any)?.street}
-            </div>
+          <div className="space-y-2 text-sm">
+            <AddressRow label="التسمية" value={(order.address as any)?.label} />
+            <AddressRow label="الاسم الكامل" value={(order.address as any)?.full_name} />
+            <AddressRow label="رقم الهاتف" value={(order.address as any)?.phone} mono />
+            <AddressRow label="المحافظة" value={(order.address as any)?.city} />
+            <AddressRow label="المنطقة / القضاء" value={(order.address as any)?.area} />
+            <AddressRow label="الشارع / تفاصيل" value={(order.address as any)?.street} />
+            <AddressRow label="ملاحظات إضافية" value={(order.address as any)?.notes} muted />
           </div>
         </div>
 

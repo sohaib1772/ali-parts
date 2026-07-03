@@ -46,7 +46,7 @@ function CheckoutPage() {
       const { data: order, error } = await supabase.from("orders").insert({
         user_id: userId!,
         address: {
-          full_name: activeAddr.full_name, phone: activeAddr.phone, city: activeAddr.city,
+          label: activeAddr.label, full_name: activeAddr.full_name, phone: activeAddr.phone, city: activeAddr.city,
           area: activeAddr.area, street: activeAddr.street, notes: activeAddr.notes,
         },
         payment_method: payment,
