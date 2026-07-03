@@ -369,6 +369,7 @@ export type Database = {
           compare_price_iqd: number | null
           compatible_models: string[] | null
           created_at: string
+          deal_expires_at: string | null
           description_ar: string | null
           id: string
           images: string[] | null
@@ -389,6 +390,7 @@ export type Database = {
           compare_price_iqd?: number | null
           compatible_models?: string[] | null
           created_at?: string
+          deal_expires_at?: string | null
           description_ar?: string | null
           id?: string
           images?: string[] | null
@@ -409,6 +411,7 @@ export type Database = {
           compare_price_iqd?: number | null
           compatible_models?: string[] | null
           created_at?: string
+          deal_expires_at?: string | null
           description_ar?: string | null
           id?: string
           images?: string[] | null

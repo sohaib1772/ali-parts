@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Search, ChevronLeft, Sparkles, Flame, CircleDot } from "lucide-react";
+import { Search, ChevronLeft, Sparkles, CircleDot, Timer } from "lucide-react";
+import useEmblaCarousel from "embla-carousel-react";
+import Autoplay from "embla-carousel-autoplay";
 import { PageShell } from "@/components/page-shell";
 import { FloatingWhatsapp } from "@/components/floating-whatsapp";
 import { ProductCard } from "@/components/product-card";
@@ -13,7 +15,8 @@ import {
   dealsQuery,
   featuredProductsQuery,
 } from "@/lib/queries";
-import type { Banner } from "@/lib/queries";
+import type { Banner, Product } from "@/lib/queries";
+import { formatIQD } from "@/lib/format";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => {
@@ -69,15 +72,9 @@ function HomePage() {
         </div>
       </Section>
 
-      {/* Deals */}
+      {/* Limited-time offers — auto-scrolling carousel */}
       {filteredDeals.length > 0 && (
-        <Section title="عروض اليوم" icon={<Flame className="size-4 text-destructive" />}>
-          <div className="grid grid-cols-2 gap-3 px-4">
-            {filteredDeals.slice(0, 4).map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        </Section>
+        <LimitedOffers deals={filteredDeals} />
       )}
 
       {/* Featured */}
@@ -311,5 +308,145 @@ function Countdown({ to }: { to: string }) {
       <Box v={m} l="دقيقة" />
       <Box v={sec} l="ثانية" />
     </div>
+  );
+}
+
+function MiniCountdown({ to }: { to: string }) {
+  const target = new Date(to).getTime();
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const diff = Math.max(0, target - now);
+  if (diff <= 0) return null;
+  const s = Math.floor(diff / 1000);
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  const label = d > 0 ? `${d}ي ${h}س` : `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  return (
+    <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold shadow-sm" dir="ltr">
+      <Timer className="size-3" />
+      <span className="tabular-nums">{label}</span>
+    </div>
+  );
+}
+
+function LimitedOffers({ deals }: { deals: Product[] }) {
+  const [emblaRef, embla] = useEmblaCarousel(
+    { loop: true, align: "start", direction: "rtl" },
+    [Autoplay({ delay: 3500, stopOnInteraction: false, stopOnMouseEnter: true })],
+  );
+  const [selected, setSelected] = useState(0);
+  const [snaps, setSnaps] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (!embla) return;
+    const onSelect = () => setSelected(embla.selectedScrollSnap());
+    setSnaps(embla.scrollSnapList());
+    embla.on("select", onSelect);
+    embla.on("reInit", () => setSnaps(embla.scrollSnapList()));
+    onSelect();
+  }, [embla]);
+
+  return (
+    <section className="mt-6 mx-4 rounded-3xl bg-card border border-border/60 shadow-card overflow-hidden">
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+        <div className="size-10 rounded-xl bg-gold/15 border border-gold/30 grid place-items-center">
+          <Timer className="size-5 text-gold" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-base font-extrabold leading-tight">عروض لفترة محدودة</h2>
+          <p className="text-[11px] text-muted-foreground">أسعار خاصة لفترة قصيرة</p>
+        </div>
+        <Link to="/search" className="text-xs font-semibold text-gold flex items-center gap-0.5">
+          عرض الكل <ChevronLeft className="size-3.5" />
+        </Link>
+      </div>
+      <div className="border-t border-border/60" />
+
+      <div className="relative">
+        <div className="overflow-hidden" ref={emblaRef}>
+          <div className="flex">
+            {deals.map((p) => (
+              <div key={p.id} className="shrink-0 grow-0 basis-1/2 p-3">
+                <OfferCard product={p} />
+              </div>
+            ))}
+          </div>
+        </div>
+        {embla && snaps.length > 1 && (
+          <>
+            <button
+              aria-label="السابق"
+              onClick={() => embla.scrollPrev()}
+              className="absolute top-1/2 -translate-y-1/2 start-2 size-9 rounded-full bg-card border border-border shadow-card grid place-items-center hover:bg-gold hover:text-navy transition"
+            >
+              <ChevronLeft className="size-4 rotate-180" />
+            </button>
+            <button
+              aria-label="التالي"
+              onClick={() => embla.scrollNext()}
+              className="absolute top-1/2 -translate-y-1/2 end-2 size-9 rounded-full bg-card border border-border shadow-card grid place-items-center hover:bg-gold hover:text-navy transition"
+            >
+              <ChevronLeft className="size-4" />
+            </button>
+          </>
+        )}
+      </div>
+
+      {snaps.length > 1 && (
+        <div className="flex justify-center gap-1.5 pb-4 pt-1">
+          {snaps.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => embla?.scrollTo(i)}
+              aria-label={`slide ${i + 1}`}
+              className={`h-1.5 rounded-full transition-all ${i === selected ? "w-6 bg-gold" : "w-1.5 bg-muted-foreground/30"}`}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function OfferCard({ product }: { product: Product }) {
+  const img = product.images?.[0];
+  return (
+    <Link
+      to="/product/$id"
+      params={{ id: product.id }}
+      className="group flex flex-col rounded-2xl bg-card border border-border/60 overflow-hidden hover:shadow-luxe transition-all"
+    >
+      <div className="relative aspect-square bg-muted overflow-hidden">
+        {img ? (
+          <img src={img} alt={product.name_ar} loading="lazy" className="size-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        ) : (
+          <div className="size-full grid place-items-center text-4xl opacity-30">⚙️</div>
+        )}
+        {product.deal_expires_at && (
+          <div className="absolute top-2 start-2">
+            <MiniCountdown to={product.deal_expires_at} />
+          </div>
+        )}
+        {!product.in_stock && (
+          <div className="absolute inset-0 bg-navy/60 grid place-items-center">
+            <span className="px-2 py-0.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">غير متوفر</span>
+          </div>
+        )}
+      </div>
+      <div className="p-3 flex flex-col gap-2">
+        <h3 className="text-sm font-semibold line-clamp-2 leading-tight min-h-[2.5rem]">{product.name_ar}</h3>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-base font-extrabold text-navy">{formatIQD(product.price_iqd)}</span>
+          <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-muted text-foreground/80 group-hover:bg-gold group-hover:text-navy transition">
+            عرض التفاصيل
+          </span>
+        </div>
+      </div>
+    </Link>
   );
 }
