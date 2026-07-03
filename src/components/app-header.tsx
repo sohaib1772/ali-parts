@@ -6,27 +6,48 @@ import { useSetting } from "@/lib/admin";
 
 export function AppHeader({ title }: { title?: string }) {
   const [count, setCount] = useState(0);
+  const [unread, setUnread] = useState(0);
   const storeName = useSetting("store_name", "Ali Parts");
   const storeTagline = useSetting("store_tagline", "قطع أصلية · العراق");
   const storeLogo = useSetting("store_logo", "");
   useEffect(() => {
     let mounted = true;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
     const load = async (userId?: string | null) => {
       let uid = userId;
       if (uid === undefined) {
         const { data } = await supabase.auth.getSession();
         uid = data.session?.user.id ?? null;
       }
-      if (!uid) { if (mounted) setCount(0); return; }
+      if (!uid) { if (mounted) { setCount(0); setUnread(0); } return; }
       const { count } = await supabase
         .from("cart_items")
         .select("*", { count: "exact", head: true })
         .eq("user_id", uid);
       if (mounted) setCount(count ?? 0);
+      const { count: nCount } = await (supabase as any)
+        .from("notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", uid)
+        .is("read_at", null);
+      if (mounted) setUnread(nCount ?? 0);
+      if (channel) supabase.removeChannel(channel);
+      channel = supabase
+        .channel(`notif-badge-${uid}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${uid}` },
+          () => load(uid),
+        )
+        .subscribe();
     };
     load();
     const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => load(session?.user.id ?? null));
-    return () => { mounted = false; sub.subscription.unsubscribe(); };
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   return (
@@ -51,8 +72,13 @@ export function AppHeader({ title }: { title?: string }) {
           <Link to="/search" aria-label="بحث" className="size-10 rounded-full grid place-items-center hover:bg-white/10 transition">
             <Search className="size-5" />
           </Link>
-          <Link to="/notifications" aria-label="الإشعارات" className="size-10 rounded-full grid place-items-center hover:bg-white/10 transition">
+          <Link to="/notifications" aria-label="الإشعارات" className="relative size-10 rounded-full grid place-items-center hover:bg-white/10 transition">
             <Bell className="size-5" />
+            {unread > 0 && (
+              <span className="absolute -top-0.5 -start-0.5 min-w-5 h-5 px-1 rounded-full bg-gold text-navy text-[10px] font-bold grid place-items-center">
+                {unread > 99 ? "99+" : unread}
+              </span>
+            )}
           </Link>
           <Link to="/cart" aria-label="السلة" className="relative size-10 rounded-full grid place-items-center hover:bg-white/10 transition">
             <ShoppingCart className="size-5" />
