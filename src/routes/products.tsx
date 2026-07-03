@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Flame, ChevronLeft } from "lucide-react";
+import { Flame, ChevronLeft, Search as SearchIcon } from "lucide-react";
+import { useMemo, useState } from "react";
 import { PageShell } from "@/components/page-shell";
 import { ProductCard } from "@/components/product-card";
 import { bestSellersQuery } from "@/lib/queries";
@@ -18,6 +19,16 @@ export const Route = createFileRoute("/products")({
 
 function AllProductsPage() {
   const { data: products } = useSuspenseQuery(bestSellersQuery());
+  const [q, setQ] = useState("");
+  const filtered = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    if (!s) return products;
+    return products.filter((p: any) =>
+      [p.name_ar, p.name_en, p.oem_number, p.brand]
+        .filter(Boolean)
+        .some((v: string) => String(v).toLowerCase().includes(s)),
+    );
+  }, [products, q]);
 
   return (
     <PageShell title="الأكثر مبيعاً">
@@ -31,17 +42,27 @@ function AllProductsPage() {
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-base font-extrabold leading-tight">الأكثر مبيعاً</h1>
-            <p className="text-[11px] text-muted-foreground">جميع المنتجات المتوفرة ({products.length})</p>
+            <p className="text-[11px] text-muted-foreground">جميع المنتجات المتوفرة ({filtered.length}/{products.length})</p>
           </div>
         </div>
 
-        {products.length === 0 ? (
+        <label className="flex items-center gap-2 bg-card border border-border rounded-2xl px-4 py-3 shadow-card focus-within:border-gold mb-4">
+          <SearchIcon className="size-5 text-muted-foreground" />
+          <input
+            placeholder="ابحث داخل هذه القائمة…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className="flex-1 bg-transparent outline-none text-sm"
+          />
+        </label>
+
+        {filtered.length === 0 ? (
           <div className="text-center text-muted-foreground text-sm py-16">
-            لا توجد منتجات حالياً.
+            {q.trim() ? "لا توجد نتائج مطابقة." : "لا توجد منتجات حالياً."}
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 pb-8">
-            {products.map((p) => (
+            {filtered.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
           </div>
