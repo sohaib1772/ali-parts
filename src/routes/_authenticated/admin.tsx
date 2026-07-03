@@ -21,7 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote } from "lucide-react";
 import { WhatsappIcon } from "@/components/icons";
 import { formatIQD, whatsappLink } from "@/lib/format";
 import { statusLabel, statusColor } from "@/lib/order-status";
@@ -628,7 +628,7 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
     queryFn: async () => {
       const { data, error } = await supabase
         .from("order_items")
-        .select("id,name_ar,oem_number,image_url,unit_price_iqd,quantity,side")
+        .select("id,name_ar,oem_number,image_url,unit_price_iqd,quantity,side,note")
         .eq("order_id", o.id);
       if (error) throw error;
       return data ?? [];
@@ -698,9 +698,24 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
                   <span className="text-muted-foreground">×{it.quantity}</span>
                   <span className="font-bold">{formatIQD(Number(it.unit_price_iqd) * it.quantity)}</span>
                 </div>
+                {it.note && (
+                  <div className="mt-1 flex items-start gap-1 text-[10px] text-muted-foreground bg-gold/5 border border-gold/20 rounded p-1.5">
+                    <StickyNote className="size-3 text-gold shrink-0 mt-0.5" />
+                    <span className="whitespace-pre-wrap">{it.note}</span>
+                  </div>
+                )}
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {o.notes && (
+        <div className="rounded-xl border border-gold/30 bg-gold/5 p-3">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-gold mb-1">
+            <StickyNote className="size-3.5" /> ملاحظة الزبون على الطلب
+          </div>
+          <div className="text-sm whitespace-pre-wrap">{o.notes}</div>
         </div>
       )}
 

@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, StickyNote } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { PageShell } from "@/components/page-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { formatIQD } from "@/lib/format";
@@ -28,6 +29,12 @@ function CartPage() {
   const remove = async (id: string) => {
     await supabase.from("cart_items").delete().eq("id", id);
     toast.success("أزيل من السلة");
+    qc.invalidateQueries({ queryKey: ["cart"] });
+  };
+
+  const saveNote = async (id: string, note: string) => {
+    const value = note.trim() || null;
+    await supabase.from("cart_items").update({ note: value }).eq("id", id);
     qc.invalidateQueries({ queryKey: ["cart"] });
   };
 
@@ -117,6 +124,7 @@ function CartPage() {
                 </div>
                 <button onClick={() => remove(it.id)} className="ms-auto size-8 grid place-items-center text-destructive"><Trash2 className="size-4" /></button>
               </div>
+              <ItemNote initial={it.note ?? ""} onSave={(v) => saveNote(it.id, v)} />
             </div>
           </div>
         ))}
@@ -135,5 +143,47 @@ function CartPage() {
         </button>
       </div>
     </PageShell>
+  );
+}
+
+function ItemNote({ initial, onSave }: { initial: string; onSave: (v: string) => void | Promise<void> }) {
+  const [open, setOpen] = useState(!!initial);
+  const [value, setValue] = useState(initial);
+  const original = useRef(initial);
+  useEffect(() => {
+    setValue(initial);
+    original.current = initial;
+  }, [initial]);
+  const commit = () => {
+    if (value === original.current) return;
+    original.current = value;
+    onSave(value);
+  };
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-2 inline-flex items-center gap-1 text-[11px] text-gold font-bold"
+      >
+        <StickyNote className="size-3.5" /> إضافة ملاحظة
+      </button>
+    );
+  }
+  return (
+    <div className="mt-2">
+      <div className="flex items-center gap-1 text-[11px] text-muted-foreground mb-1">
+        <StickyNote className="size-3.5 text-gold" /> ملاحظة لهذا المنتج
+      </div>
+      <textarea
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={commit}
+        rows={2}
+        maxLength={300}
+        placeholder="لون، مقاس، تفاصيل إضافية..."
+        className="w-full rounded-lg border border-border bg-background p-2 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-gold"
+      />
+    </div>
   );
 }

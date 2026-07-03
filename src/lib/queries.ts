@@ -130,7 +130,7 @@ export const cartQuery = (userId: string | null) =>
       if (!userId) return [];
       const { data, error } = await supabase
         .from("cart_items")
-        .select("id, quantity, side, product:products(*)")
+        .select("id, quantity, side, note, product_id, product:products(*)")
         .eq("user_id", userId);
       if (error) throw error;
       return data ?? [];
