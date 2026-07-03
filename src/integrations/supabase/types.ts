@@ -76,6 +76,7 @@ export type Database = {
       }
       banners: {
         Row: {
+          expires_at: string | null
           id: string
           image_url: string
           is_active: boolean
@@ -85,6 +86,7 @@ export type Database = {
           title_ar: string | null
         }
         Insert: {
+          expires_at?: string | null
           id?: string
           image_url: string
           is_active?: boolean
@@ -94,6 +96,7 @@ export type Database = {
           title_ar?: string | null
         }
         Update: {
+          expires_at?: string | null
           id?: string
           image_url?: string
           is_active?: boolean
