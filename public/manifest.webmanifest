@@ -1,7 +1,7 @@
 {
-  "name": "Ali Parts — قطع غيار السيارات",
-  "short_name": "Ali Parts",
-  "description": "متجر Ali Parts لقطع غيار شفروليه GMC وكاديلاك الأصلية في العراق",
+  "name": "مكتب علي شوفرليت — قطع غيار السيارات",
+  "short_name": "علي شوفرليت",
+  "description": "مكتب علي شوفرليت لقطع غيار شفروليه GMC وكاديلاك الأصلية في العراق",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

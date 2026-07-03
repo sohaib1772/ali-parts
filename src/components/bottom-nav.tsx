@@ -49,7 +49,7 @@ export function BottomNav() {
               const body = pts > 0
                 ? `تم تسليم طلبك 🎉 وربحت ${pts} نقطة`
                 : `تم تسليم طلبك 🎉`;
-              const n = new Notification("Ali Parts — تم التسليم", {
+              const n = new Notification("علي شوفرليت — تم التسليم", {
                 body,
                 icon: "/icon-192.png",
                 badge: "/icon-192.png",
