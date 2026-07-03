@@ -38,8 +38,9 @@ export function AppHeader({ title }: { title?: string }) {
       if (channel) { supabase.removeChannel(channel); channel = null; }
       if (!uid) { if (mounted) { setCount(0); setUnread(0); } return; }
       refreshCounts(uid);
+      const channelName = `notif-badge-${uid}-${crypto.randomUUID()}`;
       channel = supabase
-        .channel(`notif-badge-${uid}`)
+        .channel(channelName)
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${uid}` },

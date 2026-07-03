@@ -759,28 +759,32 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
     },
   });
   const qcCard = useQueryClient();
+  const [blockSaving, setBlockSaving] = useState(false);
   const isBlocked = !!(customer as any)?.is_blocked;
   const toggleBlock = async () => {
-    if (!o.user_id) return;
+    if (!o.user_id || blockSaving) return;
     const next = !isBlocked;
-    let reason: string | undefined = undefined;
+    const defaultReason = "تم حظر حسابك لأنك قمت بإرسال أكثر من طلب وهمي. يرجى التواصل مع قسم المبيعات.";
+    let reason: string | undefined = next ? defaultReason : undefined;
     if (next) {
-      const defaultReason = "تم حظر حسابك لأنك قمت بإرسال أكثر من طلب وهمي. يرجى التواصل مع قسم المبيعات.";
-      const input = window.prompt("سبب الحظر (سيصل كإشعار للزبون):", defaultReason);
-      if (input === null) return;
-      reason = input.trim() || defaultReason;
+      if (!window.confirm("حظر هذا الزبون من إرسال طلبات جديدة؟")) return;
     } else {
       if (!window.confirm("رفع الحظر عن هذا الزبون؟")) return;
     }
-    const { error } = await supabase.rpc("admin_set_user_blocked", {
-      p_user_id: o.user_id,
-      p_blocked: next,
-      p_reason: reason,
-    });
-    if (error) { toast.error(error.message || "تعذّر تحديث الحالة"); return; }
-    toast.success(next ? "تم حظر الزبون وإرسال الإشعار" : "تم رفع الحظر");
-    qcCard.invalidateQueries({ queryKey: ["admin", "order-customer", o.user_id] });
-    qcCard.invalidateQueries({ queryKey: ["admin", "block-log"] });
+    setBlockSaving(true);
+    try {
+      const { error } = await supabase.rpc("admin_set_user_blocked", {
+        p_user_id: o.user_id,
+        p_blocked: next,
+        p_reason: reason,
+      });
+      if (error) { toast.error(error.message || "تعذّر تحديث الحالة"); return; }
+      toast.success(next ? "تم حظر الزبون وإرسال الإشعار" : "تم رفع الحظر");
+      qcCard.invalidateQueries({ queryKey: ["admin", "order-customer", o.user_id] });
+      qcCard.invalidateQueries({ queryKey: ["admin", "block-log"] });
+    } finally {
+      setBlockSaving(false);
+    }
   };
   const addressRows = [
     { key: "label", label: "التسمية", value: addr.label || "—" },
@@ -897,13 +901,14 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
       {o.user_id && (
         <button
           onClick={toggleBlock}
+          disabled={blockSaving}
           className={`w-full h-10 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition ${
             isBlocked
               ? "border-success/40 text-success bg-success/5 hover:bg-success/10"
               : "border-destructive/40 text-destructive bg-destructive/5 hover:bg-destructive/10"
-          }`}
+          } disabled:opacity-60 disabled:cursor-not-allowed`}
         >
-          {isBlocked ? (<><CheckCircle2 className="size-4" /> رفع الحظر عن الزبون</>) : (<><Ban className="size-4" /> حظر الزبون من الطلبات</>)}
+          {blockSaving ? "جاري التحديث…" : isBlocked ? (<><CheckCircle2 className="size-4" /> رفع الحظر عن الزبون</>) : (<><Ban className="size-4" /> حظر الزبون من الطلبات</>)}
         </button>
       )}
     </div>
