@@ -719,7 +719,7 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
                 <div className="flex flex-wrap items-center gap-1.5 mt-1">
                   {it.side && (
                     <span className="inline-flex items-center rounded-full bg-navy text-primary-foreground px-2 py-0.5 text-[10px] font-black">
-                      {it.side === "LH" ? "LH · يسار" : "RH · يمين"}
+                      {it.side === "LH" ? "LH · يسار" : it.side === "RH" ? "RH · يمين" : "تخم"}
                     </span>
                   )}
                   {it.oem_number && (
