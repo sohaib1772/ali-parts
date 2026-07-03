@@ -29,6 +29,76 @@ import { PrintableInvoice, InvoicePreviewDialog } from "@/components/printable-i
 
 const STATUSES = ["received", "preparing", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"] as const;
 
+/* ---------------- Block Log ---------------- */
+
+function BlockLogAdmin() {
+  const { data: entries = [], isLoading } = useQuery({
+    queryKey: ["admin", "block-log"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_block_log")
+        .select("id, user_id, actor_id, action, created_at")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const ids = Array.from(new Set(entries.flatMap((e: any) => [e.user_id, e.actor_id]).filter(Boolean)));
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["admin", "block-log-profiles", ids],
+    enabled: ids.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("id, full_name, phone").in("id", ids);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const nameMap = new Map((profiles as any[]).map((p) => [p.id, p]));
+
+  const fmt = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleString("ar-IQ", { dateStyle: "medium", timeStyle: "short" });
+    } catch { return iso; }
+  };
+  const nameOf = (id: string | null) => {
+    if (!id) return "—";
+    const p: any = nameMap.get(id);
+    return p?.full_name || p?.phone || id.slice(0, 8);
+  };
+
+  if (isLoading) return <div className="text-center text-sm text-muted-foreground py-8">جاري التحميل…</div>;
+  if (!entries.length) return <div className="text-center text-sm text-muted-foreground py-8">لا توجد سجلات بعد</div>;
+
+  return (
+    <div className="space-y-2">
+      {entries.map((e: any) => {
+        const isBlock = e.action === "block";
+        return (
+          <div key={e.id} className="bg-card border border-border rounded-2xl p-3 flex items-start gap-3">
+            <div className={`size-9 rounded-full grid place-items-center shrink-0 ${isBlock ? "bg-destructive/10 text-destructive" : "bg-success/10 text-success"}`}>
+              {isBlock ? <Ban className="size-4" /> : <CheckCircle2 className="size-4" />}
+            </div>
+            <div className="flex-1 min-w-0 text-sm">
+              <div className="font-bold">
+                {isBlock ? "حظر زبون" : "رفع الحظر عن زبون"}
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                الزبون: <span className="font-semibold text-foreground">{nameOf(e.user_id)}</span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                بواسطة: <span className="font-semibold text-foreground">{nameOf(e.actor_id)}</span>
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-1">{fmt(e.created_at)}</div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
