@@ -51,7 +51,7 @@ function CheckoutPage() {
         },
         p_payment: payment,
         p_points_used: parsedPoints,
-        p_notes: orderNote.trim() || null,
+        p_notes: orderNote.trim() || "",
       });
       if (error || !orderId) throw error;
 
