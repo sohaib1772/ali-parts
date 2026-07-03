@@ -21,7 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote, Receipt } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote, Receipt, Search as SearchIcon } from "lucide-react";
 import { WhatsappIcon } from "@/components/icons";
 import { formatIQD, whatsappLink } from "@/lib/format";
 import { statusLabel, statusColor } from "@/lib/order-status";
@@ -165,6 +165,7 @@ function ProductsAdmin() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<ProductForm>(emptyProduct);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["admin", "products"],
@@ -174,6 +175,15 @@ function ProductsAdmin() {
       return data ?? [];
     },
   });
+  const filteredProducts = (() => {
+    const s = search.trim().toLowerCase();
+    if (!s) return products;
+    return products.filter((p: any) =>
+      [p.name_ar, p.name_en, p.oem_number]
+        .filter(Boolean)
+        .some((v: string) => String(v).toLowerCase().includes(s)),
+    );
+  })();
   const { data: categories = [] } = useQuery(categoriesQuery());
   const { data: brands = [] } = useQuery(brandsQuery());
   const { data: carModels = [] } = useQuery(carModelsQuery());
@@ -254,17 +264,27 @@ function ProductsAdmin() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">{products.length} منتج</div>
+        <div className="text-sm text-muted-foreground">{search ? `${filteredProducts.length}/${products.length}` : products.length} منتج</div>
         <Button size="sm" onClick={openNew}><Plus className="size-4 me-1" /> إضافة منتج</Button>
       </div>
 
+      <label className="flex items-center gap-2 bg-card border border-border rounded-xl px-3 py-2 focus-within:border-gold">
+        <SearchIcon className="size-4 text-muted-foreground" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="ابحث بالاسم أو رقم OEM…"
+          className="flex-1 bg-transparent outline-none text-sm"
+        />
+      </label>
+
       {isLoading ? (
         <div className="text-center text-sm text-muted-foreground py-8">جاري التحميل...</div>
-      ) : products.length === 0 ? (
+      ) : filteredProducts.length === 0 ? (
         <div className="text-center text-sm text-muted-foreground py-8">لا توجد منتجات بعد</div>
       ) : (
         <div className="space-y-2">
-          {products.map((p: any) => (
+          {filteredProducts.map((p: any) => (
             <div key={p.id} className="bg-card border border-border rounded-2xl p-3 flex gap-3 items-center">
               <div className="size-14 rounded-xl bg-muted overflow-hidden shrink-0">
                 {p.images?.[0] && <img src={p.images[0]} alt="" className="size-full object-cover" />}
