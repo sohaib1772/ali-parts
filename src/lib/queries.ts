@@ -24,7 +24,7 @@ export type Product = {
 export type Category = { id: string; name_ar: string; name_en: string; icon: string | null; image_url: string | null; sort_order: number | null };
 export type Brand = { id: string; name_ar: string; name_en: string; logo_url: string | null };
 export type CarModel = { id: string; brand_id: string | null; name_ar: string; name_en: string };
-export type Banner = { id: string; title_ar: string | null; subtitle_ar: string | null; image_url: string; link: string | null };
+export type Banner = { id: string; title_ar: string | null; subtitle_ar: string | null; image_url: string; link: string | null; expires_at?: string | null };
 
 export const categoriesQuery = () =>
   queryOptions({
@@ -62,7 +62,8 @@ export const bannersQuery = () =>
     queryFn: async () => {
       const { data, error } = await supabase.from("banners").select("*").eq("is_active", true).order("sort_order");
       if (error) throw error;
-      return (data ?? []) as Banner[];
+      const now = Date.now();
+      return ((data ?? []) as Banner[]).filter((b) => !b.expires_at || new Date(b.expires_at).getTime() > now);
     },
   });
 
