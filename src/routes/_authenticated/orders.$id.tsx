@@ -125,7 +125,14 @@ function OrderDetail() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-bold line-clamp-1">{it.name_ar}</div>
-                  <div className="text-xs text-muted-foreground">× {it.quantity}</div>
+                  <div className="text-xs text-muted-foreground flex items-center gap-2">
+                    <span>× {it.quantity}</span>
+                    {(it as any).side && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-navy text-primary-foreground text-[10px] font-black">
+                        {(it as any).side === "LH" ? "LH · يسار" : "RH · يمين"}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="text-sm font-bold self-center">{formatIQD(Number(it.unit_price_iqd) * it.quantity)}</div>
               </div>
