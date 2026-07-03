@@ -62,6 +62,7 @@ function CheckoutPage() {
         name_ar: i.product?.name_ar ?? "", oem_number: i.product?.oem_number ?? null,
         image_url: i.product?.images?.[0] ?? null,
         unit_price_iqd: Number(i.product?.price_iqd ?? 0), quantity: i.quantity,
+        side: i.side ?? null,
       }));
       await supabase.from("order_items").insert(orderItems);
       await supabase.from("cart_items").delete().eq("user_id", userId!);
