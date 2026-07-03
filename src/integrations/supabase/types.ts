@@ -496,6 +496,7 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          is_blocked: boolean
           phone: string | null
           points_balance: number
         }
@@ -504,6 +505,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
+          is_blocked?: boolean
           phone?: string | null
           points_balance?: number
         }
@@ -512,6 +514,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          is_blocked?: boolean
           phone?: string | null
           points_balance?: number
         }
