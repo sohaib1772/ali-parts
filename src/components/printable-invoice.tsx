@@ -133,8 +133,8 @@ function TotalRow({ label, value }: { label: string; value: string }) {
 export async function downloadInvoicePdf(elementId: string, filename: string) {
   const source = document.getElementById(elementId);
   if (!source) return;
-  const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
-    import("html2canvas"),
+  const [{ toPng }, { jsPDF }] = await Promise.all([
+    import("html-to-image"),
     import("jspdf"),
   ]);
   const frame = document.createElement("iframe");
@@ -183,26 +183,21 @@ export async function downloadInvoicePdf(elementId: string, filename: string) {
   try {
     await frameDoc.fonts?.ready;
     await new Promise((r) => requestAnimationFrame(() => r(null)));
-    const canvas = await html2canvas(captureNode, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
+    const captureWidth = captureNode.scrollWidth || 820;
+    const captureHeight = captureNode.scrollHeight || 1123;
+    const imgData = await toPng(captureNode, {
       backgroundColor: "#ffffff",
-      width: captureNode.scrollWidth,
-      height: captureNode.scrollHeight,
-      windowWidth: 900,
-      windowHeight: Math.max(1300, captureNode.scrollHeight + 80),
-      scrollX: 0,
-      scrollY: 0,
-      logging: false,
+      cacheBust: true,
+      pixelRatio: 2,
+      width: captureWidth,
+      height: captureHeight,
     });
-    const imgData = canvas.toDataURL("image/png");
     const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
     const pageW = pdf.internal.pageSize.getWidth();
     const pageH = pdf.internal.pageSize.getHeight();
     const margin = 8;
     const imgW = pageW - margin * 2;
-    const imgH = (canvas.height * imgW) / canvas.width;
+    const imgH = (captureHeight * imgW) / captureWidth;
     let heightLeft = imgH;
     let position = margin;
     pdf.addImage(imgData, "PNG", margin, position, imgW, imgH);
