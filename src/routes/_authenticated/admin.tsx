@@ -21,11 +21,11 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote, Printer, FileDown } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote, Receipt } from "lucide-react";
 import { WhatsappIcon } from "@/components/icons";
 import { formatIQD, whatsappLink } from "@/lib/format";
 import { statusLabel, statusColor } from "@/lib/order-status";
-import { PrintableInvoice, downloadInvoicePdf } from "@/components/printable-invoice";
+import { PrintableInvoice, InvoicePreviewDialog } from "@/components/printable-invoice";
 
 const STATUSES = ["received", "preparing", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"] as const;
 
@@ -770,52 +770,25 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
 }
 
 function InvoiceActions({ order, items }: { order: any; items: any[] }) {
-  const [busy, setBusy] = useState(false);
+  const [open, setOpen] = useState(false);
   const domId = `admin-invoice-${order.id}`;
-  const handlePdf = async () => {
-    setBusy(true);
-    try {
-      await downloadInvoicePdf(domId, `invoice-${order.order_number ?? order.id}.pdf`);
-    } catch {
-      toast.error("تعذّر توليد ملف PDF");
-    } finally {
-      setBusy(false);
-    }
-  };
-  const handlePrint = () => {
-    const el = document.getElementById(domId);
-    if (!el) return;
-    el.classList.add("pdf-capture");
-    // Add a stable id used by @media print to reveal only this invoice
-    const prev = document.body.dataset.printInvoiceId;
-    document.body.dataset.printInvoiceId = domId;
-    setTimeout(() => {
-      window.print();
-      setTimeout(() => {
-        el.classList.remove("pdf-capture");
-        if (prev) document.body.dataset.printInvoiceId = prev;
-        else delete document.body.dataset.printInvoiceId;
-      }, 300);
-    }, 50);
-  };
+  const previewId = `admin-invoice-preview-${order.id}`;
   return (
     <>
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          onClick={handlePrint}
-          className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-gradient-gold text-navy text-xs font-bold shadow-gold"
-        >
-          <Printer className="size-4" /> طباعة
-        </button>
-        <button
-          onClick={handlePdf}
-          disabled={busy}
-          className="flex items-center justify-center gap-1.5 h-9 rounded-lg border border-navy/20 bg-navy text-primary-foreground text-xs font-bold disabled:opacity-50"
-        >
-          <FileDown className="size-4" /> {busy ? "جاري..." : "تنزيل PDF"}
-        </button>
-      </div>
+      <button
+        onClick={() => setOpen(true)}
+        className="w-full flex items-center justify-center gap-1.5 h-9 rounded-lg bg-gradient-gold text-navy text-xs font-bold shadow-gold"
+      >
+        <Receipt className="size-4" /> معاينة الفاتورة
+      </button>
       <PrintableInvoice order={order} items={items} domId={domId} />
+      <InvoicePreviewDialog
+        order={order}
+        items={items}
+        open={open}
+        onOpenChange={setOpen}
+        domId={previewId}
+      />
     </>
   );
 }
