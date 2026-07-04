@@ -348,6 +348,8 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
       const body = text.trim();
       if (!body) throw new Error("empty");
       if (!userId) throw new Error("auth");
+      const { containsProfanity } = await import("@/lib/profanity");
+      if (containsProfanity(body)) throw new Error("profanity");
       if (editingId) {
         const { error } = await supabase
           .from("banner_comments")
@@ -373,6 +375,8 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
     },
     onError: (e: Error) => {
       if (e.message === "auth") toast.error("سجّل الدخول لكتابة تعليق");
+      else if (e.message === "profanity")
+        toast.error("تعليقك يحتوي كلمات مسيئة. يرجى الالتزام بالاحترام.");
       else if (e.message !== "empty") toast.error("تعذر الإرسال");
     },
   });
