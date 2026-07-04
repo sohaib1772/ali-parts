@@ -115,6 +115,24 @@ function ReelItem({ banner, onOpenComments }: { banner: Banner; onOpenComments: 
   const likes = useLikes(banner.id, userId);
   const commentsCount = useCommentsCount(banner.id);
 
+  const lastTapRef = useRef<number>(0);
+  const [burst, setBurst] = useState(0);
+  const handleMediaTap = () => {
+    const now = Date.now();
+    if (now - lastTapRef.current < 300) {
+      lastTapRef.current = 0;
+      if (!likes.liked && !likes.pending) likes.toggle();
+      setBurst((b) => b + 1);
+    } else {
+      lastTapRef.current = now;
+      const el = videoRef.current;
+      if (el) {
+        if (el.paused) el.play().catch(() => {});
+        else el.pause();
+      }
+    }
+  };
+
   return (
     <div
       ref={containerRef}
@@ -131,15 +149,23 @@ function ReelItem({ banner, onOpenComments }: { banner: Banner; onOpenComments: 
           playsInline
           preload="metadata"
           className="absolute inset-0 w-full h-full object-contain"
-          onClick={() => {
-            const el = videoRef.current;
-            if (!el) return;
-            if (el.paused) el.play().catch(() => {});
-            else el.pause();
-          }}
+          onClick={handleMediaTap}
         />
       ) : (
-        <img src={banner.image_url} alt={banner.title_ar ?? ""} className="absolute inset-0 w-full h-full object-contain" />
+        <img
+          src={banner.image_url}
+          alt={banner.title_ar ?? ""}
+          className="absolute inset-0 w-full h-full object-contain"
+          onClick={handleMediaTap}
+        />
+      )}
+
+      {/* double-tap heart burst */}
+      {burst > 0 && (
+        <Heart
+          key={burst}
+          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 size-32 text-red-500 fill-current drop-shadow-2xl animate-[likePop_700ms_ease-out_forwards] z-30"
+        />
       )}
 
       {/* gradient */}
