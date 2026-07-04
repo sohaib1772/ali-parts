@@ -17,7 +17,7 @@ export const analyzeProductImage = createServerFn({ method: "POST" })
       { auth: { persistSession: false, autoRefreshToken: false } },
     );
     const [{ data: products }, { data: cats }] = await Promise.all([
-      sb.from("products").select("id, name_ar, name_en, oem_number, category_id, brand_id, compatible_models").limit(1000),
+      sb.from("products").select("id, name_ar, name_en, oem_number, category_id").limit(500),
       sb.from("categories").select("id, name_ar"),
     ]);
     const catMap = new Map((cats ?? []).map((c) => [c.id, c.name_ar]));
@@ -38,7 +38,7 @@ export const analyzeProductImage = createServerFn({ method: "POST" })
         "Lovable-API-Key": key,
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+        model: "google/gemini-2.5-flash",
         messages: [
           {
             role: "system",

@@ -5,6 +5,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { ArrowRight, Loader2, Phone, Lock, User as UserIcon, Sparkles } from "lucide-react";
 import { useSetting } from "@/lib/admin";
+import { whatsappLink } from "@/lib/format";
 
 function normalizePhone(raw: string): string | null {
   const digits = raw.replace(/\D/g, "");
@@ -37,6 +38,7 @@ function AuthPage() {
   const storeName = useSetting("store_name", "Ali Parts");
   const storeTagline = useSetting("store_tagline", "قطع أصلية · العراق");
   const storeLogo = useSetting("store_logo", "");
+  const whatsappNumber = useSetting("whatsapp_number");
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -202,6 +204,20 @@ function AuthPage() {
               value={password}
               onChange={setPassword}
             />
+
+            {mode === "login" && (
+              <a
+                href={whatsappLink(
+                  `السلام عليكم، نسيت كلمة المرور لحسابي في المتجر.\nرقم هاتفي: ${phone || "(الرجاء تدوين رقمك)"}\nأرجو المساعدة بإعادة تعيينها.`,
+                  whatsappNumber,
+                )}
+                target="_blank"
+                rel="noreferrer"
+                className="block text-center text-xs text-gold/90 hover:text-gold font-body-lux -mt-1"
+              >
+                نسيت كلمة المرور؟ تواصل معنا عبر واتساب
+              </a>
+            )}
 
             <button
               type="submit"
