@@ -25,8 +25,8 @@ function phoneToEmail(phone: string) {
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "تسجيل الدخول — مكتب علي شوفرليت" },
-      { name: "description", content: "سجّل الدخول أو أنشئ حسابك في مكتب علي شوفرليت للاستفادة من كل الميزات." },
+      { title: "تسجيل الدخول — Ali Parts" },
+      { name: "description", content: "سجّل الدخول أو أنشئ حسابك في Ali Parts للاستفادة من كل الميزات." },
     ],
   }),
   component: AuthPage,
@@ -34,7 +34,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const storeName = useSetting("store_name", "مكتب علي شوفرليت");
+  const storeName = useSetting("store_name", "Ali Parts");
   const storeTagline = useSetting("store_tagline", "قطع أصلية · العراق");
   const storeLogo = useSetting("store_logo", "");
   const [mode, setMode] = useState<"login" | "signup">("login");

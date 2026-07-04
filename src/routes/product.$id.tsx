@@ -16,7 +16,7 @@ export const Route = createFileRoute("/product/$id")({
     await context.queryClient.ensureQueryData(productByIdQuery(params.id)).catch(() => { throw notFound(); });
   },
   head: ({ params }) => ({
-    meta: [{ title: `المنتج · مكتب علي شوفرليت` }, { name: "description", content: `تفاصيل المنتج ${params.id}` }],
+    meta: [{ title: `المنتج · Ali Parts` }, { name: "description", content: `تفاصيل المنتج ${params.id}` }],
   }),
   component: ProductPage,
   errorComponent: ({ reset }) => {

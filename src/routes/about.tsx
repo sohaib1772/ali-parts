@@ -5,13 +5,13 @@ import { useSetting } from "@/lib/admin";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
-    meta: [{ title: "من نحن — مكتب علي شوفرليت" }, { name: "description", content: "تعرّف على مكتب علي شوفرليت، وجهتك الأولى لقطع غيار السيارات الأصلية في العراق." }],
+    meta: [{ title: "من نحن — Ali Parts" }, { name: "description", content: "تعرّف على Ali Parts، وجهتك الأولى لقطع غيار السيارات الأصلية في العراق." }],
   }),
   component: AboutPage,
 });
 
 function AboutPage() {
-  const storeName = useSetting("store_name", "مكتب علي شوفرليت");
+  const storeName = useSetting("store_name", "Ali Parts");
   const aboutText = useSetting(
     "store_about",
     "متجر متخصص في بيع قطع غيار سيارات شفروليه، GMC، وكاديلاك الأصلية داخل العراق. نلتزم بتوفير قطع عالية الجودة مع خدمة عملاء متميزة وتوصيل سريع.",

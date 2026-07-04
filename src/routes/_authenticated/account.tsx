@@ -50,7 +50,7 @@ function AccountPage() {
               {(profile?.full_name?.[0] ?? user?.email?.[0] ?? "?").toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-extrabold text-lg truncate">{profile?.full_name ?? "عميل علي شوفرليت"}</div>
+              <div className="font-extrabold text-lg truncate">{profile?.full_name ?? "عميل Ali Parts"}</div>
               <div className="text-xs text-gold truncate">{user?.email}</div>
               {profile?.phone && <div className="text-xs text-primary-foreground/70">{profile.phone}</div>}
             </div>
