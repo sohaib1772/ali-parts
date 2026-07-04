@@ -73,7 +73,7 @@ export function filterProductsByVehicle(products: Product[], vehicle: Vehicle | 
   });
 }
 
-export function VehiclePicker({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+export function VehiclePicker({ open, onOpenChange, mandatory }: { open: boolean; onOpenChange: (v: boolean) => void; mandatory?: boolean }) {
   const { data: brands = [] } = useQuery(brandsQuery());
   const { data: allModels = [] } = useQuery(carModelsQuery());
 
@@ -130,12 +130,28 @@ export function VehiclePicker({ open, onOpenChange }: { open: boolean; onOpenCha
     { n: 4, label: "المحرك" },
   ];
 
+  const handleOpenChange = (v: boolean) => {
+    if (mandatory && !v && !getSavedVehicle()) return;
+    onOpenChange(v);
+  };
+
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="rounded-t-3xl max-h-[92vh] overflow-y-auto p-0">
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      <SheetContent
+        side="bottom"
+        className={`rounded-t-3xl max-h-[92vh] overflow-y-auto p-0 ${mandatory ? "[&>button.absolute]:hidden" : ""}`}
+        onEscapeKeyDown={mandatory ? (e) => e.preventDefault() : undefined}
+        onPointerDownOutside={mandatory ? (e) => e.preventDefault() : undefined}
+        onInteractOutside={mandatory ? (e) => e.preventDefault() : undefined}
+      >
         <SheetHeader className="px-5 pt-5 pb-2">
           <SheetTitle className="text-center">اختيار المركبة</SheetTitle>
         </SheetHeader>
+        {mandatory && (
+          <div className="px-5 -mt-1 text-center text-[11px] text-muted-foreground">
+            اختيار المركبة مطلوب لعرض القطع المتوافقة
+          </div>
+        )}
 
         {/* stepper */}
         <div className="px-5 pt-3 pb-4 flex items-center justify-between" dir="rtl">
