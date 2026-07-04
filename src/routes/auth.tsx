@@ -150,24 +150,6 @@ function AuthPage() {
           {/* Top golden shine line */}
           <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gold/70 to-transparent" />
 
-          {/* Logo / Brand */}
-          <div className="flex flex-col items-center mb-10">
-            <div className="relative mb-6">
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-amber-500 to-amber-200 rotate-45 opacity-40 blur-2xl scale-110" />
-              <div className="relative size-28 rounded-3xl bg-gradient-to-br from-[#1e293b] to-[#0f172a] border-2 border-gold/40 flex items-center justify-center shadow-[0_0_50px_rgba(201,162,39,0.25)]">
-                {storeLogo ? (
-                  <img src={storeLogo} alt={storeName} className="max-h-20 max-w-20 object-contain" />
-                ) : (
-                  <span className="font-luxury text-5xl font-bold text-gold drop-shadow-[0_0_12px_rgba(201,162,39,0.5)]">{storeName.charAt(0).toUpperCase()}</span>
-                )}
-              </div>
-            </div>
-            <h1 className="font-luxury text-4xl font-bold tracking-tight text-center mb-1">
-              {storeName}
-            </h1>
-            <p className="font-body-lux text-sm text-gold/80 text-center mt-1">{storeTagline}</p>
-          </div>
-
           {/* Headline */}
           <div className="text-center mb-8">
             <h2 className="font-luxury text-2xl font-semibold mb-2">
