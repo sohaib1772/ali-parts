@@ -1,15 +1,11 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { settingsQuery } from "@/lib/admin";
 
 const SESSION_KEY = "alsaaer_splash_shown";
+const STORE_NAME = "مكتب علي شوفرليت";
+const STORE_TAGLINE = "قطع أصلية · العراق";
+const STORE_LOGO = "/icon-512.png";
 
 export function SplashScreen() {
-  const { data: settings } = useQuery(settingsQuery());
-  const storeName = settings?.store_name ?? "Ali Parts";
-  const storeTagline = settings?.store_tagline ?? "قطع أصلية · العراق";
-  const storeLogo = settings?.store_logo ?? "";
-
   // Always render the splash during SSR + first client paint so the app
   // never flashes behind it. We decide whether to keep it visible in a
   // client-only effect (after hydration) to avoid hydration mismatches.
@@ -59,23 +55,17 @@ export function SplashScreen() {
           <div className="absolute inset-0 -m-3 rounded-[2rem] border border-gold/25" />
           <div className="absolute inset-0 -m-6 rounded-[2.5rem] border border-gold/10" />
           <div className="relative size-40 rounded-[1.75rem] bg-gradient-to-br from-[#1e293b] to-[#0f172a] border-2 border-gold/40 flex items-center justify-center shadow-[0_0_80px_rgba(201,162,39,0.35)] overflow-hidden">
-            {storeLogo ? (
-              <img src={storeLogo} alt={storeName} className="max-h-28 max-w-28 object-contain drop-shadow-[0_0_20px_rgba(201,162,39,0.35)]" />
-            ) : (
-              <span className="font-luxury text-7xl font-black text-gold drop-shadow-[0_0_20px_rgba(201,162,39,0.6)]">
-                {storeName.charAt(0).toUpperCase()}
-              </span>
-            )}
+            <img src={STORE_LOGO} alt={STORE_NAME} className="max-h-28 max-w-28 object-contain drop-shadow-[0_0_20px_rgba(201,162,39,0.35)]" />
           </div>
         </div>
 
         {/* Wordmark */}
         <h1 className="font-luxury text-5xl font-black tracking-tight text-white text-center px-8">
-          {storeName}
+          {STORE_NAME}
         </h1>
         <div className="mt-3 flex items-center gap-2 text-gold/90">
           <span className="h-px w-8 bg-gradient-to-l from-transparent to-gold/70" />
-          <p className="font-body-lux text-sm">{storeTagline}</p>
+          <p className="font-body-lux text-sm">{STORE_TAGLINE}</p>
           <span className="h-px w-8 bg-gradient-to-r from-transparent to-gold/70" />
         </div>
 
