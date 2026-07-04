@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Search, ChevronLeft, Sparkles, CircleDot, Timer, Flame } from "lucide-react";
+import { Search, ChevronLeft, Sparkles, CircleDot, Timer, Flame, Volume2, VolumeX } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import { PageShell } from "@/components/page-shell";
@@ -217,13 +217,19 @@ function CategoryIcon({ category, index }: { category: { id: string; name_ar: st
 
 function HeroCarousel({ banners }: { banners: Banner[] }) {
   const [idx, setIdx] = useState(0);
+  const [muted, setMuted] = useState(true);
   const slides = banners.length > 0 ? banners : null;
 
   useEffect(() => {
     if (!slides || slides.length <= 1) return;
+    // Pause the auto-rotation while a video slide is playing with sound
+    // so the user can hear it. Silent slides keep rotating.
+    const current = slides[idx];
+    const hasAudibleVideo = !!(current as any)?.video_url && !muted;
+    if (hasAudibleVideo) return;
     const t = setInterval(() => setIdx((i) => (i + 1) % slides.length), 3500);
     return () => clearInterval(t);
-  }, [slides]);
+  }, [slides, idx, muted]);
 
   if (!slides) {
     return (
