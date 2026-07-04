@@ -143,6 +143,7 @@ function RootComponent() {
       <Toaster position="top-center" richColors closeButton />
       <AuthListener />
       <SplashScreen />
+      <NotificationPermissionGate />
     </QueryClientProvider>
   );
 }
@@ -159,5 +160,35 @@ function AuthListener() {
     });
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
+  return null;
+}
+
+function NotificationPermissionGate() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!("Notification" in window)) return;
+    const STORAGE_KEY = "alsaaer_notif_perm_asked";
+    // Never ask more than once per app install; respect prior decision.
+    try {
+      const asked = window.localStorage.getItem(STORAGE_KEY);
+      const state = Notification.permission;
+      if (state === "granted" || state === "denied") {
+        // Already decided by the user/browser — never prompt again.
+        window.localStorage.setItem(STORAGE_KEY, state);
+        return;
+      }
+      if (asked) return; // default state but we already asked before
+      // Delay slightly so the splash finishes first.
+      const t = setTimeout(() => {
+        try {
+          window.localStorage.setItem(STORAGE_KEY, "asked");
+          Notification.requestPermission().then((result) => {
+            try { window.localStorage.setItem(STORAGE_KEY, result); } catch {}
+          }).catch(() => {});
+        } catch {}
+      }, 5500);
+      return () => clearTimeout(t);
+    } catch {}
+  }, []);
   return null;
 }
