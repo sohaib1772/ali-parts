@@ -218,6 +218,7 @@ function CategoryIcon({ category, index }: { category: { id: string; name_ar: st
 function HeroCarousel({ banners }: { banners: Banner[] }) {
   const [idx, setIdx] = useState(0);
   const [muted, setMuted] = useState(true);
+  const [expandedVideo, setExpandedVideo] = useState<string | null>(null);
   const slides = banners.length > 0 ? banners : null;
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
 
