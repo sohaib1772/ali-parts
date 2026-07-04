@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { Search, ChevronLeft, Sparkles, CircleDot, Timer, Flame, Volume2, VolumeX } from "lucide-react";
+import { Search, ChevronLeft, Sparkles, CircleDot, Timer, Flame, Volume2, VolumeX, X } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import { PageShell } from "@/components/page-shell";
@@ -218,8 +218,31 @@ function CategoryIcon({ category, index }: { category: { id: string; name_ar: st
 function HeroCarousel({ banners }: { banners: Banner[] }) {
   const [idx, setIdx] = useState(0);
   const [muted, setMuted] = useState(true);
+  const [expandedVideo, setExpandedVideo] = useState<string | null>(null);
   const slides = banners.length > 0 ? banners : null;
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
+
+  const handleVideoClick = (e: React.MouseEvent, i: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const b = slides?.[i];
+    if (!b || !(b as any).video_url) return;
+    setMuted(false);
+    const el = videoRefs.current[i];
+    if (el) {
+      el.muted = false;
+      el.volume = 1;
+      const p = el.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+      if (el.requestFullscreen) {
+        el.requestFullscreen().catch(() => setExpandedVideo((b as any).video_url));
+      } else {
+        setExpandedVideo((b as any).video_url);
+      }
+    } else {
+      setExpandedVideo((b as any).video_url);
+    }
+  };
 
   // Keep the DOM element in sync when muted state or the active slide changes.
   // Setting the `muted` property + calling play() imperatively is the only
@@ -291,7 +314,8 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
             loop
             playsInline
             preload="metadata"
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === idx ? "opacity-100" : "opacity-0"}`}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 cursor-pointer ${i === idx ? "opacity-100" : "opacity-0"}`}
+            onClick={(e) => handleVideoClick(e, i)}
           />
         ) : (
           <img
@@ -302,7 +326,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
           />
         )
       ))}
-      <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/40 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/40 to-transparent pointer-events-none" />
       {(current as any).video_url && (
         <button
           type="button"
@@ -370,6 +394,30 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
         <a href={current.link}>{content}</a>
       ) : (
         content
+      )}
+      {expandedVideo && (
+        <div
+          className="fixed inset-0 z-50 bg-black flex items-center justify-center"
+          onClick={() => setExpandedVideo(null)}
+        >
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setExpandedVideo(null); }}
+            aria-label="إغلاق"
+            className="absolute top-4 end-4 z-10 size-10 rounded-full bg-white/10 text-white grid place-items-center hover:bg-white/20 transition"
+          >
+            <X className="size-5" />
+          </button>
+          <video
+            src={expandedVideo}
+            autoPlay
+            controls
+            muted={false}
+            playsInline
+            className="w-full max-h-screen"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
       )}
     </div>
   );

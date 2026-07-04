@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { Sparkles, Volume2, VolumeX, ChevronLeft } from "lucide-react";
+import { Sparkles, Volume2, VolumeX, ChevronLeft, X } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { bannersQuery, type Banner } from "@/lib/queries";
 
@@ -22,6 +22,7 @@ export const Route = createFileRoute("/offers")({
 
 function OffersPage() {
   const { data: banners } = useSuspenseQuery(bannersQuery());
+  const [expandedVideo, setExpandedVideo] = useState<string | null>(null);
 
   return (
     <PageShell>
@@ -45,16 +46,40 @@ function OffersPage() {
         ) : (
           <div className="grid grid-cols-1 gap-4">
             {banners.map((b) => (
-              <OfferCard key={b.id} banner={b} />
+              <OfferCard key={b.id} banner={b} setExpandedVideo={setExpandedVideo} />
             ))}
           </div>
         )}
       </div>
+      {expandedVideo && (
+        <div
+          className="fixed inset-0 z-50 bg-black flex items-center justify-center"
+          onClick={() => setExpandedVideo(null)}
+        >
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setExpandedVideo(null); }}
+            aria-label="إغلاق"
+            className="absolute top-4 end-4 z-10 size-10 rounded-full bg-white/10 text-white grid place-items-center hover:bg-white/20 transition"
+          >
+            <X className="size-5" />
+          </button>
+          <video
+            src={expandedVideo}
+            autoPlay
+            controls
+            muted={false}
+            playsInline
+            className="w-full max-h-screen"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </PageShell>
   );
 }
 
-function OfferCard({ banner }: { banner: Banner }) {
+function OfferCard({ banner, setExpandedVideo }: { banner: Banner; setExpandedVideo: (url: string | null) => void }) {
   const [muted, setMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const video = (banner as any).video_url as string | undefined;
@@ -71,7 +96,26 @@ function OfferCard({ banner }: { banner: Banner }) {
           loop
           playsInline
           preload="metadata"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover cursor-pointer"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setMuted(false);
+            const el = videoRef.current;
+            if (el) {
+              el.muted = false;
+              el.volume = 1;
+              const p = el.play();
+              if (p && typeof p.catch === "function") p.catch(() => {});
+              if (el.requestFullscreen) {
+                el.requestFullscreen().catch(() => setExpandedVideo(video));
+              } else {
+                setExpandedVideo(video);
+              }
+            } else {
+              setExpandedVideo(video);
+            }
+          }}
         />
       ) : (
         <img src={banner.image_url} alt={banner.title_ar ?? ""} className="absolute inset-0 w-full h-full object-cover" />
