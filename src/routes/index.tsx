@@ -314,7 +314,8 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
             loop
             playsInline
             preload="metadata"
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === idx ? "opacity-100" : "opacity-0"}`}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 cursor-pointer ${i === idx ? "opacity-100" : "opacity-0"}`}
+            onClick={(e) => handleVideoClick(e, i)}
           />
         ) : (
           <img
