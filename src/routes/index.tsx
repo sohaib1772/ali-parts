@@ -267,7 +267,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
             src={(b as any).video_url}
             poster={b.image_url || undefined}
             autoPlay
-            muted
+            muted={muted || i !== idx}
             loop
             playsInline
             preload="metadata"
@@ -283,6 +283,16 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
         )
       ))}
       <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/40 to-transparent" />
+      {(current as any).video_url && (
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMuted((m) => !m); }}
+          aria-label={muted ? "تشغيل الصوت" : "كتم الصوت"}
+          className="absolute top-3 end-3 size-9 rounded-full bg-black/45 backdrop-blur-md text-white grid place-items-center border border-white/20 hover:bg-black/60 transition"
+        >
+          {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+        </button>
+      )}
       <div className="absolute inset-x-0 bottom-0 p-4">
         <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-gold bg-gold/10 border border-gold/30 rounded-full px-3 py-1 mb-2">
           <Sparkles className="size-3.5" /> قطع أصلية ١٠٠٪
