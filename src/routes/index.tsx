@@ -325,7 +325,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
           />
         )
       ))}
-      <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/40 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/40 to-transparent pointer-events-none" />
       {(current as any).video_url && (
         <button
           type="button"
