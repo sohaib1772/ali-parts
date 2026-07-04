@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">مكتب علي شوفرليت</string>
+    <string name="title_activity_main">مكتب علي شوفرليت</string>
+    <string name="package_name">com.mkteb.ali.chevrolet</string>
+    <string name="custom_url_scheme">com.mkteb.ali.chevrolet</string>
+</resources>
