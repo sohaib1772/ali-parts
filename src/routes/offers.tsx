@@ -72,7 +72,26 @@ function OfferCard({ banner, setExpandedVideo }: { banner: Banner; setExpandedVi
           loop
           playsInline
           preload="metadata"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover cursor-pointer"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setMuted(false);
+            const el = videoRef.current;
+            if (el) {
+              el.muted = false;
+              el.volume = 1;
+              const p = el.play();
+              if (p && typeof p.catch === "function") p.catch(() => {});
+              if (el.requestFullscreen) {
+                el.requestFullscreen().catch(() => setExpandedVideo(video));
+              } else {
+                setExpandedVideo(video);
+              }
+            } else {
+              setExpandedVideo(video);
+            }
+          }}
         />
       ) : (
         <img src={banner.image_url} alt={banner.title_ar ?? ""} className="absolute inset-0 w-full h-full object-cover" />
