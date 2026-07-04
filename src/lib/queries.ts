@@ -25,7 +25,7 @@ export type Product = {
 export type Category = { id: string; name_ar: string; name_en: string; icon: string | null; image_url: string | null; sort_order: number | null };
 export type Brand = { id: string; name_ar: string; name_en: string; logo_url: string | null };
 export type CarModel = { id: string; brand_id: string | null; name_ar: string; name_en: string };
-export type Banner = { id: string; title_ar: string | null; subtitle_ar: string | null; image_url: string; link: string | null; expires_at?: string | null };
+export type Banner = { id: string; title_ar: string | null; subtitle_ar: string | null; image_url: string; video_url?: string | null; link: string | null; expires_at?: string | null };
 
 export const categoriesQuery = () =>
   queryOptions({
