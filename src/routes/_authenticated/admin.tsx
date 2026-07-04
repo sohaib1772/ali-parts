@@ -721,11 +721,6 @@ function BannersAdmin() {
                 onChange={async (e) => {
                   const f = e.target.files?.[0];
                   if (!f) return;
-                  if (f.size > 50 * 1024 * 1024) {
-                    toast.error("حجم الفيديو أكبر من ٥٠ ميغابايت");
-                    if (videoInputRef.current) videoInputRef.current.value = "";
-                    return;
-                  }
                   setUploadingVideo(true);
                   try {
                     const url = await uploadMediaFile(f);
