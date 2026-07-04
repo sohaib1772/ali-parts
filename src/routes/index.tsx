@@ -40,6 +40,11 @@ function HomePage() {
 
   const vehicle = useSavedVehicle();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [mountedVehicle, setMountedVehicle] = useState(false);
+  useEffect(() => { setMountedVehicle(true); }, []);
+  useEffect(() => {
+    if (mountedVehicle && !vehicle) setPickerOpen(true);
+  }, [mountedVehicle, vehicle]);
 
   const filteredDeals = filterProductsByVehicle(deals, vehicle);
   const dealIds = new Set(filteredDeals.slice(0, 4).map((p) => p.id));
@@ -119,7 +124,7 @@ function HomePage() {
 
       <div className="h-6" />
       <FloatingWhatsapp />
-      <VehiclePicker open={pickerOpen} onOpenChange={setPickerOpen} />
+      <VehiclePicker open={pickerOpen} onOpenChange={setPickerOpen} mandatory={!vehicle} />
     </PageShell>
   );
 }
