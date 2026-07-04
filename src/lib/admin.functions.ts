@@ -15,6 +15,12 @@ const SetPasswordInput = z.object({
   password: z.string().min(6).max(72),
 });
 
+const SetBlockedInput = z.object({
+  user_id: z.string().uuid(),
+  blocked: z.boolean(),
+  reason: z.string().trim().max(500).optional(),
+});
+
 export const adminSetUserPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => SetPasswordInput.parse(d))
@@ -26,6 +32,43 @@ export const adminSetUserPassword = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const adminSetUserBlocked = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => SetBlockedInput.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    if (data.user_id === context.userId) throw new Error("لا يمكنك حظر حسابك الإداري.");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const blocked = data.blocked;
+    const title = blocked ? "تم حظر حسابك من التعليقات" : "تم رفع الحظر عن حسابك";
+    const body = data.reason || (blocked
+      ? "تم حظرك بسبب تعليق مخالف لقوانين المجتمع. يرجى الالتزام بالكلام المحترم وتجنب الإساءة أو السبام أو المحتوى غير اللائق."
+      : "تم رفع الحظر عن حسابك، يمكنك الآن التفاعل والتعليق بشكل طبيعي مع الالتزام بالقوانين.");
+
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .upsert({ id: data.user_id, is_blocked: blocked }, { onConflict: "id" });
+    if (profileError) throw new Error(profileError.message);
+
+    const { error: logError } = await supabaseAdmin.from("user_block_log").insert({
+      user_id: data.user_id,
+      actor_id: context.userId,
+      action: blocked ? "block" : "unblock",
+    });
+    if (logError) throw new Error(logError.message);
+
+    const { error: notificationError } = await supabaseAdmin.from("notifications").insert({
+      user_id: data.user_id,
+      type: "account_status",
+      title,
+      body,
+    });
+    if (notificationError) throw new Error(notificationError.message);
+
+    return { ok: true, blocked };
   });
 
 export const adminListUsers = createServerFn({ method: "GET" })
