@@ -255,12 +255,26 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   const content = (
     <div className="relative overflow-hidden rounded-3xl bg-gradient-hero text-primary-foreground shadow-luxe aspect-[16/10]">
       {slides.map((b, i) => (
-        <img
-          key={b.id}
-          src={b.image_url}
-          alt={b.title_ar ?? ""}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === idx ? "opacity-100" : "opacity-0"}`}
-        />
+        (b as any).video_url ? (
+          <video
+            key={b.id}
+            src={(b as any).video_url}
+            poster={b.image_url || undefined}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === idx ? "opacity-100" : "opacity-0"}`}
+          />
+        ) : (
+          <img
+            key={b.id}
+            src={b.image_url}
+            alt={b.title_ar ?? ""}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === idx ? "opacity-100" : "opacity-0"}`}
+          />
+        )
       ))}
       <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/40 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 p-4">
