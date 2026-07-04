@@ -48,14 +48,14 @@ function SearchPage() {
     const dataUrl = await readAsDataUrl(file);
     const img = new Image();
     await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = dataUrl; });
-    const max = 1024;
+    const max = 640;
     const scale = Math.min(1, max / Math.max(img.width, img.height));
     const w = Math.round(img.width * scale);
     const h = Math.round(img.height * scale);
     const c = document.createElement("canvas");
     c.width = w; c.height = h;
     c.getContext("2d")!.drawImage(img, 0, 0, w, h);
-    return c.toDataURL("image/jpeg", 0.85);
+    return c.toDataURL("image/jpeg", 0.72);
   };
 
   const handleImage = async (file: File) => {
