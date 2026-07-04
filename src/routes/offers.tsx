@@ -368,12 +368,12 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
       const { error } = await supabase.rpc("admin_set_user_blocked", {
         p_user_id: uid,
         p_blocked: true,
-        p_reason: "تم حظرك بسبب تعليقات مخالفة.",
+        p_reason: "تم حظر حسابك بسبب مخالفة قوانين التعليقات (إساءة، سبام، أو محتوى غير لائق). للاستفسار يرجى التواصل مع الإدارة.",
       });
       if (error) throw error;
     },
     onSuccess: () => toast.success("تم حظر المستخدم"),
-    onError: () => toast.error("تعذر الحظر"),
+    onError: (e: Error) => toast.error(e.message || "تعذر الحظر"),
   });
 
   return (
