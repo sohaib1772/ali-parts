@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as OffersRouteImport } from './routes/offers'
 import { Route as DealsRouteImport } from './routes/deals'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as BestSellersRouteImport } from './routes/best-sellers'
@@ -47,6 +48,11 @@ const ProductsRoute = ProductsRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OffersRoute = OffersRouteImport.update({
+  id: '/offers',
+  path: '/offers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DealsRoute = DealsRouteImport.update({
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/best-sellers': typeof BestSellersRoute
   '/contact': typeof ContactRoute
   '/deals': typeof DealsRoute
+  '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
   '/products': typeof ProductsRoute
   '/search': typeof SearchRoute
@@ -188,6 +195,7 @@ export interface FileRoutesByTo {
   '/best-sellers': typeof BestSellersRoute
   '/contact': typeof ContactRoute
   '/deals': typeof DealsRoute
+  '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
   '/products': typeof ProductsRoute
   '/search': typeof SearchRoute
@@ -215,6 +223,7 @@ export interface FileRoutesById {
   '/best-sellers': typeof BestSellersRoute
   '/contact': typeof ContactRoute
   '/deals': typeof DealsRoute
+  '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
   '/products': typeof ProductsRoute
   '/search': typeof SearchRoute
@@ -242,6 +251,7 @@ export interface FileRouteTypes {
     | '/best-sellers'
     | '/contact'
     | '/deals'
+    | '/offers'
     | '/privacy'
     | '/products'
     | '/search'
@@ -267,6 +277,7 @@ export interface FileRouteTypes {
     | '/best-sellers'
     | '/contact'
     | '/deals'
+    | '/offers'
     | '/privacy'
     | '/products'
     | '/search'
@@ -293,6 +304,7 @@ export interface FileRouteTypes {
     | '/best-sellers'
     | '/contact'
     | '/deals'
+    | '/offers'
     | '/privacy'
     | '/products'
     | '/search'
@@ -320,6 +332,7 @@ export interface RootRouteChildren {
   BestSellersRoute: typeof BestSellersRoute
   ContactRoute: typeof ContactRoute
   DealsRoute: typeof DealsRoute
+  OffersRoute: typeof OffersRoute
   PrivacyRoute: typeof PrivacyRoute
   ProductsRoute: typeof ProductsRoute
   SearchRoute: typeof SearchRoute
@@ -349,6 +362,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offers': {
+      id: '/offers'
+      path: '/offers'
+      fullPath: '/offers'
+      preLoaderRoute: typeof OffersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/deals': {
@@ -549,6 +569,7 @@ const rootRouteChildren: RootRouteChildren = {
   BestSellersRoute: BestSellersRoute,
   ContactRoute: ContactRoute,
   DealsRoute: DealsRoute,
+  OffersRoute: OffersRoute,
   PrivacyRoute: PrivacyRoute,
   ProductsRoute: ProductsRoute,
   SearchRoute: SearchRoute,
