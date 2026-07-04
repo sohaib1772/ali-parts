@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { Sparkles, Volume2, VolumeX, ChevronLeft } from "lucide-react";
+import { Sparkles, Volume2, VolumeX, ChevronLeft, X } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { bannersQuery, type Banner } from "@/lib/queries";
 
