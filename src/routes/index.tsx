@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Search, ChevronLeft, Sparkles, CircleDot, Timer, Flame } from "lucide-react";
+import { Search, ChevronLeft, Sparkles, CircleDot, Timer, Flame, Volume2, VolumeX } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import { PageShell } from "@/components/page-shell";
@@ -217,13 +217,19 @@ function CategoryIcon({ category, index }: { category: { id: string; name_ar: st
 
 function HeroCarousel({ banners }: { banners: Banner[] }) {
   const [idx, setIdx] = useState(0);
+  const [muted, setMuted] = useState(true);
   const slides = banners.length > 0 ? banners : null;
 
   useEffect(() => {
     if (!slides || slides.length <= 1) return;
+    // Pause the auto-rotation while a video slide is playing with sound
+    // so the user can hear it. Silent slides keep rotating.
+    const current = slides[idx];
+    const hasAudibleVideo = !!(current as any)?.video_url && !muted;
+    if (hasAudibleVideo) return;
     const t = setInterval(() => setIdx((i) => (i + 1) % slides.length), 3500);
     return () => clearInterval(t);
-  }, [slides]);
+  }, [slides, idx, muted]);
 
   if (!slides) {
     return (
@@ -261,7 +267,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
             src={(b as any).video_url}
             poster={b.image_url || undefined}
             autoPlay
-            muted
+            muted={muted || i !== idx}
             loop
             playsInline
             preload="metadata"
@@ -277,6 +283,16 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
         )
       ))}
       <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/40 to-transparent" />
+      {(current as any).video_url && (
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMuted((m) => !m); }}
+          aria-label={muted ? "تشغيل الصوت" : "كتم الصوت"}
+          className="absolute top-3 end-3 size-9 rounded-full bg-black/45 backdrop-blur-md text-white grid place-items-center border border-white/20 hover:bg-black/60 transition"
+        >
+          {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+        </button>
+      )}
       <div className="absolute inset-x-0 bottom-0 p-4">
         <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-gold bg-gold/10 border border-gold/30 rounded-full px-3 py-1 mb-2">
           <Sparkles className="size-3.5" /> قطع أصلية ١٠٠٪

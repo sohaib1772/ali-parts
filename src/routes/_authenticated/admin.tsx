@@ -721,11 +721,6 @@ function BannersAdmin() {
                 onChange={async (e) => {
                   const f = e.target.files?.[0];
                   if (!f) return;
-                  if (f.size > 50 * 1024 * 1024) {
-                    toast.error("حجم الفيديو أكبر من ٥٠ ميغابايت");
-                    if (videoInputRef.current) videoInputRef.current.value = "";
-                    return;
-                  }
                   setUploadingVideo(true);
                   try {
                     const url = await uploadMediaFile(f);
@@ -739,7 +734,7 @@ function BannersAdmin() {
                   }
                 }}
               />
-              <p className="text-[10px] text-muted-foreground mt-1">الحد الأقصى ٥٠ ميغابايت. عند وجود فيديو سيُعرض بدل الصورة، والصورة تُستخدم كصورة أولية.</p>
+              <p className="text-[10px] text-muted-foreground mt-1">عند وجود فيديو سيُعرض بدل الصورة، والصورة تُستخدم كصورة أولية.</p>
             </div>
             <Field label="العنوان"><Input value={form.title_ar} onChange={(e) => setForm({ ...form, title_ar: e.target.value })} /></Field>
             <Field label="العنوان الفرعي"><Input value={form.subtitle_ar} onChange={(e) => setForm({ ...form, subtitle_ar: e.target.value })} /></Field>
