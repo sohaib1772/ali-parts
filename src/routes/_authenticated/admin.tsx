@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import { PageShell } from "@/components/page-shell";
 import { supabase } from "@/integrations/supabase/client";
-import { useIsAdmin, uploadProductImage, settingsQuery } from "@/lib/admin";
+import { useIsAdmin, uploadProductImage, uploadMediaFile, settingsQuery } from "@/lib/admin";
 import {
   categoriesQuery,
   brandsQuery,
