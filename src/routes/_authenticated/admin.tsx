@@ -21,11 +21,12 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote, Receipt, Search as SearchIcon, Ban, CheckCircle2, History } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote, Receipt, Search as SearchIcon, Ban, CheckCircle2, History, Users as UsersIcon, KeyRound, Loader2 } from "lucide-react";
 import { WhatsappIcon } from "@/components/icons";
 import { formatIQD, whatsappLink } from "@/lib/format";
 import { statusLabel, statusColor } from "@/lib/order-status";
 import { PrintableInvoice, InvoicePreviewDialog } from "@/components/printable-invoice";
+import { adminListUsers, adminSetUserPassword } from "@/lib/admin.functions";
 
 const STATUSES = ["received", "preparing", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"] as const;
 
@@ -126,11 +127,12 @@ function AdminPage() {
     <PageShell title="لوحة الإدارة">
       <div className="px-4 pt-3 pb-6">
         <Tabs defaultValue="products">
-          <TabsList className="w-full grid grid-cols-6 h-auto">
+          <TabsList className="w-full grid grid-cols-7 h-auto">
             <TabsTrigger value="products" className="flex-col gap-1 py-2 text-[10px]"><Package className="size-4" />منتجات</TabsTrigger>
             <TabsTrigger value="banners" className="flex-col gap-1 py-2 text-[10px]"><ImageIcon className="size-4" />عروض</TabsTrigger>
             <TabsTrigger value="taxonomy" className="flex-col gap-1 py-2 text-[10px]"><Tags className="size-4" />تصنيفات</TabsTrigger>
             <TabsTrigger value="orders" className="flex-col gap-1 py-2 text-[10px]"><ClipboardList className="size-4" />طلبات</TabsTrigger>
+            <TabsTrigger value="users" className="flex-col gap-1 py-2 text-[10px]"><UsersIcon className="size-4" />مستخدمون</TabsTrigger>
             <TabsTrigger value="block-log" className="flex-col gap-1 py-2 text-[10px]"><History className="size-4" />سجل الحظر</TabsTrigger>
             <TabsTrigger value="settings" className="flex-col gap-1 py-2 text-[10px]"><SettingsIcon className="size-4" />إعدادات</TabsTrigger>
           </TabsList>
@@ -139,11 +141,160 @@ function AdminPage() {
           <TabsContent value="banners" className="mt-4"><BannersAdmin /></TabsContent>
           <TabsContent value="taxonomy" className="mt-4"><TaxonomyAdmin /></TabsContent>
           <TabsContent value="orders" className="mt-4"><OrdersAdmin /></TabsContent>
+          <TabsContent value="users" className="mt-4"><UsersAdmin /></TabsContent>
           <TabsContent value="block-log" className="mt-4"><BlockLogAdmin /></TabsContent>
           <TabsContent value="settings" className="mt-4"><SettingsAdmin /></TabsContent>
         </Tabs>
       </div>
     </PageShell>
+  );
+}
+
+/* ---------------- Users ---------------- */
+
+function UsersAdmin() {
+  const [search, setSearch] = useState("");
+  const [pwOpen, setPwOpen] = useState(false);
+  const [pwUser, setPwUser] = useState<{ id: string; label: string } | null>(null);
+  const [pw, setPw] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const { data, isLoading, refetch, isFetching } = useQuery({
+    queryKey: ["admin", "users"],
+    queryFn: () => adminListUsers(),
+    refetchInterval: 30_000,
+  });
+
+  const users = data?.users ?? [];
+  const filtered = (() => {
+    const s = search.trim().toLowerCase();
+    if (!s) return users;
+    return users.filter((u) =>
+      [u.full_name, u.email, u.phone, u.profile_phone]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(s)),
+    );
+  })();
+
+  const fmt = (iso: string | null) => {
+    if (!iso) return "—";
+    try {
+      return new Date(iso).toLocaleString("ar-IQ", { dateStyle: "short", timeStyle: "short" });
+    } catch { return iso; }
+  };
+
+  const openPw = (u: any) => {
+    setPwUser({ id: u.id, label: u.full_name || u.profile_phone || u.phone || u.email || u.id.slice(0, 8) });
+    setPw("");
+    setPwOpen(true);
+  };
+
+  const submitPw = async () => {
+    if (!pwUser) return;
+    if (pw.length < 6) { toast.error("كلمة السر يجب أن تكون 6 أحرف على الأقل"); return; }
+    setSaving(true);
+    try {
+      await adminSetUserPassword({ data: { user_id: pwUser.id, password: pw } });
+      toast.success("تم تحديث كلمة السر");
+      setPwOpen(false);
+    } catch (e: any) {
+      toast.error(e?.message ?? "تعذر التحديث");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="bg-gradient-navy text-primary-foreground rounded-2xl p-4 shadow-luxe">
+          <div className="text-[11px] text-gold font-bold">إجمالي المستخدمين</div>
+          <div className="text-3xl font-black leading-tight mt-0.5">{data?.total ?? "—"}</div>
+        </div>
+        <div className="bg-gradient-gold text-navy rounded-2xl p-4 shadow-gold">
+          <div className="text-[11px] font-bold opacity-70">متصلون الآن</div>
+          <div className="text-3xl font-black leading-tight mt-0.5 flex items-center gap-2">
+            {data?.active ?? "—"}
+            <span className="size-2.5 rounded-full bg-success animate-pulse" />
+          </div>
+          <div className="text-[10px] opacity-70 mt-1">آخر دخول خلال 15 دقيقة</div>
+        </div>
+      </div>
+
+      <label className="flex items-center gap-2 bg-card border border-border rounded-xl px-3 py-2 focus-within:border-gold">
+        <SearchIcon className="size-4 text-muted-foreground" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="ابحث بالاسم أو الهاتف أو الإيميل…"
+          className="flex-1 bg-transparent outline-none text-sm"
+        />
+        <button
+          onClick={() => refetch()}
+          className="text-xs text-gold font-bold px-2 disabled:opacity-50"
+          disabled={isFetching}
+        >
+          {isFetching ? "..." : "تحديث"}
+        </button>
+      </label>
+
+      {isLoading ? (
+        <div className="text-center text-sm text-muted-foreground py-8">جاري التحميل…</div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center text-sm text-muted-foreground py-8">لا يوجد مستخدمون مطابقون</div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((u) => {
+            const displayPhone = u.profile_phone || u.phone;
+            return (
+              <div key={u.id} className="bg-card border border-border rounded-2xl p-3 flex items-center gap-3">
+                <div className={`size-11 rounded-full grid place-items-center font-black text-lg shrink-0 ${u.is_active ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
+                  {(u.full_name?.[0] ?? u.email?.[0] ?? "?").toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0 text-sm">
+                  <div className="font-bold truncate flex items-center gap-1.5">
+                    {u.full_name || "بلا اسم"}
+                    {u.is_blocked && <Ban className="size-3.5 text-destructive" />}
+                    {u.is_active && <span className="text-[9px] font-black text-success bg-success/10 px-1.5 py-0.5 rounded-full">متصل</span>}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground truncate" dir="ltr">
+                    {displayPhone ? `+${String(displayPhone).replace(/\D/g, "")}` : (u.email ?? "—")}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">
+                    آخر دخول: {fmt(u.last_sign_in_at)}
+                  </div>
+                </div>
+                <button
+                  onClick={() => openPw(u)}
+                  className="h-9 px-3 rounded-lg border border-gold/40 text-gold text-xs font-bold flex items-center gap-1 hover:bg-gold/10 transition"
+                >
+                  <KeyRound className="size-3.5" /> كلمة السر
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <Dialog open={pwOpen} onOpenChange={setPwOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>تغيير كلمة سر: {pwUser?.label}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Field label="كلمة السر الجديدة">
+              <Input type="text" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="6 أحرف على الأقل" dir="ltr" />
+            </Field>
+            <p className="text-xs text-muted-foreground">
+              سيتمكن المستخدم من تسجيل الدخول بكلمة السر الجديدة فوراً. ذكّره بها بشكل آمن.
+            </p>
+            <Button className="w-full" onClick={submitPw} disabled={saving}>
+              {saving ? <><Loader2 className="size-4 me-1 animate-spin" /> جاري الحفظ…</> : "حفظ كلمة السر الجديدة"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
 
