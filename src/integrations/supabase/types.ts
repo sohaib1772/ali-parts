@@ -84,6 +84,7 @@ export type Database = {
           sort_order: number | null
           subtitle_ar: string | null
           title_ar: string | null
+          video_url: string | null
         }
         Insert: {
           expires_at?: string | null
@@ -94,6 +95,7 @@ export type Database = {
           sort_order?: number | null
           subtitle_ar?: string | null
           title_ar?: string | null
+          video_url?: string | null
         }
         Update: {
           expires_at?: string | null
@@ -104,6 +106,7 @@ export type Database = {
           sort_order?: number | null
           subtitle_ar?: string | null
           title_ar?: string | null
+          video_url?: string | null
         }
         Relationships: []
       }

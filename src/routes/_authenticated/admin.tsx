@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import { PageShell } from "@/components/page-shell";
 import { supabase } from "@/integrations/supabase/client";
-import { useIsAdmin, uploadProductImage, settingsQuery } from "@/lib/admin";
+import { useIsAdmin, uploadProductImage, uploadMediaFile, settingsQuery } from "@/lib/admin";
 import {
   categoriesQuery,
   brandsQuery,
@@ -615,16 +615,19 @@ function BannersAdmin() {
   const qc = useQueryClient();
   const { data: banners = [] } = useQuery(bannersQuery());
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<{ id?: string; title_ar: string; subtitle_ar: string; image_url: string; link: string; expires_at: string }>({
-    title_ar: "", subtitle_ar: "", image_url: "", link: "", expires_at: "",
+  const [form, setForm] = useState<{ id?: string; title_ar: string; subtitle_ar: string; image_url: string; video_url: string; link: string; expires_at: string }>({
+    title_ar: "", subtitle_ar: "", image_url: "", video_url: "", link: "", expires_at: "",
   });
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   const save = async () => {
-    if (!form.image_url) { toast.error("الصورة مطلوبة"); return; }
+    if (!form.image_url && !form.video_url) { toast.error("الصورة أو الفيديو مطلوب"); return; }
     const payload = {
       title_ar: form.title_ar || null,
       subtitle_ar: form.subtitle_ar || null,
-      image_url: form.image_url,
+      image_url: form.image_url || "",
+      video_url: form.video_url || null,
       link: form.link || null,
       is_active: true,
       expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
@@ -648,12 +651,16 @@ function BannersAdmin() {
 
   return (
     <div className="space-y-3">
-      <Button size="sm" onClick={() => { setForm({ title_ar: "", subtitle_ar: "", image_url: "", link: "", expires_at: "" }); setOpen(true); }}>
+      <Button size="sm" onClick={() => { setForm({ title_ar: "", subtitle_ar: "", image_url: "", video_url: "", link: "", expires_at: "" }); setOpen(true); }}>
         <Plus className="size-4 me-1" /> إضافة عرض
       </Button>
       {banners.map((b) => (
         <div key={b.id} className="bg-card border border-border rounded-2xl overflow-hidden">
-          <img src={b.image_url} alt={b.title_ar ?? ""} className="w-full h-32 object-cover" />
+          {(b as any).video_url ? (
+            <video src={(b as any).video_url} className="w-full h-32 object-cover bg-black" muted playsInline preload="metadata" poster={b.image_url || undefined} />
+          ) : (
+            <img src={b.image_url} alt={b.title_ar ?? ""} className="w-full h-32 object-cover" />
+          )}
           <div className="p-3 flex items-center gap-2">
             <div className="flex-1 min-w-0">
               <div className="font-bold text-sm truncate">{b.title_ar ?? "بدون عنوان"}</div>
@@ -664,7 +671,7 @@ function BannersAdmin() {
                 </div>
               )}
             </div>
-            <Button size="icon" variant="ghost" onClick={() => { setForm({ id: b.id, title_ar: b.title_ar ?? "", subtitle_ar: b.subtitle_ar ?? "", image_url: b.image_url, link: b.link ?? "", expires_at: (b as any).expires_at ? new Date((b as any).expires_at).toISOString().slice(0,16) : "" }); setOpen(true); }}>
+            <Button size="icon" variant="ghost" onClick={() => { setForm({ id: b.id, title_ar: b.title_ar ?? "", subtitle_ar: b.subtitle_ar ?? "", image_url: b.image_url ?? "", video_url: (b as any).video_url ?? "", link: b.link ?? "", expires_at: (b as any).expires_at ? new Date((b as any).expires_at).toISOString().slice(0,16) : "" }); setOpen(true); }}>
               <Pencil className="size-4" />
             </Button>
             <Button size="sm" variant="destructive" onClick={() => remove(b.id)} className="gap-1">
@@ -683,6 +690,57 @@ function BannersAdmin() {
               max={1}
               onChange={(imgs) => setForm({ ...form, image_url: imgs[0] ?? "" })}
             />
+            <div>
+              <Label className="text-xs mb-1 block">فيديو (اختياري)</Label>
+              {form.video_url ? (
+                <div className="relative rounded-xl overflow-hidden border border-border">
+                  <video src={form.video_url} className="w-full max-h-48 bg-black" controls playsInline preload="metadata" />
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, video_url: "" })}
+                    className="absolute top-1 end-1 size-7 rounded-full bg-destructive text-white grid place-items-center"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => videoInputRef.current?.click()}
+                  disabled={uploadingVideo}
+                  className="w-full h-24 rounded-xl border-2 border-dashed border-border grid place-items-center text-muted-foreground hover:bg-muted transition text-xs gap-1"
+                >
+                  {uploadingVideo ? "جاري الرفع..." : (<><Upload className="size-5" /> رفع فيديو</>)}
+                </button>
+              )}
+              <input
+                ref={videoInputRef}
+                type="file"
+                accept="video/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  if (f.size > 50 * 1024 * 1024) {
+                    toast.error("حجم الفيديو أكبر من ٥٠ ميغابايت");
+                    if (videoInputRef.current) videoInputRef.current.value = "";
+                    return;
+                  }
+                  setUploadingVideo(true);
+                  try {
+                    const url = await uploadMediaFile(f);
+                    setForm((prev) => ({ ...prev, video_url: url }));
+                    toast.success("تم رفع الفيديو");
+                  } catch (err: any) {
+                    toast.error(err?.message ?? "فشل رفع الفيديو");
+                  } finally {
+                    setUploadingVideo(false);
+                    if (videoInputRef.current) videoInputRef.current.value = "";
+                  }
+                }}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">الحد الأقصى ٥٠ ميغابايت. عند وجود فيديو سيُعرض بدل الصورة، والصورة تُستخدم كصورة أولية.</p>
+            </div>
             <Field label="العنوان"><Input value={form.title_ar} onChange={(e) => setForm({ ...form, title_ar: e.target.value })} /></Field>
             <Field label="العنوان الفرعي"><Input value={form.subtitle_ar} onChange={(e) => setForm({ ...form, subtitle_ar: e.target.value })} /></Field>
             <Field label="رابط (اختياري)"><Input value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} placeholder="/category/..." /></Field>

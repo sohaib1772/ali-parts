@@ -54,3 +54,16 @@ export async function uploadProductImage(file: File): Promise<string> {
   const { data } = await supabase.storage.from("product-images").createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
   return data?.signedUrl ?? "";
 }
+
+export async function uploadMediaFile(file: File): Promise<string> {
+  const ext = file.name.split(".").pop() || "bin";
+  const path = `${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from("product-images").upload(path, file, {
+    cacheControl: "3600",
+    upsert: false,
+    contentType: file.type || undefined,
+  });
+  if (error) throw error;
+  const { data } = await supabase.storage.from("product-images").createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+  return data?.signedUrl ?? "";
+}
