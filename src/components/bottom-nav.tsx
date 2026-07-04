@@ -23,10 +23,6 @@ export function BottomNav() {
   const qc = useQueryClient();
   useEffect(() => {
     if (!userId) return;
-    // اطلب إذن الإشعارات مرة وحدة
-    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission().catch(() => {});
-    }
     const ch = supabase
       .channel(`nav-orders-${userId}`)
       .on(
