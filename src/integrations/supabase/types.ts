@@ -74,6 +74,80 @@ export type Database = {
         }
         Relationships: []
       }
+      banner_comments: {
+        Row: {
+          banner_id: string
+          content: string
+          created_at: string
+          id: string
+          is_admin_reply: boolean
+          parent_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          banner_id: string
+          content: string
+          created_at?: string
+          id?: string
+          is_admin_reply?: boolean
+          parent_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          banner_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_admin_reply?: boolean
+          parent_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banner_comments_banner_id_fkey"
+            columns: ["banner_id"]
+            isOneToOne: false
+            referencedRelation: "banners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "banner_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "banner_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      banner_likes: {
+        Row: {
+          banner_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          banner_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          banner_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banner_likes_banner_id_fkey"
+            columns: ["banner_id"]
+            isOneToOne: false
+            referencedRelation: "banners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       banners: {
         Row: {
           expires_at: string | null
