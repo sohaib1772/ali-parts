@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { Search, ChevronLeft, Sparkles, CircleDot, Timer, Flame, Volume2, VolumeX } from "lucide-react";
+import { Search, ChevronLeft, Sparkles, CircleDot, Timer, Flame, Volume2, VolumeX, X } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import { PageShell } from "@/components/page-shell";
