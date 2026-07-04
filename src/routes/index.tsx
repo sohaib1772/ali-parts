@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search, ChevronLeft, Sparkles, CircleDot, Timer, Flame, Volume2, VolumeX } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
@@ -219,6 +219,25 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   const [idx, setIdx] = useState(0);
   const [muted, setMuted] = useState(true);
   const slides = banners.length > 0 ? banners : null;
+  const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
+
+  // Keep the DOM element in sync when muted state or the active slide changes.
+  // Setting the `muted` property + calling play() imperatively is the only
+  // reliable way to unmute after autoplay across mobile browsers.
+  useEffect(() => {
+    videoRefs.current.forEach((el, i) => {
+      if (!el) return;
+      const isActive = i === idx;
+      el.muted = !isActive || muted;
+      if (isActive) {
+        el.currentTime = el.currentTime; // no-op, keeps position
+        const p = el.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      } else {
+        el.pause();
+      }
+    });
+  }, [idx, muted, slides]);
 
   useEffect(() => {
     if (!slides || slides.length <= 1) return;
@@ -264,6 +283,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
         (b as any).video_url ? (
           <video
             key={b.id}
+            ref={(el) => { videoRefs.current[i] = el; }}
             src={(b as any).video_url}
             poster={b.image_url || undefined}
             autoPlay
@@ -286,7 +306,23 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
       {(current as any).video_url && (
         <button
           type="button"
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMuted((m) => !m); }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setMuted((m) => {
+              const next = !m;
+              const el = videoRefs.current[idx];
+              if (el) {
+                el.muted = next;
+                if (!next) {
+                  el.volume = 1;
+                  const p = el.play();
+                  if (p && typeof p.catch === "function") p.catch(() => {});
+                }
+              }
+              return next;
+            });
+          }}
           aria-label={muted ? "تشغيل الصوت" : "كتم الصوت"}
           className="absolute top-3 end-3 size-9 rounded-full bg-black/45 backdrop-blur-md text-white grid place-items-center border border-white/20 hover:bg-black/60 transition"
         >
@@ -294,9 +330,13 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
         </button>
       )}
       <div className="absolute inset-x-0 bottom-0 p-4">
-        <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-gold bg-gold/10 border border-gold/30 rounded-full px-3 py-1 mb-2">
-          <Sparkles className="size-3.5" /> قطع أصلية ١٠٠٪
-        </div>
+        <Link
+          to="/offers"
+          onClick={(e) => e.stopPropagation()}
+          className="inline-flex items-center gap-1.5 text-[11px] font-bold text-gold bg-gold/10 border border-gold/30 rounded-full px-3 py-1 mb-2 hover:bg-gold/20 transition"
+        >
+          <Sparkles className="size-3.5" /> عروض حصرية · شاهد الكل
+        </Link>
         {current.expires_at && (
           <div className="mb-2">
             <Countdown to={current.expires_at} />
