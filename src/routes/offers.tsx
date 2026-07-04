@@ -55,7 +55,7 @@ function OffersPage() {
   );
 }
 
-function OfferCard({ banner }: { banner: Banner }) {
+function OfferCard({ banner, setExpandedVideo }: { banner: Banner; setExpandedVideo: (url: string | null) => void }) {
   const [muted, setMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const video = (banner as any).video_url as string | undefined;
