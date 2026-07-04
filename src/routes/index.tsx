@@ -222,6 +222,28 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   const slides = banners.length > 0 ? banners : null;
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
 
+  const handleVideoClick = (e: React.MouseEvent, i: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const b = slides?.[i];
+    if (!b || !(b as any).video_url) return;
+    setMuted(false);
+    const el = videoRefs.current[i];
+    if (el) {
+      el.muted = false;
+      el.volume = 1;
+      const p = el.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+      if (el.requestFullscreen) {
+        el.requestFullscreen().catch(() => setExpandedVideo((b as any).video_url));
+      } else {
+        setExpandedVideo((b as any).video_url);
+      }
+    } else {
+      setExpandedVideo((b as any).video_url);
+    }
+  };
+
   // Keep the DOM element in sync when muted state or the active slide changes.
   // Setting the `muted` property + calling play() imperatively is the only
   // reliable way to unmute after autoplay across mobile browsers.
