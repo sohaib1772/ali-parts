@@ -46,7 +46,7 @@ function OffersPage() {
         ) : (
           <div className="grid grid-cols-1 gap-4">
             {banners.map((b) => (
-              <OfferCard key={b.id} banner={b} />
+              <OfferCard key={b.id} banner={b} setExpandedVideo={setExpandedVideo} />
             ))}
           </div>
         )}
