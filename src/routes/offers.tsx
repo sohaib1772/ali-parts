@@ -22,6 +22,7 @@ export const Route = createFileRoute("/offers")({
 
 function OffersPage() {
   const { data: banners } = useSuspenseQuery(bannersQuery());
+  const [expandedVideo, setExpandedVideo] = useState<string | null>(null);
 
   return (
     <PageShell>
