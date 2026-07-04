@@ -26,7 +26,7 @@ import { WhatsappIcon } from "@/components/icons";
 import { formatIQD, whatsappLink } from "@/lib/format";
 import { statusLabel, statusColor } from "@/lib/order-status";
 import { PrintableInvoice, InvoicePreviewDialog } from "@/components/printable-invoice";
-import { adminListUsers, adminSetUserPassword } from "@/lib/admin.functions";
+import { adminListUsers, adminSetUserBlocked, adminSetUserPassword } from "@/lib/admin.functions";
 
 const STATUSES = ["received", "preparing", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"] as const;
 
@@ -972,15 +972,19 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
     let reason: string | undefined = next ? defaultReason : undefined;
     setBlockSaving(true);
     try {
-      const { error } = await supabase.rpc("admin_set_user_blocked", {
-        p_user_id: o.user_id,
-        p_blocked: next,
-        p_reason: reason,
+      await adminSetUserBlocked({
+        data: {
+          user_id: o.user_id,
+          blocked: next,
+          reason,
+        },
       });
-      if (error) { toast.error(error.message || "تعذّر تحديث الحالة"); return; }
       toast.success(next ? "تم حظر الزبون وإرسال الإشعار" : "تم رفع الحظر");
       qcCard.invalidateQueries({ queryKey: ["admin", "order-customer", o.user_id] });
       qcCard.invalidateQueries({ queryKey: ["admin", "block-log"] });
+      qcCard.invalidateQueries({ queryKey: ["admin", "users"] });
+    } catch (e: any) {
+      toast.error(e?.message || "تعذّر تحديث الحالة");
     } finally {
       setBlockSaving(false);
     }

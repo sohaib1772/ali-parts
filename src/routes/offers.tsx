@@ -11,6 +11,7 @@ import { bannersQuery, type Banner } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 import { useIsAdmin } from "@/lib/admin";
+import { adminSetUserBlocked } from "@/lib/admin.functions";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -39,7 +40,7 @@ type CommentRow = {
   is_admin_reply: boolean;
   created_at: string;
   updated_at: string;
-  profile?: { full_name: string | null; avatar_url: string | null } | null;
+  profile?: { full_name: string | null; avatar_url: string | null; is_blocked: boolean | null } | null;
 };
 
 function OffersPage() {
@@ -307,7 +308,7 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
       if (ids.length) {
         const { data: profs } = await supabase
           .from("profiles")
-          .select("id, full_name, avatar_url")
+          .select("id, full_name, avatar_url, is_blocked")
           .in("id", ids);
         const map = new Map((profs ?? []).map((p) => [p.id, p]));
         for (const r of rows) r.profile = map.get(r.user_id) ?? null;
@@ -364,15 +365,22 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
   });
 
   const block = useMutation({
-    mutationFn: async (uid: string) => {
-      const { error } = await supabase.rpc("admin_set_user_blocked", {
-        p_user_id: uid,
-        p_blocked: true,
-        p_reason: "تم حظر حسابك بسبب مخالفة قوانين التعليقات (إساءة، سبام، أو محتوى غير لائق). للاستفسار يرجى التواصل مع الإدارة.",
+    mutationFn: async ({ uid, blocked }: { uid: string; blocked: boolean }) => {
+      await adminSetUserBlocked({
+        data: {
+          user_id: uid,
+          blocked,
+          reason: blocked
+            ? "تم حظرك بسبب تعليق مخالف لقوانين المجتمع. يرجى الالتزام بالكلام المحترم وتجنب الإساءة أو السبام أو المحتوى غير اللائق."
+            : "تم رفع الحظر عن حسابك، يمكنك الآن التعليق والتفاعل بشكل طبيعي مع الالتزام بالقوانين.",
+        },
       });
-      if (error) throw error;
     },
-    onSuccess: () => toast.success("تم حظر المستخدم"),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["banner_comments", bannerId] });
+      qc.invalidateQueries({ queryKey: ["admin", "block-log"] });
+      toast.success(vars.blocked ? "تم حظر المستخدم وإرسال الإشعار" : "تم رفع الحظر عن المستخدم");
+    },
     onError: (e: Error) => toast.error(e.message || "تعذر الحظر"),
   });
 
@@ -393,7 +401,11 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
               onEdit={() => { setEditingId(c.id); setText(c.content); }}
               onDelete={() => del.mutate(c.id)}
               onBlock={() => {
-                if (confirm("حظر هذا المستخدم من إرسال الطلبات والتعليقات؟")) block.mutate(c.user_id);
+                const blocked = !!c.profile?.is_blocked;
+                const next = !blocked;
+                if (confirm(next ? "حظر هذا المستخدم من إرسال الطلبات والتعليقات؟" : "رفع الحظر عن هذا المستخدم؟")) {
+                  block.mutate({ uid: c.user_id, blocked: next });
+                }
               }}
             />
           ))
@@ -503,8 +515,9 @@ function CommentRowView({
               <button type="button" onClick={onDelete} className="inline-flex items-center gap-1 hover:text-destructive">
                 <Trash2 className="size-3" /> حذف
               </button>
-              <button type="button" onClick={onBlock} className="inline-flex items-center gap-1 hover:text-destructive">
-                <Ban className="size-3" /> حظر المستخدم
+              <button type="button" onClick={onBlock} className={`inline-flex items-center gap-1 ${c.profile?.is_blocked ? "hover:text-success" : "hover:text-destructive"}`}>
+                {c.profile?.is_blocked ? <Check className="size-3" /> : <Ban className="size-3" />}
+                {c.profile?.is_blocked ? "رفع الحظر" : "حظر المستخدم"}
               </button>
             </>
           )}
