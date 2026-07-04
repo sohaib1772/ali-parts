@@ -10,18 +10,21 @@ export function SplashScreen() {
   const storeTagline = settings?.store_tagline ?? "قطع أصلية · العراق";
   const storeLogo = settings?.store_logo ?? "";
 
-  const [visible, setVisible] = useState(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return !window.sessionStorage.getItem(SESSION_KEY);
-    } catch {
-      return true;
-    }
-  });
+  // Always render the splash during SSR + first client paint so the app
+  // never flashes behind it. We decide whether to keep it visible in a
+  // client-only effect (after hydration) to avoid hydration mismatches.
+  const [visible, setVisible] = useState(true);
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
-    if (!visible) return;
+    let alreadyShown = false;
+    try {
+      alreadyShown = !!window.sessionStorage.getItem(SESSION_KEY);
+    } catch {}
+    if (alreadyShown) {
+      setVisible(false);
+      return;
+    }
     const fadeAt = setTimeout(() => setFading(true), 1600);
     const hideAt = setTimeout(() => {
       setVisible(false);
@@ -31,7 +34,7 @@ export function SplashScreen() {
       clearTimeout(fadeAt);
       clearTimeout(hideAt);
     };
-  }, [visible]);
+  }, []);
 
   if (!visible) return null;
 
