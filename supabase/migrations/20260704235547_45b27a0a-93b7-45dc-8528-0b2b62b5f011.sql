@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.admin_set_user_blocked(uuid, boolean, text) FROM authenticated;
