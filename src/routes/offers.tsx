@@ -466,9 +466,8 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
               onBlock={() => {
                 const blocked = !!c.profile?.is_blocked;
                 const next = !blocked;
-                if (confirm(next ? "حظر هذا المستخدم من إرسال الطلبات والتعليقات؟" : "رفع الحظر عن هذا المستخدم؟")) {
-                  block.mutate({ uid: c.user_id, blocked: next });
-                }
+                if (block.isPending) return;
+                block.mutate({ uid: c.user_id, blocked: next });
               }}
             />
           ))
