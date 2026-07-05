@@ -21,11 +21,11 @@ export function SplashScreen() {
       setVisible(false);
       return;
     }
-    const fadeAt = setTimeout(() => setFading(true), 4500);
+    const fadeAt = setTimeout(() => setFading(true), 900);
     const hideAt = setTimeout(() => {
       setVisible(false);
       try { window.sessionStorage.setItem(SESSION_KEY, "1"); } catch {}
-    }, 5000);
+    }, 1300);
     return () => {
       clearTimeout(fadeAt);
       clearTimeout(hideAt);
