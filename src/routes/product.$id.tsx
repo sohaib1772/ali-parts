@@ -77,7 +77,7 @@ function ProductPage() {
     } else {
       await supabase.from("cart_items").insert({ user_id: userId!, product_id: product.id, quantity: qty, side: side ?? null });
     }
-    window.dispatchEvent(new CustomEvent("cart:changed", { detail: { delta: existing ? 0 : 1, bump: true } }));
+    window.dispatchEvent(new CustomEvent("cart:changed", { detail: { delta: qty, bump: true } }));
     toast.success("تمت الإضافة إلى السلة");
     qc.invalidateQueries({ queryKey: ["cart"] });
   };

@@ -20,11 +20,11 @@ export function AppHeader({ title }: { title?: string }) {
     let currentUid: string | null = null;
 
     const refreshCounts = async (uid: string) => {
-      const { count } = await supabase
+      const { data: cartItems } = await supabase
         .from("cart_items")
-        .select("*", { count: "exact", head: true })
+        .select("quantity")
         .eq("user_id", uid);
-      if (mounted) setCount(count ?? 0);
+      if (mounted) setCount((cartItems ?? []).reduce((sum, item) => sum + Number(item.quantity ?? 0), 0));
       const { count: nCount } = await (supabase as any)
         .from("notifications")
         .select("*", { count: "exact", head: true })
