@@ -384,8 +384,8 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   );
 
   return (
-    <div className="px-4 mt-4">
-      <Link to="/offers" aria-label="فتح العروض" ref={heroRef as never}>{content}</Link>
+    <div className="px-4 mt-4" ref={heroRef}>
+      <Link to="/offers" aria-label="فتح العروض">{content}</Link>
     </div>
   );
 }
