@@ -86,8 +86,10 @@ function OffersPage() {
 
 function ReelItem({ banner, onOpenComments }: { banner: Banner; onOpenComments: () => void }) {
   const [muted, setMuted] = useState<boolean>(() => {
-    if (typeof window === "undefined") return true;
-    return window.sessionStorage.getItem("reels_muted") !== "0";
+    if (typeof window === "undefined") return false;
+    // Default: sound ON when opening a clip. Only stay muted if the user
+    // explicitly chose mute earlier in this session.
+    return window.sessionStorage.getItem("reels_muted") === "1";
   });
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -115,12 +117,17 @@ function ReelItem({ banner, onOpenComments }: { banner: Banner; onOpenComments: 
       (entries) => {
         for (const e of entries) {
           if (e.isIntersecting && e.intersectionRatio > 0.6) {
-            // Mute automatically when swiping to a new reel
-            el.muted = true;
-            setMuted(true);
-            try { window.sessionStorage.setItem("reels_muted", "1"); } catch { /* noop */ }
-            window.dispatchEvent(new CustomEvent("reels-muted-change", { detail: true }));
-            el.play().catch(() => {});
+            // Try to play with sound. If the browser blocks unmuted
+            // autoplay, fall back to muted so the video still plays.
+            el.muted = muted;
+            const p = el.play();
+            if (p && typeof p.catch === "function") {
+              p.catch(() => {
+                el.muted = true;
+                setMuted(true);
+                el.play().catch(() => {});
+              });
+            }
           } else {
             el.pause();
           }
@@ -130,7 +137,7 @@ function ReelItem({ banner, onOpenComments }: { banner: Banner; onOpenComments: 
     );
     io.observe(box);
     return () => io.disconnect();
-  }, [video]);
+  }, [video, muted]);
 
   const likes = useLikes(banner.id, userId);
   const commentsCount = useCommentsCount(banner.id);
