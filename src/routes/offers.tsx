@@ -85,11 +85,26 @@ function OffersPage() {
 /* ---------- Reel item ---------- */
 
 function ReelItem({ banner, onOpenComments }: { banner: Banner; onOpenComments: () => void }) {
-  const [muted, setMuted] = useState(true);
+  const [muted, setMuted] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    return window.sessionStorage.getItem("reels_muted") !== "0";
+  });
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const video = (banner as unknown as { video_url?: string | null }).video_url ?? null;
   const { userId } = useAuth();
+
+  // sync with global mute pref (when another reel toggles)
+  useEffect(() => {
+    const onChange = (e: Event) => {
+      const next = (e as CustomEvent<boolean>).detail;
+      setMuted(next);
+      const el = videoRef.current;
+      if (el) el.muted = next;
+    };
+    window.addEventListener("reels-muted-change", onChange as EventListener);
+    return () => window.removeEventListener("reels-muted-change", onChange as EventListener);
+  }, []);
 
   // pause/play when in view
   useEffect(() => {
@@ -117,20 +132,30 @@ function ReelItem({ banner, onOpenComments }: { banner: Banner; onOpenComments: 
 
   const lastTapRef = useRef<number>(0);
   const [burst, setBurst] = useState(0);
+  const singleTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleMediaTap = () => {
     const now = Date.now();
-    if (now - lastTapRef.current < 300) {
+    if (now - lastTapRef.current < 400) {
       lastTapRef.current = 0;
+      if (singleTapTimerRef.current) {
+        clearTimeout(singleTapTimerRef.current);
+        singleTapTimerRef.current = null;
+      }
       if (!likes.liked && !likes.pending) likes.toggle();
       setBurst((b) => b + 1);
-    } else {
-      lastTapRef.current = now;
+      return;
+    }
+    lastTapRef.current = now;
+    // delay play/pause to allow a possible second tap
+    if (singleTapTimerRef.current) clearTimeout(singleTapTimerRef.current);
+    singleTapTimerRef.current = setTimeout(() => {
       const el = videoRef.current;
       if (el) {
         if (el.paused) el.play().catch(() => {});
         else el.pause();
       }
-    }
+      singleTapTimerRef.current = null;
+    }, 260);
   };
 
   return (
