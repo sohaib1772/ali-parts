@@ -63,33 +63,25 @@ function ProductPage() {
   };
 
   const addToCart = async () => {
-    if (!requireAuth()) return;
-    // Side is optional. Merge on (user, product, side) — treat null side as its own slot.
-    let existingQuery = supabase
-      .from("cart_items")
-      .select("id, quantity")
-      .eq("user_id", userId!)
-      .eq("product_id", product.id);
-    existingQuery = side ? existingQuery.eq("side", side) : existingQuery.is("side", null);
-    const { data: existingRows } = await existingQuery;
-    if (existingRows && existingRows.length > 0) {
-      const totalQty = existingRows.reduce((s, r: any) => s + Number(r.quantity ?? 0), 0) + qty;
-      const keep = existingRows[0];
-      await supabase.from("cart_items").update({ quantity: totalQty }).eq("id", keep.id);
-      const extras = existingRows.slice(1).map((r: any) => r.id);
-      if (extras.length) await supabase.from("cart_items").delete().in("id", extras);
-    } else {
-      await supabase.from("cart_items").insert({ user_id: userId!, product_id: product.id, quantity: qty, side: side ?? null });
+    if (!requireAuth()) return false;
+    const { error } = await (supabase as any).rpc("add_cart_item", {
+      p_product_id: product.id,
+      p_quantity: qty,
+      p_side: side ?? null,
+    });
+    if (error) {
+      toast.error("تعذر إضافة المنتج للسلة");
+      return false;
     }
     window.dispatchEvent(new CustomEvent("cart:changed", { detail: { delta: qty, bump: true } }));
     toast.success("تمت الإضافة إلى السلة");
     qc.invalidateQueries({ queryKey: ["cart"] });
+    return true;
   };
 
   const buyNow = async () => {
     if (!requireAuth()) return;
-    await addToCart();
-    router.navigate({ to: "/checkout" });
+    if (await addToCart()) router.navigate({ to: "/checkout" });
   };
 
   const toggleFav = async () => {
