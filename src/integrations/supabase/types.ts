@@ -649,6 +649,10 @@ export type Database = {
     Functions: {
       _contains_profanity: { Args: { input: string }; Returns: boolean }
       _normalize_ar: { Args: { input: string }; Returns: string }
+      add_cart_item: {
+        Args: { p_product_id: string; p_quantity?: number; p_side?: string }
+        Returns: undefined
+      }
       admin_set_user_blocked: {
         Args: { p_blocked: boolean; p_reason?: string; p_user_id: string }
         Returns: undefined
