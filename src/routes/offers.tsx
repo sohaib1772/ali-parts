@@ -211,6 +211,10 @@ function ReelItem({ banner, onOpenComments }: { banner: Banner; onOpenComments: 
               }
             }
             setMuted(next);
+            try {
+              window.sessionStorage.setItem("reels_muted", next ? "1" : "0");
+            } catch { /* noop */ }
+            window.dispatchEvent(new CustomEvent("reels-muted-change", { detail: next }));
           }}
           aria-label={muted ? "تشغيل الصوت" : "كتم الصوت"}
           className="absolute top-4 end-4 z-20 size-10 rounded-full bg-black/40 backdrop-blur text-white grid place-items-center border border-white/20"
