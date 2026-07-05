@@ -46,6 +46,24 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
 
+  const arabicAuthError = (err: unknown): string => {
+    const msg = err instanceof Error ? err.message : String(err ?? "");
+    const m = msg.toLowerCase();
+    if (m.includes("invalid login") || m.includes("invalid credentials") || m.includes("invalid_credentials"))
+      return "رقم الهاتف أو كلمة المرور غير صحيحة";
+    if (m.includes("password should be at least") || m.includes("password is too short") || m.includes("weak password") || m.includes("weak_password"))
+      return "كلمة المرور قصيرة جداً — يجب أن تكون 6 خانات على الأقل";
+    if (m.includes("user already registered") || m.includes("already registered") || m.includes("user_already_exists"))
+      return "هذا الحساب مسجّل مسبقاً — سجّل الدخول بدل الإنشاء";
+    if (m.includes("email not confirmed"))
+      return "الحساب غير مفعّل بعد. تواصل مع الإدارة.";
+    if (m.includes("rate limit") || m.includes("too many"))
+      return "محاولات كثيرة — انتظر قليلاً وحاول مرة أخرى";
+    if (m.includes("network") || m.includes("failed to fetch"))
+      return "تعذر الاتصال بالإنترنت — تحقق من الشبكة";
+    return "تعذر إتمام العملية، يرجى المحاولة مرة أخرى";
+  };
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/account" });
@@ -66,7 +84,7 @@ function AuthPage() {
         toast.success("مرحباً بك");
         navigate({ to: "/" });
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "حدث خطأ");
+        toast.error(arabicAuthError(err));
       } finally { setLoading(false); setProgress(null); }
       return;
     }
@@ -80,6 +98,9 @@ function AuthPage() {
     setProgress(mode === "signup" ? "جاري إنشاء حسابك…" : "جاري التحقق من بيانات الدخول…");
     try {
       if (mode === "signup") {
+        if (password.length < 6) {
+          throw new Error("password should be at least 6");
+        }
         const { error } = await supabase.auth.signUp({
           email: loginEmail,
           password,
@@ -97,7 +118,7 @@ function AuthPage() {
         navigate({ to: "/" });
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "حدث خطأ");
+      toast.error(arabicAuthError(err));
     } finally {
       setLoading(false);
       setProgress(null);
