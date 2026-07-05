@@ -10,6 +10,7 @@ export function AppHeader({ title }: { title?: string }) {
   const [unread, setUnread] = useState(0);
   const [cartBump, setCartBump] = useState(false);
   const [cartIconJump, setCartIconJump] = useState(false);
+  const [bumpKey, setBumpKey] = useState(0);
   const storeName = useSetting("store_name", "Ali Parts");
   const storeTagline = useSetting("store_tagline", "قطع أصلية · العراق");
   const storeLogo = useSetting("store_logo", "");
@@ -64,11 +65,13 @@ export function AppHeader({ title }: { title?: string }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => setup(session?.user.id ?? null));
     // Instant badge bump when addToCart fires an event locally
     const onCartChanged = (e: Event) => {
-      const detail = (e as CustomEvent<{ delta?: number }>).detail;
+      const detail = (e as CustomEvent<{ delta?: number; bump?: boolean }>).detail;
       const delta = detail?.delta ?? 1;
+      const bump = detail?.bump ?? delta > 0;
       if (mounted) {
         setCount((c) => Math.max(0, c + delta));
-        if (delta > 0) {
+        if (bump) {
+          setBumpKey((k) => k + 1);
           setCartBump(true);
           setCartIconJump(true);
           window.setTimeout(() => { if (mounted) setCartBump(false); }, 360);
@@ -120,9 +123,9 @@ export function AppHeader({ title }: { title?: string }) {
             )}
           </Link>
           <Link to="/cart" aria-label="السلة" className="relative size-10 rounded-full grid place-items-center hover:bg-white/10 transition">
-            <ShoppingCart className={cn("size-5 transition-transform", cartIconJump && "animate-cart-jump")} />
+            <ShoppingCart key={`icon-${bumpKey}`} className={cn("size-5 transition-transform", cartIconJump && "animate-cart-jump")} />
             {count > 0 && (
-              <span className={cn(
+              <span key={`badge-${bumpKey}`} className={cn(
                 "absolute -top-0.5 -start-0.5 min-w-5 h-5 px-1 rounded-full bg-gold text-navy text-[10px] font-bold grid place-items-center origin-center",
                 cartBump && "animate-badge-pop"
               )}>
