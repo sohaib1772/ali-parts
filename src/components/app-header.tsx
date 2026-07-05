@@ -59,10 +59,22 @@ export function AppHeader({ title }: { title?: string }) {
       setup(data.session?.user.id ?? null);
     })();
     const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => setup(session?.user.id ?? null));
+    // Instant badge bump when addToCart fires an event locally
+    const onCartChanged = (e: Event) => {
+      const detail = (e as CustomEvent<{ delta?: number }>).detail;
+      const delta = detail?.delta ?? 1;
+      if (mounted) setCount((c) => Math.max(0, c + delta));
+      // Reconcile with the real count shortly after
+      if (currentUid) {
+        window.setTimeout(() => currentUid && refreshCounts(currentUid), 600);
+      }
+    };
+    window.addEventListener("cart:changed", onCartChanged as EventListener);
     return () => {
       mounted = false;
       sub.subscription.unsubscribe();
       if (channel) supabase.removeChannel(channel);
+      window.removeEventListener("cart:changed", onCartChanged as EventListener);
     };
   }, []);
 
