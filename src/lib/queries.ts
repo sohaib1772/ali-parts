@@ -126,6 +126,7 @@ export const productByIdQuery = (id: string) =>
 export const productsByCategoryQuery = (categoryId: string) =>
   queryOptions({
     queryKey: ["products", "category", categoryId],
+    staleTime: 2 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("products").select("*").eq("category_id", categoryId);
       if (error) throw error;
