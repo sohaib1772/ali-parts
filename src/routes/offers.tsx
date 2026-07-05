@@ -115,6 +115,11 @@ function ReelItem({ banner, onOpenComments }: { banner: Banner; onOpenComments: 
       (entries) => {
         for (const e of entries) {
           if (e.isIntersecting && e.intersectionRatio > 0.6) {
+            // Mute automatically when swiping to a new reel
+            el.muted = true;
+            setMuted(true);
+            try { window.sessionStorage.setItem("reels_muted", "1"); } catch { /* noop */ }
+            window.dispatchEvent(new CustomEvent("reels-muted-change", { detail: true }));
             el.play().catch(() => {});
           } else {
             el.pause();
