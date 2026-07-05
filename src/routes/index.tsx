@@ -367,30 +367,6 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   return (
     <div className="px-4 mt-4">
       <Link to="/offers" aria-label="فتح العروض">{content}</Link>
-      {expandedVideo && (
-        <div
-          className="fixed inset-0 z-50 bg-black flex items-center justify-center"
-          onClick={() => setExpandedVideo(null)}
-        >
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); setExpandedVideo(null); }}
-            aria-label="إغلاق"
-            className="absolute top-4 end-4 z-10 size-10 rounded-full bg-white/10 text-white grid place-items-center hover:bg-white/20 transition"
-          >
-            <X className="size-5" />
-          </button>
-          <video
-            src={expandedVideo}
-            autoPlay
-            controls
-            muted={false}
-            playsInline
-            className="w-full max-h-screen"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
     </div>
   );
 }
