@@ -411,14 +411,45 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
         if (error) throw error;
       }
     },
-    onSuccess: () => {
+    onMutate: async () => {
+      const body = text.trim();
+      if (!body || !userId) return;
+      const key = ["banner_comments", bannerId];
+      await qc.cancelQueries({ queryKey: key });
+      const previous = qc.getQueryData<CommentRow[]>(key);
+      if (editingId) {
+        qc.setQueryData<CommentRow[]>(key, (rows) =>
+          (rows ?? []).map((r) => (r.id === editingId ? { ...r, content: body } : r)),
+        );
+      } else {
+        const prevProfile = (previous ?? []).find((r) => r.user_id === userId)?.profile ?? null;
+        const optimistic: CommentRow = {
+          id: `optimistic-${Date.now()}`,
+          banner_id: bannerId,
+          user_id: userId,
+          parent_id: null,
+          content: body,
+          is_admin_reply: isAdmin && asAdmin,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          profile: prevProfile,
+        };
+        qc.setQueryData<CommentRow[]>(key, (rows) => [optimistic, ...(rows ?? [])]);
+        qc.setQueryData<number>(["banner_comments_count", bannerId], (n) => (n ?? 0) + 1);
+      }
+      // Clear the input immediately so the UI feels instant.
       setText("");
       setEditingId(null);
       setAsAdmin(false);
+      return { previous };
+    },
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["banner_comments", bannerId] });
       qc.invalidateQueries({ queryKey: ["banner_comments_count", bannerId] });
     },
-    onError: (e: Error) => {
+    onError: (e: Error, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(["banner_comments", bannerId], ctx.previous);
+      qc.invalidateQueries({ queryKey: ["banner_comments_count", bannerId] });
       if (e.message === "auth") toast.error("سجّل الدخول لكتابة تعليق");
       else if (e.message === "profanity")
         toast.error("تعليقك يحتوي كلمات مسيئة. يرجى الالتزام بالاحترام.");
