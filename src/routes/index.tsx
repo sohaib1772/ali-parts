@@ -390,11 +390,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
 
   return (
     <div className="px-4 mt-4">
-      {current.link ? (
-        <a href={current.link}>{content}</a>
-      ) : (
-        content
-      )}
+      <Link to="/offers" aria-label="فتح العروض">{content}</Link>
       {expandedVideo && (
         <div
           className="fixed inset-0 z-50 bg-black flex items-center justify-center"
