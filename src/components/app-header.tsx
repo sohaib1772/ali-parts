@@ -64,11 +64,12 @@ export function AppHeader({ title }: { title?: string }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => setup(session?.user.id ?? null));
     // Instant badge bump when addToCart fires an event locally
     const onCartChanged = (e: Event) => {
-      const detail = (e as CustomEvent<{ delta?: number }>).detail;
+      const detail = (e as CustomEvent<{ delta?: number; bump?: boolean }>).detail;
       const delta = detail?.delta ?? 1;
+      const bump = detail?.bump ?? delta > 0;
       if (mounted) {
         setCount((c) => Math.max(0, c + delta));
-        if (delta > 0) {
+        if (bump) {
           setCartBump(true);
           setCartIconJump(true);
           window.setTimeout(() => { if (mounted) setCartBump(false); }, 360);
