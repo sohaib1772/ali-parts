@@ -33,6 +33,37 @@ const STATUSES = ["received", "preparing", "packed", "shipped", "out_for_deliver
 /* ---------------- Block Log ---------------- */
 
 function BlockLogAdmin() {
+  const qc = useQueryClient();
+  const [unblockingId, setUnblockingId] = useState<string | null>(null);
+
+  const { data: blocked = [], isLoading: loadingBlocked } = useQuery({
+    queryKey: ["admin", "blocked-users"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, phone")
+        .eq("is_blocked", true)
+        .order("full_name", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const unblock = async (uid: string) => {
+    if (unblockingId) return;
+    setUnblockingId(uid);
+    try {
+      await adminSetUserBlocked({ data: { user_id: uid, blocked: false } });
+      toast.success("تم رفع الحظر");
+      qc.invalidateQueries({ queryKey: ["admin", "blocked-users"] });
+      qc.invalidateQueries({ queryKey: ["admin", "block-log"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "تعذر رفع الحظر");
+    } finally {
+      setUnblockingId(null);
+    }
+  };
+
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ["admin", "block-log"],
     queryFn: async () => {
@@ -69,11 +100,62 @@ function BlockLogAdmin() {
     return p?.full_name || p?.phone || id.slice(0, 8);
   };
 
-  if (isLoading) return <div className="text-center text-sm text-muted-foreground py-8">جاري التحميل…</div>;
-  if (!entries.length) return <div className="text-center text-sm text-muted-foreground py-8">لا توجد سجلات بعد</div>;
-
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
+      {/* Currently blocked users */}
+      <div className="space-y-2">
+        <div className="text-sm font-extrabold flex items-center gap-2">
+          <Ban className="size-4 text-destructive" /> المحظورون حاليًا
+          {blocked.length > 0 && (
+            <span className="text-xs font-normal text-muted-foreground">({blocked.length})</span>
+          )}
+        </div>
+        {loadingBlocked ? (
+          <div className="text-center text-xs text-muted-foreground py-4">جاري التحميل…</div>
+        ) : blocked.length === 0 ? (
+          <div className="text-center text-xs text-muted-foreground py-4 bg-muted/40 rounded-2xl">
+            لا يوجد مستخدمون محظورون
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {blocked.map((u: any) => (
+              <div key={u.id} className="bg-card border border-border rounded-2xl p-3 flex items-center gap-3">
+                <div className="size-9 rounded-full bg-destructive/10 text-destructive grid place-items-center shrink-0">
+                  <Ban className="size-4" />
+                </div>
+                <div className="flex-1 min-w-0 text-sm">
+                  <div className="font-bold truncate">{u.full_name || u.phone || u.id.slice(0, 8)}</div>
+                  {u.phone && <div className="text-xs text-muted-foreground truncate">{u.phone}</div>}
+                </div>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => unblock(u.id)}
+                  disabled={unblockingId === u.id}
+                  className="gap-1"
+                >
+                  {unblockingId === u.id ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="size-3.5" />
+                  )}
+                  رفع الحظر
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="text-sm font-extrabold flex items-center gap-2 pt-2">
+        <History className="size-4" /> السجل
+      </div>
+      {isLoading ? (
+        <div className="text-center text-sm text-muted-foreground py-8">جاري التحميل…</div>
+      ) : !entries.length ? (
+        <div className="text-center text-sm text-muted-foreground py-8">لا توجد سجلات بعد</div>
+      ) : (
+        <div className="space-y-2">
       {entries.map((e: any) => {
         const isBlock = e.action === "block";
         return (
@@ -96,6 +178,8 @@ function BlockLogAdmin() {
           </div>
         );
       })}
+        </div>
+      )}
     </div>
   );
 }
