@@ -23,6 +23,10 @@ function phoneToEmail(phone: string) {
   return `p${phone}@aliparts.app`;
 }
 
+function phoneToEmailLegacy(phone: string) {
+  return `p${phone}@aliparts.local`;
+}
+
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
@@ -111,8 +115,12 @@ function AuthPage() {
         toast.success("تم إنشاء الحساب بنجاح");
         navigate({ to: "/" });
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
-        if (error) throw error;
+        let { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
+        if (error) {
+          // Legacy accounts created with the old domain
+          const legacy = await supabase.auth.signInWithPassword({ email: phoneToEmailLegacy(normalized), password });
+          if (legacy.error) throw error;
+        }
         setProgress("تم — جاري تحويلك…");
         toast.success("مرحباً بعودتك");
         navigate({ to: "/" });
