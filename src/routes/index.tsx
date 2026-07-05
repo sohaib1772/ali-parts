@@ -231,6 +231,15 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
         for (const e of entries) {
           if (!e.isIntersecting || e.intersectionRatio < 0.5) {
             setMuted(true);
+            videoRefs.current.forEach((el) => {
+              if (el) {
+                el.muted = true;
+                el.pause();
+              }
+            });
+          } else {
+            const el = videoRefs.current[idx];
+            if (el) el.play().catch(() => {});
           }
         }
       },
@@ -238,7 +247,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
     );
     io.observe(box);
     return () => io.disconnect();
-  }, []);
+  }, [idx]);
 
   // Keep the DOM element in sync when muted state or the active slide changes.
   // Setting the `muted` property + calling play() imperatively is the only
