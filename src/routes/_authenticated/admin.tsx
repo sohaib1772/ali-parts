@@ -1040,7 +1040,7 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, phone, is_blocked")
+        .select("full_name, phone, is_blocked, avatar_url")
         .eq("id", o.user_id)
         .maybeSingle();
       return data ?? null;
@@ -1066,6 +1066,7 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
       toast.success(next ? "تم حظر الزبون وإرسال الإشعار" : "تم رفع الحظر");
       qcCard.invalidateQueries({ queryKey: ["admin", "order-customer", o.user_id] });
       qcCard.invalidateQueries({ queryKey: ["admin", "block-log"] });
+      qcCard.invalidateQueries({ queryKey: ["admin", "blocked-users"] });
       qcCard.invalidateQueries({ queryKey: ["admin", "users"] });
     } catch (e: any) {
       toast.error(e?.message || "تعذّر تحديث الحالة");
