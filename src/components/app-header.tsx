@@ -3,10 +3,13 @@ import { Bell, Search, ShoppingCart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useSetting } from "@/lib/admin";
+import { cn } from "@/lib/utils";
 
 export function AppHeader({ title }: { title?: string }) {
   const [count, setCount] = useState(0);
   const [unread, setUnread] = useState(0);
+  const [cartBump, setCartBump] = useState(false);
+  const [cartIconJump, setCartIconJump] = useState(false);
   const storeName = useSetting("store_name", "Ali Parts");
   const storeTagline = useSetting("store_tagline", "قطع أصلية · العراق");
   const storeLogo = useSetting("store_logo", "");
@@ -63,7 +66,15 @@ export function AppHeader({ title }: { title?: string }) {
     const onCartChanged = (e: Event) => {
       const detail = (e as CustomEvent<{ delta?: number }>).detail;
       const delta = detail?.delta ?? 1;
-      if (mounted) setCount((c) => Math.max(0, c + delta));
+      if (mounted) {
+        setCount((c) => Math.max(0, c + delta));
+        if (delta > 0) {
+          setCartBump(true);
+          setCartIconJump(true);
+          window.setTimeout(() => { if (mounted) setCartBump(false); }, 360);
+          window.setTimeout(() => { if (mounted) setCartIconJump(false); }, 420);
+        }
+      }
       // Reconcile with the real count shortly after
       if (currentUid) {
         window.setTimeout(() => currentUid && refreshCounts(currentUid), 600);
@@ -109,9 +120,12 @@ export function AppHeader({ title }: { title?: string }) {
             )}
           </Link>
           <Link to="/cart" aria-label="السلة" className="relative size-10 rounded-full grid place-items-center hover:bg-white/10 transition">
-            <ShoppingCart className="size-5" />
+            <ShoppingCart className={cn("size-5 transition-transform", cartIconJump && "animate-cart-jump")} />
             {count > 0 && (
-              <span className="absolute -top-0.5 -start-0.5 min-w-5 h-5 px-1 rounded-full bg-gold text-navy text-[10px] font-bold grid place-items-center">
+              <span className={cn(
+                "absolute -top-0.5 -start-0.5 min-w-5 h-5 px-1 rounded-full bg-gold text-navy text-[10px] font-bold grid place-items-center origin-center",
+                cartBump && "animate-badge-pop"
+              )}>
                 {count}
               </span>
             )}
