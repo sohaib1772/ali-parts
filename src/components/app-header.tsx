@@ -119,9 +119,12 @@ export function AppHeader({ title }: { title?: string }) {
             )}
           </Link>
           <Link to="/cart" aria-label="السلة" className="relative size-10 rounded-full grid place-items-center hover:bg-white/10 transition">
-            <ShoppingCart className="size-5" />
+            <ShoppingCart className={cn("size-5 transition-transform", cartIconJump && "animate-cart-jump")} />
             {count > 0 && (
-              <span className="absolute -top-0.5 -start-0.5 min-w-5 h-5 px-1 rounded-full bg-gold text-navy text-[10px] font-bold grid place-items-center">
+              <span className={cn(
+                "absolute -top-0.5 -start-0.5 min-w-5 h-5 px-1 rounded-full bg-gold text-navy text-[10px] font-bold grid place-items-center origin-center",
+                cartBump && "animate-badge-pop"
+              )}>
                 {count}
               </span>
             )}
