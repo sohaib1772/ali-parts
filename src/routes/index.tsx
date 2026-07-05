@@ -329,6 +329,12 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
             playsInline
             preload="metadata"
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 cursor-pointer ${i === idx ? "opacity-100" : "opacity-0"}`}
+            onVolumeChange={(e) => {
+              if (i !== idx) return;
+              const el = e.currentTarget;
+              setMuted(el.muted);
+              if (!el.muted) userWantsSoundRef.current = true;
+            }}
           />
         ) : (
           <img
