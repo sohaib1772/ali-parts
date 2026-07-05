@@ -15,26 +15,46 @@ export const Route = createFileRoute("/_authenticated/cart")({
 
 function CartPage() {
   const { userId } = useAuth();
-  const { data: items = [], isLoading } = useQuery(cartQuery(userId));
+  const { data: items = [], isLoading, isError, refetch } = useQuery(cartQuery(userId));
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const [pendingIds, setPendingIds] = useState<Record<string, boolean>>({});
+  const markPending = (id: string, on: boolean) =>
+    setPendingIds((p) => ({ ...p, [id]: on }));
 
   const total = items.reduce((s, i: any) => s + Number(i.product?.price_iqd ?? 0) * i.quantity, 0);
 
   const setQty = async (id: string, q: number) => {
     if (q <= 0) return remove(id);
-    await supabase.from("cart_items").update({ quantity: q }).eq("id", id);
-    qc.invalidateQueries({ queryKey: ["cart"] });
+    markPending(id, true);
+    const { error } = await supabase.from("cart_items").update({ quantity: q }).eq("id", id);
+    if (error) {
+      toast.error("تعذر تحديث الكمية. حاول مرة أخرى.");
+    } else {
+      await qc.invalidateQueries({ queryKey: ["cart"] });
+    }
+    markPending(id, false);
   };
   const remove = async (id: string) => {
-    await supabase.from("cart_items").delete().eq("id", id);
+    markPending(id, true);
+    const { error } = await supabase.from("cart_items").delete().eq("id", id);
+    if (error) {
+      toast.error("تعذر حذف المنتج. حاول مرة أخرى.");
+      markPending(id, false);
+      return;
+    }
     toast.success("أزيل من السلة");
-    qc.invalidateQueries({ queryKey: ["cart"] });
+    await qc.invalidateQueries({ queryKey: ["cart"] });
+    markPending(id, false);
   };
 
   const saveNote = async (id: string, note: string) => {
     const value = note.trim() || null;
-    await supabase.from("cart_items").update({ note: value }).eq("id", id);
+    const { error } = await supabase.from("cart_items").update({ note: value }).eq("id", id);
+    if (error) {
+      toast.error("تعذر حفظ الملاحظة.");
+      return;
+    }
     qc.invalidateQueries({ queryKey: ["cart"] });
   };
 
@@ -67,7 +87,41 @@ function CartPage() {
   };
 
   if (isLoading) {
-    return <PageShell title="السلة"><div className="p-8 text-center text-muted-foreground">جاري التحميل…</div></PageShell>;
+    return (
+      <PageShell title="السلة">
+        <div className="px-4 pt-4 pb-6 space-y-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="bg-card rounded-2xl border border-border p-3 shadow-card flex gap-3 animate-pulse">
+              <div className="size-20 rounded-xl bg-muted flex-shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-muted rounded w-3/4" />
+                <div className="h-3 bg-muted rounded w-1/2" />
+                <div className="h-8 bg-muted rounded w-24 mt-3" />
+              </div>
+            </div>
+          ))}
+          <div className="bg-card rounded-2xl border border-border p-4 shadow-card space-y-2 animate-pulse">
+            <div className="h-4 bg-muted rounded w-full" />
+            <div className="h-4 bg-muted rounded w-full" />
+            <div className="h-6 bg-muted rounded w-1/2 mt-3" />
+          </div>
+        </div>
+      </PageShell>
+    );
+  }
+
+  if (isError) {
+    return (
+      <PageShell title="السلة">
+        <div className="px-6 py-20 text-center">
+          <h2 className="text-lg font-bold mb-2 text-destructive">تعذر تحميل السلة</h2>
+          <p className="text-sm text-muted-foreground mb-6">تحقق من الاتصال ثم أعد المحاولة.</p>
+          <button onClick={() => refetch()} className="px-6 py-3 rounded-2xl bg-gradient-gold text-navy font-bold shadow-gold">
+            إعادة المحاولة
+          </button>
+        </div>
+      </PageShell>
+    );
   }
 
   if (items.length === 0) {
@@ -91,7 +145,12 @@ function CartPage() {
     <PageShell title="السلة">
       <div className="px-4 pt-4 pb-6 space-y-3">
         {items.map((it: any) => (
-          <div key={it.id} className="bg-card rounded-2xl border border-border p-3 shadow-card flex gap-3">
+          <div key={it.id} className={`relative bg-card rounded-2xl border border-border p-3 shadow-card flex gap-3 transition ${pendingIds[it.id] ? "opacity-60 pointer-events-none" : ""}`}>
+            {pendingIds[it.id] && (
+              <div className="absolute inset-0 grid place-items-center rounded-2xl bg-background/40 z-10">
+                <div className="size-6 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
             <div className="size-20 rounded-xl bg-muted overflow-hidden flex-shrink-0">
               {it.product?.images?.[0] && <img src={it.product.images[0]} alt="" className="size-full object-cover" />}
             </div>
