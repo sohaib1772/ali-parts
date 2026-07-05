@@ -30,6 +30,7 @@ export type Banner = { id: string; title_ar: string | null; subtitle_ar: string 
 export const categoriesQuery = () =>
   queryOptions({
     queryKey: ["categories"],
+    staleTime: 5 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("categories").select("*").order("sort_order");
       if (error) throw error;
@@ -40,6 +41,7 @@ export const categoriesQuery = () =>
 export const brandsQuery = () =>
   queryOptions({
     queryKey: ["brands"],
+    staleTime: 5 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("brands").select("*").order("sort_order");
       if (error) throw error;
@@ -50,6 +52,7 @@ export const brandsQuery = () =>
 export const carModelsQuery = () =>
   queryOptions({
     queryKey: ["car_models"],
+    staleTime: 5 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("car_models").select("*").order("sort_order");
       if (error) throw error;
@@ -60,6 +63,7 @@ export const carModelsQuery = () =>
 export const bannersQuery = () =>
   queryOptions({
     queryKey: ["banners"],
+    staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("banners").select("*").eq("is_active", true).order("sort_order");
       if (error) throw error;
@@ -71,6 +75,7 @@ export const bannersQuery = () =>
 export const featuredProductsQuery = () =>
   queryOptions({
     queryKey: ["products", "featured"],
+    staleTime: 2 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("products").select("*").eq("is_featured", true).order("created_at", { ascending: false }).limit(10);
       if (error) throw error;
@@ -81,6 +86,7 @@ export const featuredProductsQuery = () =>
 export const dealsQuery = () =>
   queryOptions({
     queryKey: ["products", "deals"],
+    staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("products").select("*").eq("is_deal", true).order("created_at", { ascending: false }).limit(20);
       if (error) throw error;
@@ -94,12 +100,14 @@ export const dealsQuery = () =>
 export const bestSellersQuery = () =>
   queryOptions({
     queryKey: ["products", "best-sellers"],
+    staleTime: 2 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
         .select("*")
         .order("sales_count", { ascending: false })
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(20);
       if (error) throw error;
       return (data ?? []) as (Product & { sales_count: number })[];
     },
