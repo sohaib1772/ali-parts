@@ -28,15 +28,18 @@ export function ProductCard({ product }: { product: Product }) {
     e.stopPropagation();
     if (!requireAuth()) return;
     // Side is optional now: add directly with null side.
-    const { data: existing } = await supabase
+    const { data: existingRows } = await supabase
       .from("cart_items")
       .select("id, quantity")
       .eq("user_id", userId!)
       .eq("product_id", product.id)
-      .is("side", null)
-      .maybeSingle();
-    if (existing) {
-      await supabase.from("cart_items").update({ quantity: existing.quantity + 1 }).eq("id", existing.id);
+      .is("side", null);
+    if (existingRows && existingRows.length > 0) {
+      const totalQty = existingRows.reduce((s, r: any) => s + Number(r.quantity ?? 0), 0) + 1;
+      const keep = existingRows[0];
+      await supabase.from("cart_items").update({ quantity: totalQty }).eq("id", keep.id);
+      const extras = existingRows.slice(1).map((r: any) => r.id);
+      if (extras.length) await supabase.from("cart_items").delete().in("id", extras);
     } else {
       await supabase.from("cart_items").insert({ user_id: userId!, product_id: product.id, quantity: 1, side: null });
     }
