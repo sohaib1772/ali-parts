@@ -145,7 +145,12 @@ function CartPage() {
     <PageShell title="السلة">
       <div className="px-4 pt-4 pb-6 space-y-3">
         {items.map((it: any) => (
-          <div key={it.id} className="bg-card rounded-2xl border border-border p-3 shadow-card flex gap-3">
+          <div key={it.id} className={`relative bg-card rounded-2xl border border-border p-3 shadow-card flex gap-3 transition ${pendingIds[it.id] ? "opacity-60 pointer-events-none" : ""}`}>
+            {pendingIds[it.id] && (
+              <div className="absolute inset-0 grid place-items-center rounded-2xl bg-background/40 z-10">
+                <div className="size-6 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
             <div className="size-20 rounded-xl bg-muted overflow-hidden flex-shrink-0">
               {it.product?.images?.[0] && <img src={it.product.images[0]} alt="" className="size-full object-cover" />}
             </div>
