@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { SplashScreen } from "@/components/splash-screen";
+import { NotificationPopup } from "@/components/notification-popup";
 
 function NotFoundComponent() {
   return (
@@ -144,6 +145,7 @@ function RootComponent() {
       <AuthListener />
       <SplashScreen />
       <NotificationPermissionGate />
+      <NotificationPopup />
     </QueryClientProvider>
   );
 }
