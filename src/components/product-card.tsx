@@ -40,6 +40,7 @@ export function ProductCard({ product }: { product: Product }) {
     } else {
       await supabase.from("cart_items").insert({ user_id: userId!, product_id: product.id, quantity: 1, side: null });
     }
+    window.dispatchEvent(new CustomEvent("cart:changed", { detail: { delta: existing ? 0 : 1 } }));
     toast.success("تمت الإضافة إلى السلة");
     qc.invalidateQueries({ queryKey: ["cart"] });
   };
