@@ -647,6 +647,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _contains_profanity: { Args: { input: string }; Returns: boolean }
+      _normalize_ar: { Args: { input: string }; Returns: string }
       admin_set_user_blocked: {
         Args: { p_blocked: boolean; p_reason?: string; p_user_id: string }
         Returns: undefined
