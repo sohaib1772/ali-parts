@@ -65,7 +65,15 @@ export function AppHeader({ title }: { title?: string }) {
     const onCartChanged = (e: Event) => {
       const detail = (e as CustomEvent<{ delta?: number }>).detail;
       const delta = detail?.delta ?? 1;
-      if (mounted) setCount((c) => Math.max(0, c + delta));
+      if (mounted) {
+        setCount((c) => Math.max(0, c + delta));
+        if (delta > 0) {
+          setCartBump(true);
+          setCartIconJump(true);
+          window.setTimeout(() => { if (mounted) setCartBump(false); }, 360);
+          window.setTimeout(() => { if (mounted) setCartIconJump(false); }, 420);
+        }
+      }
       // Reconcile with the real count shortly after
       if (currentUid) {
         window.setTimeout(() => currentUid && refreshCounts(currentUid), 600);
