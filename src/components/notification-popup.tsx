@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Bell, X } from "lucide-react";
+import { Bell, X, ShieldAlert } from "lucide-react";
 
 type Notif = {
   id: string;
@@ -104,11 +104,24 @@ export function NotificationPopup() {
           <X className="size-4" />
         </button>
         <div
-          className={`mx-auto size-14 rounded-full grid place-items-center mb-3 ${
-            isBlock ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
+          className={`relative mx-auto mb-4 size-20 rounded-full grid place-items-center ${
+            isBlock
+              ? "bg-gradient-to-br from-red-500 via-rose-600 to-red-700 shadow-[0_10px_30px_-8px_rgba(239,68,68,0.6)]"
+              : "bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-600 shadow-[0_10px_30px_-8px_rgba(245,158,11,0.6)]"
           }`}
         >
-          <Bell className="size-6" />
+          <div
+            className={`absolute -inset-2 rounded-full blur-xl opacity-60 ${
+              isBlock ? "bg-red-500/50" : "bg-amber-400/50"
+            }`}
+          />
+          <div className="relative size-16 rounded-full bg-white/10 backdrop-blur-sm grid place-items-center border border-white/30 ring-4 ring-white/20">
+            {isBlock ? (
+              <ShieldAlert className="size-9 text-white drop-shadow-lg" strokeWidth={2.5} />
+            ) : (
+              <Bell className="size-9 text-white drop-shadow-lg" strokeWidth={2.5} />
+            )}
+          </div>
         </div>
         {notif.title && (
           <div className="font-extrabold text-lg text-foreground mb-2">{notif.title}</div>
