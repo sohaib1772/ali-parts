@@ -44,7 +44,7 @@ function ChangePasswordPage() {
       <form onSubmit={submit} className="px-4 pt-4 space-y-4">
         <div className="bg-card border border-border rounded-2xl p-4 shadow-card space-y-4">
           <Field
-            placeholder="كلمة المرور الجديدة"
+            placeholder="كلمة المرور الجديدة (أرقام أو أحرف)"
             value={password}
             onChange={setPassword}
           />

@@ -180,7 +180,7 @@ function AuthPage() {
             />
             <LuxuryField
               icon={<Lock className="size-4" />}
-              placeholder="كلمة المرور"
+              placeholder="كلمة المرور (أرقام فقط أو أحرف — 6 خانات على الأقل)"
               type="password"
               required
               value={password}
