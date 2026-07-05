@@ -3,6 +3,7 @@ import { Bell, Search, ShoppingCart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useSetting } from "@/lib/admin";
+import { cn } from "@/lib/utils";
 
 export function AppHeader({ title }: { title?: string }) {
   const [count, setCount] = useState(0);
