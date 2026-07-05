@@ -175,6 +175,10 @@ function ReelItem({ banner, onOpenComments }: { banner: Banner; onOpenComments: 
           preload="metadata"
           className="absolute inset-0 w-full h-full object-contain"
           onClick={handleMediaTap}
+          onVolumeChange={(e) => {
+            const el = e.currentTarget;
+            setMuted(el.muted);
+          }}
         />
       ) : (
         <img
