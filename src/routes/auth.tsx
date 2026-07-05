@@ -55,8 +55,10 @@ function AuthPage() {
     const m = msg.toLowerCase();
     if (m.includes("invalid login") || m.includes("invalid credentials") || m.includes("invalid_credentials"))
       return "رقم الهاتف أو كلمة المرور غير صحيحة";
-    if (m.includes("password should be at least") || m.includes("password is too short") || m.includes("weak password") || m.includes("weak_password"))
+    if (m.includes("password should be at least") || m.includes("password is too short"))
       return "كلمة المرور قصيرة جداً — يجب أن تكون 6 خانات على الأقل";
+    if (m.includes("weak password") || m.includes("weak_password") || m.includes("pwned"))
+      return "كلمة المرور ضعيفة جداً وشائعة الاستخدام. اختر كلمة أقوى (اخلط أحرف وأرقام ورموز، مثال: Ali@2026#77)";
     if (m.includes("user already registered") || m.includes("already registered") || m.includes("user_already_exists"))
       return "هذا الحساب مسجّل مسبقاً — سجّل الدخول بدل الإنشاء";
     if (m.includes("email not confirmed"))
