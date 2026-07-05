@@ -221,8 +221,12 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   const slides = banners.length > 0 ? banners : null;
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
   const heroRef = useRef<HTMLDivElement | null>(null);
+  // Remember the user's chosen sound preference so we can restore it
+  // when the hero scrolls back into view.
+  const userWantsSoundRef = useRef(false);
 
-  // Mute the hero video when it scrolls out of view
+  // Mute + pause the hero video when it scrolls out of view; restore
+  // the user's chosen sound preference when it comes back in.
   useEffect(() => {
     const box = heroRef.current;
     if (!box) return;
@@ -238,8 +242,13 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
               }
             });
           } else {
+            if (userWantsSoundRef.current) setMuted(false);
             const el = videoRefs.current[idx];
-            if (el) el.play().catch(() => {});
+            if (el) {
+              el.muted = !userWantsSoundRef.current;
+              if (userWantsSoundRef.current) el.volume = 1;
+              el.play().catch(() => {});
+            }
           }
         }
       },
@@ -339,6 +348,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
             e.stopPropagation();
             setMuted((m) => {
               const next = !m;
+              userWantsSoundRef.current = !next;
               const el = videoRefs.current[idx];
               if (el) {
                 el.muted = next;
