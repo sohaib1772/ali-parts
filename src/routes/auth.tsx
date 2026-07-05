@@ -20,7 +20,7 @@ function normalizePhone(raw: string): string | null {
 }
 
 function phoneToEmail(phone: string) {
-  return `p${phone}@aliparts.local`;
+  return `p${phone}@aliparts.app`;
 }
 
 export const Route = createFileRoute("/auth")({
