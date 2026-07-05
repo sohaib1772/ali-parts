@@ -1090,6 +1090,29 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
         <div className={`text-xs font-bold px-2 py-0.5 rounded-full ${statusColor(o.status)}`}>{statusLabel(o.status)}</div>
       </div>
 
+      {(customer as any) && (
+        <div className="flex items-center gap-3 -mb-1">
+          <div className="size-11 rounded-full overflow-hidden bg-gradient-gold text-navy font-black grid place-items-center shrink-0">
+            {(customer as any).avatar_url ? (
+              <img src={(customer as any).avatar_url} alt="" className="size-full object-cover" />
+            ) : (
+              <span>{((customer as any).full_name?.[0] ?? "?").toUpperCase()}</span>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-bold truncate">{(customer as any).full_name || addr.full_name || "زبون"}</div>
+            {(customer as any).phone && (
+              <div className="text-[11px] text-muted-foreground font-mono truncate">{(customer as any).phone}</div>
+            )}
+          </div>
+          {isBlocked && (
+            <span className="text-[10px] font-bold text-destructive bg-destructive/10 border border-destructive/30 rounded-full px-2 py-0.5">
+              محظور
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="rounded-xl border border-border/80 bg-muted/30 p-3 space-y-2">
         <div className="flex items-center gap-2 text-xs font-bold text-gold mb-1">
           <MapPin className="size-4" /> تفاصيل عنوان التوصيل
