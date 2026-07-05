@@ -7,6 +7,8 @@ import { useSetting } from "@/lib/admin";
 export function AppHeader({ title }: { title?: string }) {
   const [count, setCount] = useState(0);
   const [unread, setUnread] = useState(0);
+  const [cartBump, setCartBump] = useState(false);
+  const [cartIconJump, setCartIconJump] = useState(false);
   const storeName = useSetting("store_name", "Ali Parts");
   const storeTagline = useSetting("store_tagline", "قطع أصلية · العراق");
   const storeLogo = useSetting("store_logo", "");
