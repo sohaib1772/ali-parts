@@ -442,6 +442,7 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ["banner_comments", bannerId] });
       qc.invalidateQueries({ queryKey: ["admin", "block-log"] });
+      qc.invalidateQueries({ queryKey: ["admin", "blocked-users"] });
       toast.success(vars.blocked ? "تم حظر المستخدم وإرسال الإشعار" : "تم رفع الحظر عن المستخدم");
     },
     onError: (e: Error) => toast.error(e.message || "تعذر الحظر"),
