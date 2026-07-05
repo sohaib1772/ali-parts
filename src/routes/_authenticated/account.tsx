@@ -1,13 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { ChevronLeft, LogOut, MapPin, Heart, Package, Bell, Info, Shield, MessageCircle, ShieldCheck, Sparkles, Lock } from "lucide-react";
+import { useRef, useState } from "react";
+import { ChevronLeft, LogOut, MapPin, Heart, Package, Bell, Info, Shield, MessageCircle, ShieldCheck, Sparkles, Lock, Camera, Loader2 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { VehicleBar, VehiclePicker } from "@/components/vehicle-picker";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 import { profileQuery } from "@/lib/queries";
 import { useIsAdmin } from "@/lib/admin";
+import { uploadAvatar } from "@/lib/avatar";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/account")({
@@ -21,6 +22,26 @@ function AccountPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const onPickAvatar = async (file: File) => {
+    if (!userId) return;
+    if (!file.type.startsWith("image/")) { toast.error("يرجى اختيار صورة"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("الحد الأقصى ٥ ميغابايت"); return; }
+    setUploading(true);
+    try {
+      const url = await uploadAvatar(userId, file);
+      const { error } = await supabase.from("profiles").update({ avatar_url: url }).eq("id", userId);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["profile", userId] });
+      toast.success("تم تحديث صورتك");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "تعذر رفع الصورة");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const signOut = async () => {
     await qc.cancelQueries();
@@ -47,13 +68,50 @@ function AccountPage() {
       <div className="px-4 pt-4">
         <div className="bg-gradient-navy text-primary-foreground rounded-3xl p-5 shadow-luxe">
           <div className="flex items-center gap-4">
-            <div className="size-16 rounded-full bg-gradient-gold text-navy font-black text-2xl grid place-items-center shadow-gold">
-              {(profile?.full_name?.[0] ?? user?.email?.[0] ?? "?").toUpperCase()}
-            </div>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              aria-label="تغيير الصورة الشخصية"
+              className="relative size-16 rounded-full overflow-hidden bg-gradient-gold text-navy font-black text-2xl grid place-items-center shadow-gold group"
+            >
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              ) : (
+                <span>{(profile?.full_name?.[0] ?? user?.email?.[0] ?? "?").toUpperCase()}</span>
+              )}
+              <span className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition grid place-items-center">
+                {uploading ? <Loader2 className="size-5 text-white animate-spin" /> : <Camera className="size-5 text-white" />}
+              </span>
+              {uploading && (
+                <span className="absolute inset-0 bg-black/50 grid place-items-center">
+                  <Loader2 className="size-5 text-white animate-spin" />
+                </span>
+              )}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) onPickAvatar(f);
+                e.target.value = "";
+              }}
+            />
             <div className="flex-1 min-w-0">
               <div className="font-extrabold text-lg truncate">{profile?.full_name ?? "عميل Ali Parts"}</div>
               <div className="text-xs text-gold truncate">{user?.email}</div>
               {profile?.phone && <div className="text-xs text-primary-foreground/70">{profile.phone}</div>}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="mt-1 inline-flex items-center gap-1 text-[11px] text-gold hover:underline disabled:opacity-60"
+              >
+                <Camera className="size-3" /> {profile?.avatar_url ? "تغيير الصورة" : "إضافة صورة شخصية"}
+              </button>
             </div>
           </div>
         </div>
