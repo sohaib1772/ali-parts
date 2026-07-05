@@ -220,6 +220,25 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   const [muted, setMuted] = useState(true);
   const slides = banners.length > 0 ? banners : null;
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
+  const heroRef = useRef<HTMLDivElement | null>(null);
+
+  // Mute the hero video when it scrolls out of view
+  useEffect(() => {
+    const box = heroRef.current;
+    if (!box) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting || e.intersectionRatio < 0.5) {
+            setMuted(true);
+          }
+        }
+      },
+      { threshold: [0, 0.5, 1] },
+    );
+    io.observe(box);
+    return () => io.disconnect();
+  }, []);
 
   // Keep the DOM element in sync when muted state or the active slide changes.
   // Setting the `muted` property + calling play() imperatively is the only
@@ -365,7 +384,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   );
 
   return (
-    <div className="px-4 mt-4">
+    <div className="px-4 mt-4" ref={heroRef}>
       <Link to="/offers" aria-label="فتح العروض">{content}</Link>
     </div>
   );
