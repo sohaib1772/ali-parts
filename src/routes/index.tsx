@@ -317,7 +317,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   const content = (
     <div className="relative overflow-hidden rounded-3xl bg-gradient-hero text-primary-foreground shadow-luxe aspect-[16/10]">
       {slides.map((b, i) => (
-        (b as any).video_url ? (
+        (b as any).video_url && i === idx ? (
           <video
             key={b.id}
             ref={(el) => { videoRefs.current[i] = el; }}
@@ -327,7 +327,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
             muted={muted || i !== idx}
             loop
             playsInline
-            preload="metadata"
+            preload="none"
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 cursor-pointer ${i === idx ? "opacity-100" : "opacity-0"}`}
             onVolumeChange={(e) => {
               if (i !== idx) return;
@@ -340,6 +340,8 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
           <img
             key={b.id}
             src={b.image_url}
+            loading={i === idx ? "eager" : "lazy"}
+            decoding="async"
             alt={b.title_ar ?? ""}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === idx ? "opacity-100" : "opacity-0"}`}
           />
