@@ -598,7 +598,6 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
 
 function CommentRowView({
   c, currentUserId, isAdmin, onEdit, onDelete, onBlock,
-  c, currentUserId, isAdmin, onEdit, onDelete, onBlock,
 }: {
   c: CommentRow;
   currentUserId: string | null;
