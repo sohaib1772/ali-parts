@@ -25,6 +25,7 @@ export type Database = {
           label: string | null
           notes: string | null
           phone: string
+          phone2: string | null
           street: string | null
           user_id: string
         }
@@ -38,6 +39,7 @@ export type Database = {
           label?: string | null
           notes?: string | null
           phone: string
+          phone2?: string | null
           street?: string | null
           user_id: string
         }
@@ -51,6 +53,7 @@ export type Database = {
           label?: string | null
           notes?: string | null
           phone?: string
+          phone2?: string | null
           street?: string | null
           user_id?: string
         }
