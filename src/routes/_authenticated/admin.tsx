@@ -568,9 +568,20 @@ function ProductsAdmin() {
 
   const remove = async (id: string) => {
     if (!confirm("هل أنت متأكد من حذف هذا المنتج؟")) return;
-    const { error } = await supabase.from("products").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("تم الحذف");
+    const { error, count } = await supabase
+      .from("products")
+      .delete({ count: "exact" })
+      .eq("id", id);
+    if (error) {
+      console.error("[admin] delete product failed", error);
+      toast.error("تعذّر حذف المنتج", { description: error.message });
+      return;
+    }
+    if (!count) {
+      toast.error("لم يتم الحذف — تحقق من صلاحيات المشرف");
+      return;
+    }
+    toast.success("تم حذف المنتج");
     qc.invalidateQueries({ queryKey: ["admin", "products"] });
     qc.invalidateQueries({ queryKey: ["products"] });
   };
