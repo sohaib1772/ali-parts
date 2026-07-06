@@ -439,6 +439,7 @@ export type Database = {
         Row: {
           address: Json
           created_at: string
+          hidden_by_user: boolean
           id: string
           notes: string | null
           order_number: string
@@ -454,6 +455,7 @@ export type Database = {
         Insert: {
           address: Json
           created_at?: string
+          hidden_by_user?: boolean
           id?: string
           notes?: string | null
           order_number?: string
@@ -469,6 +471,7 @@ export type Database = {
         Update: {
           address?: Json
           created_at?: string
+          hidden_by_user?: boolean
           id?: string
           notes?: string | null
           order_number?: string
