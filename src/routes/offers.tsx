@@ -432,36 +432,36 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
   }, [bannerId, qc]);
 
   const addOrEdit = useMutation({
-    mutationFn: async () => {
-      const body = text.trim();
+    mutationFn: async (vars: { body: string; editingId: string | null; asAdmin: boolean }) => {
+      const body = vars.body;
       if (!body) throw new Error("empty");
       if (!userId) throw new Error("auth");
       const { containsProfanity } = await import("@/lib/profanity");
       if (containsProfanity(body)) throw new Error("profanity");
-      if (editingId) {
+      if (vars.editingId) {
         const { error } = await supabase
           .from("banner_comments")
           .update({ content: body })
-          .eq("id", editingId);
+          .eq("id", vars.editingId);
         if (error) throw error;
       } else {
         const { error } = await (supabase as any).rpc("add_banner_comment", {
           p_banner_id: bannerId,
           p_content: body,
-          p_is_admin_reply: isAdmin && asAdmin,
+          p_is_admin_reply: isAdmin && vars.asAdmin,
         });
         if (error) throw error;
       }
     },
-    onMutate: async () => {
-      const body = text.trim();
+    onMutate: async (vars) => {
+      const body = vars.body;
       if (!body || !userId) return;
       const key = ["banner_comments", bannerId, limit];
       await qc.cancelQueries({ queryKey: key });
       const previous = qc.getQueryData<{ rows: CommentRow[]; total: number }>(key);
-      if (editingId) {
+      if (vars.editingId) {
         qc.setQueryData<{ rows: CommentRow[]; total: number }>(key, (d) =>
-          d ? { ...d, rows: d.rows.map((r) => (r.id === editingId ? { ...r, content: body } : r)) } : d,
+          d ? { ...d, rows: d.rows.map((r) => (r.id === vars.editingId ? { ...r, content: body } : r)) } : d,
         );
       } else {
         const prevProfile = (previous?.rows ?? []).find((r) => r.user_id === userId)?.profile ?? null;
@@ -471,7 +471,7 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
           user_id: userId,
           parent_id: null,
           content: body,
-          is_admin_reply: isAdmin && asAdmin,
+          is_admin_reply: isAdmin && vars.asAdmin,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           profile: prevProfile,
@@ -487,7 +487,7 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
       setText("");
       setEditingId(null);
       setAsAdmin(false);
-      return { previous, isEdit: !!editingId };
+      return { previous, isEdit: !!vars.editingId };
     },
     onSuccess: (_data, _vars, ctx) => {
       qc.invalidateQueries({ queryKey: ["banner_comments", bannerId] });
@@ -615,7 +615,7 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
             <Button
               type="button"
               size="icon"
-              onClick={() => addOrEdit.mutate()}
+              onClick={() => addOrEdit.mutate({ body: text.trim(), editingId, asAdmin })}
               disabled={addOrEdit.isPending || !text.trim()}
               aria-label="إرسال"
             >
