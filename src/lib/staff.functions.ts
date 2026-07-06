@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { normalizePhone, phoneToEmail } from "@/lib/phone-auth";
 
 async function assertAdmin(ctx: { supabase: any; userId: string }) {
   const { data, error } = await ctx.supabase.rpc("has_role", {
@@ -11,7 +12,7 @@ async function assertAdmin(ctx: { supabase: any; userId: string }) {
 }
 
 const CreateInput = z.object({
-  email: z.string().trim().email().max(255),
+  phone: z.string().trim().min(1).max(20),
   password: z.string().min(6).max(72),
   full_name: z.string().trim().min(1).max(100),
   can_orders: z.boolean().default(false),
@@ -37,11 +38,15 @@ export const createStaff = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    const normalized = normalizePhone(data.phone);
+    if (!normalized) throw new Error("رقم الهاتف غير صحيح — مثال: 07XX XXX XXXX");
+    const email = phoneToEmail(normalized);
+
     const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
-      email: data.email,
+      email,
       password: data.password,
       email_confirm: true,
-      user_metadata: { full_name: data.full_name },
+      user_metadata: { full_name: data.full_name, phone: "+" + normalized },
     });
     if (createErr || !created?.user) throw new Error(createErr?.message ?? "فشل إنشاء الحساب");
 
