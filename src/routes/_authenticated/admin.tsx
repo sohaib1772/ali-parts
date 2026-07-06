@@ -2109,3 +2109,180 @@ function ReplacementCard({
     </div>
   );
 }
+
+/* ---------------- Stock Movements ---------------- */
+
+const REASON_LABEL: Record<string, string> = {
+  order_placed: "طلب جديد",
+  order_cancelled: "إلغاء طلب",
+  order_uncancelled: "إعادة تفعيل طلب",
+  order_deleted: "حذف طلب",
+};
+const REASON_TONE: Record<string, string> = {
+  order_placed: "bg-rose-50 text-rose-700 border-rose-200",
+  order_cancelled: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  order_uncancelled: "bg-amber-50 text-amber-700 border-amber-200",
+  order_deleted: "bg-blue-50 text-blue-700 border-blue-200",
+};
+
+function StockMovementsAdmin() {
+  const [reasonFilter, setReasonFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
+
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ["admin", "stock-movements", reasonFilter],
+    queryFn: async () => {
+      let q = supabase
+        .from("stock_movements" as any)
+        .select("id, product_id, product_name_ar, delta, reason, order_id, order_number, actor_id, note, created_at")
+        .order("created_at", { ascending: false })
+        .limit(300);
+      if (reasonFilter !== "all") q = q.eq("reason", reasonFilter);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  const actorIds = Array.from(new Set(rows.map((r) => r.actor_id).filter(Boolean)));
+  const { data: actors = [] } = useQuery({
+    queryKey: ["admin", "stock-movements-actors", actorIds.join("|")],
+    enabled: actorIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_public_profiles", { _ids: actorIds });
+      if (error) return [] as any[];
+      return (data ?? []) as { id: string; full_name: string | null }[];
+    },
+  });
+  const actorName = (id: string | null | undefined) =>
+    actors.find((a) => a.id === id)?.full_name || (id ? id.slice(0, 8) : "—");
+
+  const filtered = rows.filter((r) => {
+    if (!search.trim()) return true;
+    const s = search.trim().toLowerCase();
+    return (
+      (r.product_name_ar ?? "").toLowerCase().includes(s) ||
+      (r.order_number ?? "").toLowerCase().includes(s) ||
+      (r.note ?? "").toLowerCase().includes(s)
+    );
+  });
+
+  const totals = filtered.reduce(
+    (acc, r) => {
+      if (r.delta > 0) acc.in += r.delta;
+      else acc.out += -r.delta;
+      return acc;
+    },
+    { in: 0, out: 0 },
+  );
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-3">
+          <div className="flex items-center gap-1.5 text-emerald-700 text-[11px] font-bold">
+            <ArrowUp className="size-3.5" /> إعادة إلى المخزون
+          </div>
+          <div className="text-xl font-black text-emerald-700 mt-1">+{totals.in}</div>
+        </div>
+        <div className="rounded-2xl border border-rose-200 bg-rose-50/50 p-3">
+          <div className="flex items-center gap-1.5 text-rose-700 text-[11px] font-bold">
+            <ArrowDown className="size-3.5" /> خصم من المخزون
+          </div>
+          <div className="text-xl font-black text-rose-700 mt-1">−{totals.out}</div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <SearchIcon className="size-3.5 absolute start-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="ابحث بالمنتج، رقم الطلب، أو الملاحظة"
+            className="h-9 ps-8 text-xs"
+          />
+        </div>
+        <Select value={reasonFilter} onValueChange={setReasonFilter}>
+          <SelectTrigger className="h-9 w-36 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">كل الأسباب</SelectItem>
+            <SelectItem value="order_placed">طلب جديد</SelectItem>
+            <SelectItem value="order_cancelled">إلغاء طلب</SelectItem>
+            <SelectItem value="order_uncancelled">إعادة تفعيل</SelectItem>
+            <SelectItem value="order_deleted">حذف طلب</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {isLoading ? (
+        <div className="text-center py-8 text-xs text-muted-foreground">
+          <Loader2 className="size-4 animate-spin inline-block me-1" /> جاري التحميل...
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-10 text-xs text-muted-foreground bg-muted/40 rounded-2xl">
+          لا توجد حركات مخزون
+        </div>
+      ) : (
+        <ul className="space-y-2">
+          {filtered.map((r) => {
+            const positive = r.delta > 0;
+            return (
+              <li
+                key={r.id}
+                className="rounded-2xl border border-border bg-card p-3 shadow-card"
+              >
+                <div className="flex items-start gap-2">
+                  <div
+                    className={`shrink-0 size-10 rounded-xl grid place-items-center font-black text-sm ${
+                      positive
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-rose-100 text-rose-700"
+                    }`}
+                  >
+                    {positive ? "+" : "−"}
+                    {Math.abs(r.delta)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-sm text-navy truncate">
+                        {r.product_name_ar ?? "منتج محذوف"}
+                      </span>
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-full border ${
+                          REASON_TONE[r.reason] ?? "bg-muted text-muted-foreground border-border"
+                        }`}
+                      >
+                        {REASON_LABEL[r.reason] ?? r.reason}
+                      </span>
+                    </div>
+                    {r.note && (
+                      <div className="text-[11px] text-muted-foreground mt-0.5">{r.note}</div>
+                    )}
+                    <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="size-3" />
+                        {new Date(r.created_at).toLocaleString("ar-IQ")}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <UserIcon className="size-3" />
+                        {actorName(r.actor_id)}
+                      </span>
+                      {r.order_number && (
+                        <span className="inline-flex items-center gap-1">
+                          <Receipt className="size-3" />#{r.order_number}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
