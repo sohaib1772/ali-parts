@@ -129,7 +129,7 @@ export const runStockTests = createServerFn({ method: "POST" })
           name: "بعد إنشاء الطلب: المخزون 97",
           pass: s1.stock_qty === 97,
           expected: "97",
-          actual: s1.stock_qty,
+          actual: String(s1.stock_qty),
         });
         const m1 = await getMovements(orderId);
         checks.push({
@@ -146,7 +146,7 @@ export const runStockTests = createServerFn({ method: "POST" })
           name: "بعد الإلغاء: المخزون 100",
           pass: s2.stock_qty === 100,
           expected: "100",
-          actual: s2.stock_qty,
+          actual: String(s2.stock_qty),
         });
         const m2 = await getMovements(orderId);
         checks.push({
@@ -163,7 +163,7 @@ export const runStockTests = createServerFn({ method: "POST" })
         checks.push({
           name: "حفظ بنفس الحالة → لا تكرار",
           pass: countByReason(m3, "order_cancelled") === 1 && m3.length === m2.length,
-          expected: m2.length,
+          expected: String(m2.length),
           actual: String(m3.length),
         });
         const s3 = await getStock(productId);
@@ -171,7 +171,7 @@ export const runStockTests = createServerFn({ method: "POST" })
           name: "المخزون لم يتغير بعد الحفظ الفارغ",
           pass: s3.stock_qty === 100,
           expected: "100",
-          actual: s3.stock_qty,
+          actual: String(s3.stock_qty),
         });
 
         // Uncancel
@@ -181,7 +181,7 @@ export const runStockTests = createServerFn({ method: "POST" })
           name: "بعد إعادة التفعيل: المخزون 97",
           pass: s4.stock_qty === 97,
           expected: "97",
-          actual: s4.stock_qty,
+          actual: String(s4.stock_qty),
         });
         const m4 = await getMovements(orderId);
         checks.push({
@@ -227,7 +227,7 @@ export const runStockTests = createServerFn({ method: "POST" })
           name: "بعد الحذف: المخزون 50",
           pass: s.stock_qty === 50,
           expected: "50",
-          actual: s.stock_qty,
+          actual: String(s.stock_qty),
         });
 
         const after = await getMovements(orderId);
@@ -261,7 +261,7 @@ export const runStockTests = createServerFn({ method: "POST" })
           name: "بعد الإلغاء: المخزون 20",
           pass: sAfterCancel.stock_qty === 20,
           expected: "20",
-          actual: sAfterCancel.stock_qty,
+          actual: String(sAfterCancel.stock_qty),
         });
         const mBefore = await getMovements(orderId);
 
@@ -274,7 +274,7 @@ export const runStockTests = createServerFn({ method: "POST" })
           name: "بعد حذف طلب ملغى: المخزون 20 (لا استرداد مزدوج)",
           pass: sAfterDel.stock_qty === 20,
           expected: "20",
-          actual: sAfterDel.stock_qty,
+          actual: String(sAfterDel.stock_qty),
         });
 
         const mAfter = await getMovements(orderId);
@@ -310,7 +310,7 @@ export const runStockTests = createServerFn({ method: "POST" })
           name: "بعد سلسلة تغييرات (تجهيز→تسليم): المخزون 28",
           pass: s.stock_qty === 28,
           expected: "28",
-          actual: s.stock_qty,
+          actual: String(s.stock_qty),
         });
 
         const m = await getMovements(orderId);
@@ -318,7 +318,7 @@ export const runStockTests = createServerFn({ method: "POST" })
           name: "حركة واحدة فقط (order_placed)",
           pass: m.length === 1 && m[0].reason === "order_placed",
           expected: "1",
-          actual: m.length,
+          actual: String(m.length),
           detail: JSON.stringify(m),
         });
 
