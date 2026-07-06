@@ -563,6 +563,7 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
               c={c}
               currentUserId={userId}
               isAdmin={isAdmin}
+              canBlock={canBlock}
               onEdit={() => { setEditingId(c.id); setText(c.content); }}
               onDelete={() => del.mutate(c.id)}
               onBlock={() => {
@@ -643,11 +644,12 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
 }
 
 function CommentRowView({
-  c, currentUserId, isAdmin, onEdit, onDelete, onBlock,
+  c, currentUserId, isAdmin, canBlock, onEdit, onDelete, onBlock,
 }: {
   c: CommentRow;
   currentUserId: string | null;
   isAdmin: boolean;
+  canBlock: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onBlock: () => void;
@@ -689,15 +691,15 @@ function CommentRowView({
             </>
           )}
           {!mine && isAdmin && (
-            <>
-              <button type="button" onClick={onDelete} className="inline-flex items-center gap-1 hover:text-destructive">
-                <Trash2 className="size-3" /> حذف
-              </button>
-              <button type="button" onClick={onBlock} className={`inline-flex items-center gap-1 ${c.profile?.is_blocked ? "hover:text-success" : "hover:text-destructive"}`}>
-                {c.profile?.is_blocked ? <Check className="size-3" /> : <Ban className="size-3" />}
-                {c.profile?.is_blocked ? "رفع الحظر" : "حظر المستخدم"}
-              </button>
-            </>
+            <button type="button" onClick={onDelete} className="inline-flex items-center gap-1 hover:text-destructive">
+              <Trash2 className="size-3" /> حذف
+            </button>
+          )}
+          {!mine && canBlock && (
+            <button type="button" onClick={onBlock} className={`inline-flex items-center gap-1 ${c.profile?.is_blocked ? "hover:text-success" : "hover:text-destructive"}`}>
+              {c.profile?.is_blocked ? <Check className="size-3" /> : <Ban className="size-3" />}
+              {c.profile?.is_blocked ? "رفع الحظر" : "حظر المستخدم"}
+            </button>
           )}
         </div>
       </div>
