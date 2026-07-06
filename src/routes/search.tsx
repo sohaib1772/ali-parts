@@ -27,6 +27,8 @@ function SearchPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageMatchIds, setImageMatchIds] = useState<string[]>([]);
+  const [exactIds, setExactIds] = useState<string[]>([]);
+  const [similarIds, setSimilarIds] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   const { data: textResults, isFetching: textFetching } = useQuery(searchProductsQuery(q));
   const { data: imageResults, isFetching: imageFetching } = useQuery(productsByIdsQuery(imageMatchIds));
@@ -66,11 +68,15 @@ function SearchPage() {
       const result = await analyzeProductImage({ data: { imageDataUrl: dataUrl } });
       if (!result.productIds.length) {
         setImageMatchIds([]);
+        setExactIds([]);
+        setSimilarIds([]);
         toast.error("لم نجد منتجاً مطابقاً في المتجر");
         return;
       }
       setQ("");
       setImageMatchIds(result.productIds);
+      setExactIds(result.exactIds ?? []);
+      setSimilarIds(result.similarIds ?? []);
       toast.success(`تم العثور على ${result.productIds.length} منتج${result.name_ar ? ` — ${result.name_ar}` : ""}`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "تعذر تحليل الصورة");
@@ -121,7 +127,7 @@ function SearchPage() {
               {analyzing ? "جاري تحليل الصورة…" : "تم البحث بالصورة"}
             </div>
             <button
-              onClick={() => { setImagePreview(null); setImageMatchIds([]); }}
+              onClick={() => { setImagePreview(null); setImageMatchIds([]); setExactIds([]); setSimilarIds([]); }}
               className="text-xs text-muted-foreground hover:text-destructive px-2"
             >
               إزالة
@@ -142,14 +148,47 @@ function SearchPage() {
             ))}
           </div>
         ) : filtered.length > 0 ? (
-          <>
-            <div className="text-xs text-muted-foreground mb-3">
-              {vehicle ? `${filtered.length} نتيجة متوافقة مع ${vehicle.brandName} ${vehicle.modelName}` : `${filtered.length} نتيجة`}
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {filtered.map((p) => <ProductCard key={p.id} product={p} />)}
-            </div>
-          </>
+          usingImage ? (
+            (() => {
+              const exact = filtered.filter((p) => exactIds.includes(p.id));
+              const similar = filtered.filter((p) => similarIds.includes(p.id) && !exactIds.includes(p.id));
+              return (
+                <div className="space-y-6">
+                  {exact.length > 0 && (
+                    <section>
+                      <h2 className="text-sm font-bold mb-3 flex items-center gap-2">
+                        <span className="inline-block w-1 h-4 bg-gold rounded" />
+                        نتائج مطابقة ({exact.length})
+                      </h2>
+                      <div className="grid grid-cols-2 gap-3">
+                        {exact.map((p) => <ProductCard key={p.id} product={p} />)}
+                      </div>
+                    </section>
+                  )}
+                  {similar.length > 0 && (
+                    <section>
+                      <h2 className="text-sm font-bold mb-3 flex items-center gap-2">
+                        <span className="inline-block w-1 h-4 bg-muted-foreground/60 rounded" />
+                        منتجات مشابهة ({similar.length})
+                      </h2>
+                      <div className="grid grid-cols-2 gap-3">
+                        {similar.map((p) => <ProductCard key={p.id} product={p} />)}
+                      </div>
+                    </section>
+                  )}
+                </div>
+              );
+            })()
+          ) : (
+            <>
+              <div className="text-xs text-muted-foreground mb-3">
+                {vehicle ? `${filtered.length} نتيجة متوافقة مع ${vehicle.brandName} ${vehicle.modelName}` : `${filtered.length} نتيجة`}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {filtered.map((p) => <ProductCard key={p.id} product={p} />)}
+              </div>
+            </>
+          )
         ) : (
           <div className="text-center text-muted-foreground text-sm py-16">
             لا توجد نتائج مطابقة. {vehicle && `جرّب تغيير المركبة أو تواصل معنا عبر واتساب.`}

@@ -43,12 +43,12 @@ export const analyzeProductImage = createServerFn({ method: "POST" })
           {
             role: "system",
             content:
-              "أنت خبير قطع غيار سيارات محترف. مهمتك: تحديد نوع القطعة في الصورة بدقة عالية ثم اختيار المنتجات المطابقة فعلياً من قائمة متجرنا فقط.\n\nخطوات التحليل:\n1. حدد نوع القطعة بدقة (مثال: فلتر زيت، مساعد، دسك فرامل، رديتر، شمعة، حساس، إلخ).\n2. لاحظ الشكل واللون والمعالم المميزة.\n3. طابق فقط مع منتجات القائمة التي تنتمي لنفس النوع/الفئة. لا تطابق قطعة بأخرى مختلفة النوع حتى لو تشابهت بالشكل.\n4. رتّب النتائج من الأكثر تطابقاً للأقل، بحد أقصى 6 منتجات.\n5. إذا لم يوجد أي منتج من نفس النوع في القائمة، أعد matches فارغة — لا تخمّن.\n\nأعد JSON فقط بهذا الشكل: {\"name_ar\":\"اسم القطعة المكتشفة\",\"matches\":[<idx>,<idx>,...]}",
+              "أنت خبير قطع غيار سيارات. حدد نوع القطعة في الصورة، ثم أعد منتجات من قائمة المتجر مرتبة من الأقرب للأبعد.\n\nالقواعد:\n1. حدد نوع/فئة القطعة (فلتر، مساعد، دسك، رديتر، شمعة، حساس…).\n2. أعد نتيجتين:\n   - exact: منتجات من نفس النوع تماماً (الأولوية القصوى).\n   - similar: منتجات قريبة/مشابهة أو من نفس الفئة أو مكمّلة للقطعة (حتى لو ليست نفس النوع بالضبط)، مرتبة بالأهم.\n3. مجموع النتائج حتى 12 منتج. لا تكرّر idx بين القائمتين.\n4. إذا ما توفر أي منتج من نفس النوع، اترك exact فارغة واملأ similar بأقرب البدائل من نفس الفئة.\n5. لا تخترع idx خارج القائمة.\n\nأعد JSON فقط: {\"name_ar\":\"اسم القطعة\",\"exact\":[<idx>,...],\"similar\":[<idx>,...]}",
           },
           {
             role: "user",
             content: [
-              { type: "text", text: `قائمة منتجات المتجر (idx. الاسم [الفئة] OEM):\n${catalogText}\n\nحلل الصورة واختر فقط منتجات من نفس نوع/فئة القطعة الظاهرة. JSON فقط.` },
+              { type: "text", text: `قائمة منتجات المتجر (idx. الاسم [الفئة] OEM):\n${catalogText}\n\nحلل الصورة وأعد exact + similar. JSON فقط.` },
               { type: "image_url", image_url: { url: data.imageDataUrl } },
             ],
           },
@@ -63,10 +63,12 @@ export const analyzeProductImage = createServerFn({ method: "POST" })
 
     const json = await res.json();
     const content: string = json.choices?.[0]?.message?.content ?? "{}";
-    let parsed: { matches?: number[]; name_ar?: string } = {};
+    let parsed: { matches?: number[]; exact?: number[]; similar?: number[]; name_ar?: string } = {};
     try { parsed = JSON.parse(content); } catch { parsed = {}; }
-    const ids = (parsed.matches ?? [])
-      .map((i) => catalog[i]?.id)
-      .filter((v): v is string => !!v);
-    return { productIds: ids, name_ar: parsed.name_ar ?? "" };
+    const toIds = (arr?: number[]) =>
+      (arr ?? []).map((i) => catalog[i]?.id).filter((v): v is string => !!v);
+    const exactIds = toIds(parsed.exact ?? parsed.matches);
+    const similarIds = toIds(parsed.similar).filter((id) => !exactIds.includes(id));
+    const productIds = [...exactIds, ...similarIds];
+    return { productIds, exactIds, similarIds, name_ar: parsed.name_ar ?? "" };
   });
