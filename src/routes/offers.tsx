@@ -474,6 +474,7 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["banner_comments", bannerId] });
       qc.invalidateQueries({ queryKey: ["banner_comments_count", bannerId] });
+      toast.success(editingId ? "تم تحديث التعليق" : "تم نشر تعليقك");
     },
     onError: (e: Error, _vars, ctx) => {
       if (ctx?.previous) qc.setQueryData(["banner_comments", bannerId, limit], ctx.previous);
