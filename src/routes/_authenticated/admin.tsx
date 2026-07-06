@@ -1864,6 +1864,7 @@ function ReplacementsAdmin() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<"all" | ReplacementStatus>("all");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const runUpdateStatus = useServerFn(adminUpdateReplacementStatus);
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["admin", "replacements"],
@@ -1893,16 +1894,13 @@ function ReplacementsAdmin() {
   const filtered = filter === "all" ? rows : rows.filter((r) => r.status === filter);
 
   const changeStatus = async (id: string, status: ReplacementStatus) => {
-    const { error } = await supabase
-      .from("replacement_requests" as any)
-      .update({ status } as any)
-      .eq("id", id);
-    if (error) {
-      toast.error("تعذّر تحديث الحالة");
-      return;
+    try {
+      await runUpdateStatus({ data: { id, status } });
+      toast.success("تم تحديث الحالة وإرسال إشعار للزبون");
+      qc.invalidateQueries({ queryKey: ["admin", "replacements"] });
+    } catch (err: any) {
+      toast.error(err?.message ?? "تعذّر تحديث الحالة");
     }
-    toast.success("تم تحديث الحالة");
-    qc.invalidateQueries({ queryKey: ["admin", "replacements"] });
   };
 
   const saveNotes = async (id: string, notes: string) => {
