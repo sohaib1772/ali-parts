@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useRouter, useNavigate, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowRight, Heart, Minus, Plus, Share2, Shield, ShoppingCart, Truck, CheckCircle2, XCircle, Facebook, X as CloseIcon, Clock, HeadphonesIcon } from "lucide-react";
+import { ArrowRight, Heart, Minus, Plus, Share2, Shield, ShoppingCart, Truck, CheckCircle2, XCircle, Facebook, X as CloseIcon, Clock } from "lucide-react";
 import { productByIdQuery, carModelsQuery, brandsQuery } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
