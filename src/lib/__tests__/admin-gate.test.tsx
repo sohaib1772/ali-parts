@@ -12,9 +12,10 @@ vi.mock("@/lib/use-auth", () => ({
   useAuth: () => ({ ...authState, user: authState.userId ? { id: authState.userId } : null }),
 }));
 
+type QueryResult = { data: unknown; error: { message: string } | null };
 type Resolver<T> = (v: T) => void;
-let adminResolver: Resolver<{ data: unknown; error: null }> | null = null;
-let staffResolver: Resolver<{ data: unknown; error: null }> | null = null;
+let adminResolver: Resolver<QueryResult> | null = null;
+let staffResolver: Resolver<QueryResult> | null = null;
 
 function pending<T>(setResolver: (r: Resolver<T>) => void) {
   return new Promise<T>((resolve) => setResolver(resolve));
@@ -46,10 +47,13 @@ vi.mock("@/integrations/supabase/client", () => {
 import { useIsAdminStatus, useStaffPermissionsStatus } from "@/lib/admin";
 
 function Harness() {
-  const { isAdmin, isLoading: adminLoading } = useIsAdminStatus();
-  const { staff, isLoading: staffLoading } = useStaffPermissionsStatus();
+  const { isAdmin, isLoading: adminLoading, isError: adminError } = useIsAdminStatus();
+  const { staff, isLoading: staffLoading, isError: staffError } = useStaffPermissionsStatus();
   if (adminLoading || staffLoading) {
     return <div data-testid="state">جاري التحقق من الصلاحيات…</div>;
+  }
+  if (adminError || staffError) {
+    return <div data-testid="state">تعذر التحقق من الصلاحيات</div>;
   }
   const hasAccess =
     isAdmin ||
@@ -141,5 +145,55 @@ describe("Admin permission gate", () => {
     await waitFor(() =>
       expect(screen.getByTestId("state").textContent).toContain("ليس لديك صلاحية"),
     );
+  });
+
+  it("shows professional error message (not 'no permission') when admin query fails", async () => {
+    authState = { userId: "u1", loading: false };
+    renderHarness();
+
+    // Skeleton visible while pending
+    expect(screen.getByTestId("state").textContent).toContain("جاري التحقق");
+
+    await waitFor(() => expect(adminResolver).toBeTruthy());
+    await waitFor(() => expect(staffResolver).toBeTruthy());
+    await act(async () => {
+      adminResolver!({ data: null, error: { message: "network down" } });
+      staffResolver!({ data: null, error: null });
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId("state").textContent).toContain("تعذر التحقق"),
+    );
+    // The false-permission screen must never appear on network errors
+    expect(screen.queryByText(/ليس لديك صلاحية/)).toBeNull();
+  });
+
+  it("shows professional error when staff permissions query fails", async () => {
+    authState = { userId: "u1", loading: false };
+    renderHarness();
+
+    await waitFor(() => expect(adminResolver).toBeTruthy());
+    await waitFor(() => expect(staffResolver).toBeTruthy());
+    await act(async () => {
+      adminResolver!({ data: null, error: null });
+      staffResolver!({ data: null, error: { message: "PGRST timeout" } });
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId("state").textContent).toContain("تعذر التحقق"),
+    );
+    expect(screen.queryByText(/ليس لديك صلاحية/)).toBeNull();
+  });
+
+  it("stays on skeleton when queries never resolve (timeout in-flight)", async () => {
+    authState = { userId: "u1", loading: false };
+    renderHarness();
+
+    // Wait long enough that if the gate were to bail out early, it would have
+    await new Promise((r) => setTimeout(r, 150));
+
+    expect(screen.getByTestId("state").textContent).toContain("جاري التحقق");
+    expect(screen.queryByText(/ليس لديك صلاحية/)).toBeNull();
+    expect(screen.queryByText(/تعذر التحقق/)).toBeNull();
   });
 });

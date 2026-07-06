@@ -14,7 +14,7 @@ export const isAdminQuery = (userId: string | null) =>
         .eq("user_id", userId)
         .eq("role", "admin")
         .maybeSingle();
-      if (error) return false;
+      if (error) throw error;
       return !!data;
     },
     enabled: !!userId,
@@ -29,7 +29,12 @@ export function useIsAdmin() {
 export function useIsAdminStatus() {
   const { userId, loading: authLoading } = useAuth();
   const q = useQuery(isAdminQuery(userId));
-  return { isAdmin: !!q.data, isLoading: authLoading || (!!userId && q.data === undefined) };
+  return {
+    isAdmin: !!q.data,
+    isLoading: authLoading || (!!userId && q.data === undefined && !q.isError),
+    isError: q.isError,
+    error: q.error as Error | null,
+  };
 }
 
 export type StaffPermissions = {
@@ -49,7 +54,8 @@ export const staffPermissionsQuery = (userId: string | null) =>
         .select("can_orders, can_products, can_replacements, can_block")
         .eq("user_id", userId)
         .maybeSingle();
-      if (error || !data) return null;
+      if (error) throw error;
+      if (!data) return null;
       return data as StaffPermissions;
     },
     enabled: !!userId,
@@ -67,7 +73,10 @@ export function useStaffPermissionsStatus() {
   const q = useQuery(staffPermissionsQuery(userId));
   return {
     staff: q.data ?? null,
-    isLoading: authLoading || (!!userId && q.data === undefined && q.isLoading),
+    isLoading:
+      authLoading || (!!userId && q.data === undefined && q.isLoading && !q.isError),
+    isError: q.isError,
+    error: q.error as Error | null,
   };
 }
 
