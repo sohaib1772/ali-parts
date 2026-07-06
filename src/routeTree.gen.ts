@@ -36,6 +36,7 @@ import { Route as AuthenticatedAddressesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedReplacementsIdRouteImport } from './routes/_authenticated/replacements.$id'
 import { Route as AuthenticatedOrdersIdRouteImport } from './routes/_authenticated/orders.$id'
+import { Route as AuthenticatedAdminStockTestRouteImport } from './routes/_authenticated/admin.stock-test'
 
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
@@ -175,6 +176,12 @@ const AuthenticatedOrdersIdRoute = AuthenticatedOrdersIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthenticatedOrdersRoute,
 } as any)
+const AuthenticatedAdminStockTestRoute =
+  AuthenticatedAdminStockTestRouteImport.update({
+    id: '/stock-test',
+    path: '/stock-test',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -189,7 +196,7 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/account': typeof AuthenticatedAccountRoute
   '/addresses': typeof AuthenticatedAddressesRoute
-  '/admin': typeof AuthenticatedAdminRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/cart': typeof AuthenticatedCartRoute
   '/change-password': typeof AuthenticatedChangePasswordRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
@@ -201,6 +208,7 @@ export interface FileRoutesByFullPath {
   '/category/$id': typeof CategoryIdRoute
   '/order-success/$id': typeof OrderSuccessIdRoute
   '/product/$id': typeof ProductIdRoute
+  '/admin/stock-test': typeof AuthenticatedAdminStockTestRoute
   '/orders/$id': typeof AuthenticatedOrdersIdRoute
   '/replacements/$id': typeof AuthenticatedReplacementsIdRoute
 }
@@ -217,7 +225,7 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/account': typeof AuthenticatedAccountRoute
   '/addresses': typeof AuthenticatedAddressesRoute
-  '/admin': typeof AuthenticatedAdminRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/cart': typeof AuthenticatedCartRoute
   '/change-password': typeof AuthenticatedChangePasswordRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
@@ -229,6 +237,7 @@ export interface FileRoutesByTo {
   '/category/$id': typeof CategoryIdRoute
   '/order-success/$id': typeof OrderSuccessIdRoute
   '/product/$id': typeof ProductIdRoute
+  '/admin/stock-test': typeof AuthenticatedAdminStockTestRoute
   '/orders/$id': typeof AuthenticatedOrdersIdRoute
   '/replacements/$id': typeof AuthenticatedReplacementsIdRoute
 }
@@ -247,7 +256,7 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/addresses': typeof AuthenticatedAddressesRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/cart': typeof AuthenticatedCartRoute
   '/_authenticated/change-password': typeof AuthenticatedChangePasswordRoute
   '/_authenticated/checkout': typeof AuthenticatedCheckoutRoute
@@ -259,6 +268,7 @@ export interface FileRoutesById {
   '/category/$id': typeof CategoryIdRoute
   '/order-success/$id': typeof OrderSuccessIdRoute
   '/product/$id': typeof ProductIdRoute
+  '/_authenticated/admin/stock-test': typeof AuthenticatedAdminStockTestRoute
   '/_authenticated/orders/$id': typeof AuthenticatedOrdersIdRoute
   '/_authenticated/replacements/$id': typeof AuthenticatedReplacementsIdRoute
 }
@@ -289,6 +299,7 @@ export interface FileRouteTypes {
     | '/category/$id'
     | '/order-success/$id'
     | '/product/$id'
+    | '/admin/stock-test'
     | '/orders/$id'
     | '/replacements/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -317,6 +328,7 @@ export interface FileRouteTypes {
     | '/category/$id'
     | '/order-success/$id'
     | '/product/$id'
+    | '/admin/stock-test'
     | '/orders/$id'
     | '/replacements/$id'
   id:
@@ -346,6 +358,7 @@ export interface FileRouteTypes {
     | '/category/$id'
     | '/order-success/$id'
     | '/product/$id'
+    | '/_authenticated/admin/stock-test'
     | '/_authenticated/orders/$id'
     | '/_authenticated/replacements/$id'
   fileRoutesById: FileRoutesById
@@ -558,8 +571,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOrdersIdRouteImport
       parentRoute: typeof AuthenticatedOrdersRoute
     }
+    '/_authenticated/admin/stock-test': {
+      id: '/_authenticated/admin/stock-test'
+      path: '/stock-test'
+      fullPath: '/admin/stock-test'
+      preLoaderRoute: typeof AuthenticatedAdminStockTestRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
+
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminStockTestRoute: typeof AuthenticatedAdminStockTestRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminStockTestRoute: AuthenticatedAdminStockTestRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
 interface AuthenticatedOrdersRouteChildren {
   AuthenticatedOrdersIdRoute: typeof AuthenticatedOrdersIdRoute
@@ -589,7 +620,7 @@ const AuthenticatedReplacementsRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedAddressesRoute: typeof AuthenticatedAddressesRoute
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedCartRoute: typeof AuthenticatedCartRoute
   AuthenticatedChangePasswordRoute: typeof AuthenticatedChangePasswordRoute
   AuthenticatedCheckoutRoute: typeof AuthenticatedCheckoutRoute
@@ -603,7 +634,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedAddressesRoute: AuthenticatedAddressesRoute,
-  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedCartRoute: AuthenticatedCartRoute,
   AuthenticatedChangePasswordRoute: AuthenticatedChangePasswordRoute,
   AuthenticatedCheckoutRoute: AuthenticatedCheckoutRoute,
