@@ -151,7 +151,8 @@ function OrderDetail() {
           <div className="text-xs font-bold text-gold mb-3">المنتجات</div>
           <div className="space-y-3">
             {items.map((it) => (
-              <div key={it.id} className="flex gap-3">
+              <div key={it.id} className="space-y-2">
+              <div className="flex gap-3">
                 <div className="size-14 rounded-xl bg-muted overflow-hidden flex-shrink-0">
                   {it.image_url && <img src={it.image_url} alt="" className="size-full object-cover" />}
                 </div>
@@ -184,6 +185,7 @@ function OrderDetail() {
                     استبدال
                   </button>
                 )}
+              </div>
             ))}
           </div>
         </div>
