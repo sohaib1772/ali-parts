@@ -1382,6 +1382,12 @@ function OrderAdminCard({ order: o, onStatusChange, onDelete }: { order: any; on
           {blockSaving ? "جاري التحديث…" : isBlocked ? (<><CheckCircle2 className="size-4" /> رفع الحظر عن الزبون</>) : (<><Ban className="size-4" /> حظر الزبون من الطلبات</>)}
         </button>
       )}
+      <button
+        onClick={() => onDelete(o.id)}
+        className="w-full h-10 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border border-destructive/40 text-destructive bg-destructive/5 hover:bg-destructive/10 transition"
+      >
+        <Trash2 className="size-4" /> حذف الطلب نهائياً
+      </button>
     </div>
   );
 }
