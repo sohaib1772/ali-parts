@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useRouter, useNavigate, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { ArrowRight, Heart, Minus, Plus, Share2, Shield, ShoppingCart, Truck, CheckCircle2, XCircle, Facebook, X as CloseIcon, Clock, RefreshCw } from "lucide-react";
+import { useState, useRef } from "react";
+import { ArrowRight, Heart, Minus, Plus, Share2, Shield, ShoppingCart, Truck, CheckCircle2, XCircle, Facebook, X as CloseIcon, Clock, RefreshCw, Loader2, Paperclip, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from "@/components/ui/alert-dialog";
 import { productByIdQuery, carModelsQuery, brandsQuery } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -59,7 +60,7 @@ function ProductPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("order_items")
-        .select("order_id, orders!inner(id, user_id, status, order_number, created_at)")
+        .select("id, order_id, orders!inner(id, user_id, status, order_number, created_at)")
         .eq("product_id", id)
         .eq("orders.user_id", userId!)
         .eq("orders.status", "delivered")
@@ -71,6 +72,7 @@ function ProductPage() {
     },
   });
   const deliveredOrderId: string | null = deliveredOrder?.order_id ?? null;
+  const deliveredOrderItemId: string | null = deliveredOrder?.id ?? null;
 
   const img = product.images?.[activeImg];
   const stockQty = (product as any).stock_qty ?? 0;
@@ -137,6 +139,97 @@ function ProductPage() {
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
   const shareText = `${product.name_ar}${product.oem_number ? ` (OEM: ${product.oem_number})` : ""}`;
   const waShareHref = whatsappLink(`${shareText}\n${shareUrl}`, "");
+
+  // ─── Quick replacement flow (from product page) ──────────────────────────
+  const REASON_PRESETS = [
+    "المنتج معطوب أو مكسور",
+    "لا يطابق المواصفات",
+    "المقاس أو الجهة (LH/RH) خطأ",
+    "استلمت منتجًا مختلفًا",
+  ] as const;
+  const MAX_FILES = 6;
+  const MAX_FILE_MB = 10;
+  const [replaceOpen, setReplaceOpen] = useState(false);
+  const [reasonChoice, setReasonChoice] = useState<string>(REASON_PRESETS[0]);
+  const [reasonText, setReasonText] = useState("");
+  const [pickedFiles, setPickedFiles] = useState<File[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [submittedId, setSubmittedId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const openReplaceQuick = () => {
+    if (!userId) {
+      toast.error("سجّل الدخول أولاً");
+      return;
+    }
+    setReasonChoice(REASON_PRESETS[0]);
+    setReasonText("");
+    setPickedFiles([]);
+    setSubmittedId(null);
+    setReplaceOpen(true);
+  };
+
+  const onPickFiles = (list: FileList | null) => {
+    if (!list) return;
+    const slots = MAX_FILES - pickedFiles.length;
+    const next: File[] = [];
+    for (const f of Array.from(list).slice(0, slots)) {
+      if (f.size > MAX_FILE_MB * 1024 * 1024) {
+        toast.error(`${f.name}: يتجاوز ${MAX_FILE_MB} ميغابايت`);
+        continue;
+      }
+      next.push(f);
+    }
+    setPickedFiles((prev) => [...prev, ...next]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const submitQuickReplace = async () => {
+    if (!userId || !deliveredOrderId || !deliveredOrderItemId) return;
+    const isOther = reasonChoice === "أخرى";
+    const finalReason = (isOther ? reasonText : `${reasonChoice}${reasonText ? " — " + reasonText : ""}`).trim();
+    if (finalReason.length < 5) {
+      toast.error("يرجى كتابة سبب الاستبدال (5 أحرف على الأقل)");
+      return;
+    }
+    setSubmitting(true);
+    const { data: inserted, error: insertErr } = await supabase
+      .from("replacement_requests" as any)
+      .insert({
+        user_id: userId,
+        order_id: deliveredOrderId,
+        order_item_id: deliveredOrderItemId,
+        product_id: product.id,
+        product_name_ar: product.name_ar,
+        reason: finalReason,
+      } as any)
+      .select("id")
+      .single();
+    if (insertErr || !inserted) {
+      setSubmitting(false);
+      toast.error("تعذّر إرسال طلب الاستبدال");
+      return;
+    }
+    const reqId = (inserted as any).id as string;
+
+    const uploaded: string[] = [];
+    for (const file of pickedFiles) {
+      const extMatch = file.name.match(/\.([a-zA-Z0-9]+)$/);
+      const ext = extMatch ? extMatch[1] : "bin";
+      const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(0, 80) || `file.${ext}`;
+      const key = `${userId}/${reqId}/${Date.now()}-${crypto.randomUUID().slice(0, 6)}-${safeName}`;
+      const { error: upErr } = await supabase.storage
+        .from("replacement-attachments")
+        .upload(key, file, { contentType: file.type || undefined, upsert: false });
+      if (!upErr) uploaded.push(key);
+    }
+    if (uploaded.length > 0) {
+      await supabase.from("replacement_requests" as any).update({ attachments: uploaded } as any).eq("id", reqId);
+    }
+    setSubmitting(false);
+    setSubmittedId(reqId);
+    toast.success("تم إرسال طلب الاستبدال");
+  };
   const fbShareHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
   const copyLink = async () => {
     try {
@@ -337,23 +430,23 @@ function ProductPage() {
         </a>
 
         {deliveredOrderId && (
-          <Link
-            to="/orders/$id"
-            params={{ id: deliveredOrderId }}
-            className="block bg-card rounded-2xl border border-gold/60 p-4 shadow-card hover:bg-gold/5 transition"
+          <button
+            type="button"
+            onClick={openReplaceQuick}
+            className="w-full text-start block bg-card rounded-2xl border border-gold/60 p-4 shadow-card hover:bg-gold/5 transition"
           >
             <div className="flex items-start gap-3">
               <div className="size-11 rounded-xl bg-gold/15 text-gold grid place-items-center shrink-0">
                 <RefreshCw className="size-5" />
               </div>
               <div className="flex-1">
-                <div className="text-sm font-extrabold text-navy">هل استلمت هذا المنتج؟ اطلب استبدال</div>
+                <div className="text-sm font-extrabold text-navy">استبدل هذا المنتج بخطوات سريعة</div>
                 <div className="text-[11px] text-foreground/70 mt-0.5 leading-relaxed">
-                  استلمت هذا المنتج ضمن طلب سابق. اضغط لفتح الطلب وتقديم طلب استبدال خلال 72 ساعة.
+                  اختر السبب وأرفق صورة أو مستند، ونرسل الطلب مباشرة — بدون التنقل بين الصفحات.
                 </div>
               </div>
             </div>
-          </Link>
+          </button>
         )}
 
         <div className="flex items-center gap-3">
@@ -459,6 +552,129 @@ function ProductPage() {
           </div>
         </div>
       )}
+
+      <AlertDialog open={replaceOpen} onOpenChange={setReplaceOpen}>
+        <AlertDialogContent className="rounded-3xl max-w-md p-0 overflow-hidden">
+          <div className="p-5 pb-2">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-navy">
+                {submittedId ? "تم إرسال طلب الاستبدال" : "طلب استبدال سريع"}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {submittedId
+                  ? "سيتواصل معك قسم متابعة الاستبدال خلال 72 ساعة."
+                  : product.name_ar}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+          </div>
+
+          {!submittedId ? (
+            <div className="px-5 pb-4 space-y-4">
+              <div>
+                <div className="text-xs font-bold text-navy mb-2">1) سبب الاستبدال</div>
+                <div className="space-y-1.5">
+                  {[...REASON_PRESETS, "أخرى"].map((r) => (
+                    <label
+                      key={r}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer text-xs font-bold ${reasonChoice === r ? "bg-navy/5 border-navy" : "border-border hover:bg-muted"}`}
+                    >
+                      <input
+                        type="radio"
+                        name="reason"
+                        value={r}
+                        checked={reasonChoice === r}
+                        onChange={() => setReasonChoice(r)}
+                        className="accent-navy"
+                      />
+                      <span>{r}</span>
+                    </label>
+                  ))}
+                </div>
+                <textarea
+                  value={reasonText}
+                  onChange={(e) => setReasonText(e.target.value.slice(0, 500))}
+                  placeholder={reasonChoice === "أخرى" ? "اكتب السبب بالتفصيل..." : "تفاصيل إضافية (اختياري)"}
+                  className="mt-2 w-full min-h-[64px] rounded-xl border border-border bg-background p-2 text-xs"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs font-bold text-navy">2) مرفقات (اختياري)</div>
+                  <span className="text-[10px] text-muted-foreground">
+                    {pickedFiles.length}/{MAX_FILES} · حتى {MAX_FILE_MB}MB
+                  </span>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt"
+                  className="hidden"
+                  onChange={(e) => onPickFiles(e.target.files)}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={pickedFiles.length >= MAX_FILES}
+                  className="w-full h-10 rounded-xl border border-dashed border-gold/60 text-navy text-xs font-bold flex items-center justify-center gap-2 hover:bg-gold/5 disabled:opacity-50"
+                >
+                  <Paperclip className="size-4 text-gold" />
+                  إضافة صور أو مستندات
+                </button>
+                {pickedFiles.length > 0 && (
+                  <ul className="mt-2 space-y-1">
+                    {pickedFiles.map((f, idx) => (
+                      <li key={idx} className="flex items-center gap-2 text-[11px] bg-muted rounded-lg px-2 py-1.5">
+                        <span className="flex-1 truncate">{f.name}</span>
+                        <span className="text-muted-foreground">{(f.size / 1024 / 1024).toFixed(2)}MB</span>
+                        <button
+                          type="button"
+                          onClick={() => setPickedFiles((prev) => prev.filter((_, i) => i !== idx))}
+                          className="size-6 rounded-md grid place-items-center hover:bg-background"
+                        >
+                          <Trash2 className="size-3.5 text-rose-600" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="px-5 pb-2 text-xs text-muted-foreground">
+              يمكنك متابعة حالة الطلب من صفحة الاستبدال.
+            </div>
+          )}
+
+          <AlertDialogFooter className="p-4 pt-2 gap-2">
+            {submittedId ? (
+              <>
+                <AlertDialogCancel className="rounded-xl">إغلاق</AlertDialogCancel>
+                <Link
+                  to="/replacements/$id"
+                  params={{ id: submittedId }}
+                  className="inline-flex items-center justify-center h-10 px-4 rounded-xl bg-navy text-primary-foreground text-xs font-bold hover:bg-navy/90"
+                >
+                  عرض تفاصيل الطلب
+                </Link>
+              </>
+            ) : (
+              <>
+                <AlertDialogCancel disabled={submitting} className="rounded-xl">إلغاء</AlertDialogCancel>
+                <button
+                  type="button"
+                  onClick={submitQuickReplace}
+                  disabled={submitting}
+                  className="inline-flex items-center justify-center h-10 px-4 rounded-xl bg-navy text-primary-foreground text-xs font-bold hover:bg-navy/90 disabled:opacity-60"
+                >
+                  {submitting ? <Loader2 className="size-4 animate-spin" /> : "إرسال الطلب"}
+                </button>
+              </>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
