@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { ChevronLeft, LogOut, MapPin, Heart, Package, Bell, Info, Shield, MessageCircle, ShieldCheck, Sparkles, Lock, Camera, Loader2 } from "lucide-react";
+import { ChevronLeft, LogOut, MapPin, Heart, Package, Bell, Info, Shield, MessageCircle, ShieldCheck, Sparkles, Lock, Camera, Loader2, Pencil, Check, X } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { VehicleBar, VehiclePicker } from "@/components/vehicle-picker";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +24,34 @@ function AccountPage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [savingName, setSavingName] = useState(false);
+
+  const startEditName = () => {
+    setNameDraft(profile?.full_name ?? "");
+    setEditingName(true);
+  };
+
+  const saveName = async () => {
+    if (!userId) return;
+    const trimmed = nameDraft.trim();
+    if (trimmed.length < 2) { toast.error("الاسم قصير جداً"); return; }
+    if (trimmed.length > 60) { toast.error("الاسم طويل جداً"); return; }
+    setSavingName(true);
+    try {
+      const { error } = await supabase.from("profiles").update({ full_name: trimmed }).eq("id", userId);
+      if (error) throw error;
+      await supabase.auth.updateUser({ data: { full_name: trimmed } });
+      qc.invalidateQueries({ queryKey: ["profile", userId] });
+      toast.success("تم تحديث الاسم");
+      setEditingName(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "تعذر تحديث الاسم");
+    } finally {
+      setSavingName(false);
+    }
+  };
 
   const onPickAvatar = async (file: File) => {
     if (!userId) return;
@@ -101,7 +129,32 @@ function AccountPage() {
               }}
             />
             <div className="flex-1 min-w-0">
-              <div className="font-extrabold text-lg truncate">{profile?.full_name ?? "عميل Ali Parts"}</div>
+              {editingName ? (
+                <div className="flex items-center gap-1">
+                  <input
+                    autoFocus
+                    value={nameDraft}
+                    onChange={(e) => setNameDraft(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") saveName(); if (e.key === "Escape") setEditingName(false); }}
+                    maxLength={60}
+                    placeholder="اسمك الكامل"
+                    className="flex-1 min-w-0 bg-white/10 border border-gold/40 rounded-lg px-2 py-1 text-sm font-bold text-primary-foreground placeholder:text-primary-foreground/50 outline-none focus:border-gold"
+                  />
+                  <button type="button" onClick={saveName} disabled={savingName} aria-label="حفظ" className="size-7 rounded-lg bg-gold text-navy grid place-items-center disabled:opacity-60">
+                    {savingName ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+                  </button>
+                  <button type="button" onClick={() => setEditingName(false)} aria-label="إلغاء" className="size-7 rounded-lg bg-white/10 text-primary-foreground grid place-items-center">
+                    <X className="size-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <div className="font-extrabold text-lg truncate">{profile?.full_name ?? "عميل Ali Parts"}</div>
+                  <button type="button" onClick={startEditName} aria-label="تعديل الاسم" className="size-6 rounded-md bg-white/10 hover:bg-white/20 text-gold grid place-items-center shrink-0">
+                    <Pencil className="size-3" />
+                  </button>
+                </div>
+              )}
               <div className="text-xs text-gold truncate">{user?.email}</div>
               {profile?.phone && <div className="text-xs text-primary-foreground/70">{profile.phone}</div>}
               <button
