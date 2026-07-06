@@ -459,6 +459,7 @@ type ProductForm = {
   is_deal: boolean;
   compatible_models: string[];
   deal_expires_at: string;
+  condition: "new" | "used";
 };
 
 const emptyProduct: ProductForm = {
@@ -466,6 +467,7 @@ const emptyProduct: ProductForm = {
   price_iqd: "", compare_price_iqd: "", shipping_iqd: "", category_id: "", brand_id: "",
   images: [], in_stock: true, is_featured: false, is_deal: false,
   compatible_models: [], deal_expires_at: "", stock_qty: "0",
+  condition: "new",
 };
 
 function ProductsAdmin() {
@@ -517,6 +519,7 @@ function ProductsAdmin() {
       is_deal: !!p.is_deal,
       compatible_models: p.compatible_models ?? [],
       deal_expires_at: p.deal_expires_at ? new Date(p.deal_expires_at).toISOString().slice(0, 16) : "",
+      condition: (p.condition === "used" ? "used" : "new"),
     });
     setOpen(true);
   };
@@ -546,6 +549,7 @@ function ProductsAdmin() {
         is_deal: form.is_deal,
         compatible_models: form.compatible_models.length > 0 ? form.compatible_models : null,
         deal_expires_at: form.is_deal && form.deal_expires_at ? new Date(form.deal_expires_at).toISOString() : null,
+        condition: form.condition,
       };
       const res = form.id
         ? await supabase.from("products").update(payload).eq("id", form.id)
@@ -681,6 +685,24 @@ function ProductsAdmin() {
                 onChange={(e) => setForm({ ...form, stock_qty: e.target.value })}
                 placeholder="0"
               />
+            </Field>
+            <Field label="حالة المنتج">
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, condition: "new" })}
+                  className={`h-11 rounded-xl font-black text-sm border-2 transition ${form.condition === "new" ? "bg-navy text-primary-foreground border-navy" : "bg-card text-navy border-border"}`}
+                >
+                  جديد
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, condition: "used" })}
+                  className={`h-11 rounded-xl font-black text-sm border-2 transition ${form.condition === "used" ? "bg-gradient-gold text-navy border-gold" : "bg-card text-navy border-border"}`}
+                >
+                  مستعمل
+                </button>
+              </div>
             </Field>
             <div className="flex items-center justify-between py-1">
               <Label>مميز</Label>
