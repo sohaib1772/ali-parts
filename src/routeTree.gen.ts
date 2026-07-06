@@ -23,6 +23,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
 import { Route as OrderSuccessIdRouteImport } from './routes/order-success.$id'
 import { Route as CategoryIdRouteImport } from './routes/category.$id'
+import { Route as AuthenticatedReplacementsRouteImport } from './routes/_authenticated/replacements'
 import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated/orders'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
@@ -105,6 +106,12 @@ const CategoryIdRoute = CategoryIdRouteImport.update({
   path: '/category/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedReplacementsRoute =
+  AuthenticatedReplacementsRouteImport.update({
+    id: '/replacements',
+    path: '/replacements',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOrdersRoute = AuthenticatedOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -159,9 +166,9 @@ const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
 } as any)
 const AuthenticatedReplacementsIdRoute =
   AuthenticatedReplacementsIdRouteImport.update({
-    id: '/replacements/$id',
-    path: '/replacements/$id',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedReplacementsRoute,
   } as any)
 const AuthenticatedOrdersIdRoute = AuthenticatedOrdersIdRouteImport.update({
   id: '/$id',
@@ -190,6 +197,7 @@ export interface FileRoutesByFullPath {
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/orders': typeof AuthenticatedOrdersRouteWithChildren
+  '/replacements': typeof AuthenticatedReplacementsRouteWithChildren
   '/category/$id': typeof CategoryIdRoute
   '/order-success/$id': typeof OrderSuccessIdRoute
   '/product/$id': typeof ProductIdRoute
@@ -217,6 +225,7 @@ export interface FileRoutesByTo {
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/orders': typeof AuthenticatedOrdersRouteWithChildren
+  '/replacements': typeof AuthenticatedReplacementsRouteWithChildren
   '/category/$id': typeof CategoryIdRoute
   '/order-success/$id': typeof OrderSuccessIdRoute
   '/product/$id': typeof ProductIdRoute
@@ -246,6 +255,7 @@ export interface FileRoutesById {
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/orders': typeof AuthenticatedOrdersRouteWithChildren
+  '/_authenticated/replacements': typeof AuthenticatedReplacementsRouteWithChildren
   '/category/$id': typeof CategoryIdRoute
   '/order-success/$id': typeof OrderSuccessIdRoute
   '/product/$id': typeof ProductIdRoute
@@ -275,6 +285,7 @@ export interface FileRouteTypes {
     | '/messages'
     | '/notifications'
     | '/orders'
+    | '/replacements'
     | '/category/$id'
     | '/order-success/$id'
     | '/product/$id'
@@ -302,6 +313,7 @@ export interface FileRouteTypes {
     | '/messages'
     | '/notifications'
     | '/orders'
+    | '/replacements'
     | '/category/$id'
     | '/order-success/$id'
     | '/product/$id'
@@ -330,6 +342,7 @@ export interface FileRouteTypes {
     | '/_authenticated/messages'
     | '/_authenticated/notifications'
     | '/_authenticated/orders'
+    | '/_authenticated/replacements'
     | '/category/$id'
     | '/order-success/$id'
     | '/product/$id'
@@ -454,6 +467,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CategoryIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/replacements': {
+      id: '/_authenticated/replacements'
+      path: '/replacements'
+      fullPath: '/replacements'
+      preLoaderRoute: typeof AuthenticatedReplacementsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/orders': {
       id: '/_authenticated/orders'
       path: '/orders'
@@ -526,10 +546,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/replacements/$id': {
       id: '/_authenticated/replacements/$id'
-      path: '/replacements/$id'
+      path: '/$id'
       fullPath: '/replacements/$id'
       preLoaderRoute: typeof AuthenticatedReplacementsIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedReplacementsRoute
     }
     '/_authenticated/orders/$id': {
       id: '/_authenticated/orders/$id'
@@ -552,6 +572,20 @@ const AuthenticatedOrdersRouteChildren: AuthenticatedOrdersRouteChildren = {
 const AuthenticatedOrdersRouteWithChildren =
   AuthenticatedOrdersRoute._addFileChildren(AuthenticatedOrdersRouteChildren)
 
+interface AuthenticatedReplacementsRouteChildren {
+  AuthenticatedReplacementsIdRoute: typeof AuthenticatedReplacementsIdRoute
+}
+
+const AuthenticatedReplacementsRouteChildren: AuthenticatedReplacementsRouteChildren =
+  {
+    AuthenticatedReplacementsIdRoute: AuthenticatedReplacementsIdRoute,
+  }
+
+const AuthenticatedReplacementsRouteWithChildren =
+  AuthenticatedReplacementsRoute._addFileChildren(
+    AuthenticatedReplacementsRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedAddressesRoute: typeof AuthenticatedAddressesRoute
@@ -563,7 +597,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedOrdersRoute: typeof AuthenticatedOrdersRouteWithChildren
-  AuthenticatedReplacementsIdRoute: typeof AuthenticatedReplacementsIdRoute
+  AuthenticatedReplacementsRoute: typeof AuthenticatedReplacementsRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -577,7 +611,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedOrdersRoute: AuthenticatedOrdersRouteWithChildren,
-  AuthenticatedReplacementsIdRoute: AuthenticatedReplacementsIdRoute,
+  AuthenticatedReplacementsRoute: AuthenticatedReplacementsRouteWithChildren,
 }
 
 const AuthenticatedRouteRouteWithChildren =
