@@ -59,6 +59,54 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_otp_challenges: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      admin_otp_verifications: {
+        Row: {
+          expires_at: string
+          user_id: string
+          verified_at: string
+        }
+        Insert: {
+          expires_at: string
+          user_id: string
+          verified_at?: string
+        }
+        Update: {
+          expires_at?: string
+          user_id?: string
+          verified_at?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           key: string
