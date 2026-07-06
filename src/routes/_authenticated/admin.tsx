@@ -1412,13 +1412,27 @@ function BannersAdmin() {
       is_active: true,
       expires_at: null,
     };
-    const res = form.id
-      ? await supabase.from("banners").update(payload).eq("id", form.id)
-      : await supabase.from("banners").insert(payload);
-    if (res.error) { toast.error(res.error.message); return; }
+    const isNew = !form.id;
+    let newId: string | null = null;
+    if (isNew) {
+      const res = await supabase.from("banners").insert(payload).select("id").single();
+      if (res.error) { toast.error(res.error.message); return; }
+      newId = (res.data as any)?.id ?? null;
+    } else {
+      const res = await supabase.from("banners").update(payload).eq("id", form.id!);
+      if (res.error) { toast.error(res.error.message); return; }
+    }
     toast.success("تم الحفظ");
     setOpen(false);
     qc.invalidateQueries({ queryKey: ["banners"] });
+    if (isNew && newId) {
+      try {
+        const { broadcastBannerPush } = await import("@/lib/banner-push.functions");
+        await broadcastBannerPush({ data: { bannerId: newId } });
+      } catch (err) {
+        console.error("[push] broadcast failed", err);
+      }
+    }
   };
 
   const remove = async (id: string) => {
