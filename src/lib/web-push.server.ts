@@ -16,14 +16,13 @@ const STATUS_TITLES: Record<string, string> = {
   resolved: "تم إنجاز طلب الاستبدال",
 };
 
-let cachedKeys: Promise<ApplicationServerKeys> | null = null;
+let cachedKeys: Promise<ApplicationServerKeys> | undefined;
 function keys(): Promise<ApplicationServerKeys> {
-  if (!cachedKeys) {
-    const publicKey = process.env.WEB_PUSH_PUBLIC_KEY;
-    const privateKey = process.env.WEB_PUSH_PRIVATE_KEY;
-    if (!publicKey || !privateKey) throw new Error("Missing WEB_PUSH_PUBLIC_KEY / WEB_PUSH_PRIVATE_KEY");
-    cachedKeys = ApplicationServerKeys.fromJSON({ publicKey, privateKey });
-  }
+  if (cachedKeys) return cachedKeys;
+  const publicKey = process.env.WEB_PUSH_PUBLIC_KEY;
+  const privateKey = process.env.WEB_PUSH_PRIVATE_KEY;
+  if (!publicKey || !privateKey) throw new Error("Missing WEB_PUSH_PUBLIC_KEY / WEB_PUSH_PRIVATE_KEY");
+  cachedKeys = ApplicationServerKeys.fromJSON({ publicKey, privateKey });
   return cachedKeys;
 }
 
