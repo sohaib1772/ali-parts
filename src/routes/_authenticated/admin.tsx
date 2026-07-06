@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import { PageShell } from "@/components/page-shell";
@@ -2089,6 +2089,13 @@ function ReplacementCard({
             ))}
           </SelectContent>
         </Select>
+        <Link
+          to="/replacements/$id"
+          params={{ id: row.id }}
+          className="h-9 px-3 rounded-xl border border-border text-xs font-bold flex items-center gap-1.5 hover:bg-muted"
+        >
+          <History className="size-3.5" /> السجل
+        </Link>
         <button
           type="button"
           onClick={onDelete}
