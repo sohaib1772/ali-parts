@@ -1300,6 +1300,9 @@ function SettingsAdmin() {
   const [tagline, setTagline] = useState("");
   const [logo, setLogo] = useState("");
   const [address, setAddress] = useState("");
+  const [locationLink, setLocationLink] = useState("");
+  const [years, setYears] = useState("");
+  const [frontImage, setFrontImage] = useState("");
   const [about, setAbout] = useState("");
   const [shipLocalName, setShipLocalName] = useState("");
   const [shipLocalCost, setShipLocalCost] = useState("");
