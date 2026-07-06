@@ -232,6 +232,38 @@ function OrdersPage() {
           })
         )}
       </div>
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent dir="rtl" className="max-w-sm">
+          <AlertDialogHeader className="items-center sm:items-center">
+            <div className="size-12 rounded-full bg-destructive/10 grid place-items-center mb-2">
+              <AlertTriangle className="size-6 text-destructive" />
+            </div>
+            <AlertDialogTitle className="text-base sm:text-lg">
+              {confirmMode === "all" ? "مسح جميع الطلبات" : `مسح ${selected.size} طلب`}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              {confirmMode === "all"
+                ? "سيتم حذف جميع طلباتك بشكل نهائي. لا يمكن التراجع عن هذا الإجراء."
+                : "سيتم حذف الطلبات المحددة بشكل نهائي. لا يمكن التراجع عن هذا الإجراء."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col-reverse sm:flex-col-reverse gap-2">
+            <AlertDialogCancel asChild>
+              <Button variant="outline" className="w-full">إلغاء</Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button
+                variant="destructive"
+                className="w-full"
+                onClick={executeDelete}
+                disabled={deleting}
+              >
+                {deleting ? "جاري الحذف..." : "حذف نهائي"}
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageShell>
   );
 }
