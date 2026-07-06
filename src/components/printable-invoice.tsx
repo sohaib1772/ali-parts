@@ -263,6 +263,18 @@ export function InvoicePreviewDialog({
     }
   };
 
+  const handlePng = async () => {
+    setBusy(true);
+    try {
+      await downloadInvoicePng(domId, `invoice-${order.order_number ?? order.id}.png`);
+      toast.success("تم حفظ الفاتورة كصورة");
+    } catch {
+      toast.error("تعذّر حفظ الصورة");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handlePrint = () => {
     printOnlyThisInvoice(domId);
   };
@@ -285,6 +297,13 @@ export function InvoicePreviewDialog({
                 className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-gradient-gold text-navy text-xs font-black shadow-gold"
               >
                 <Printer className="size-3.5" /> طباعة
+              </button>
+              <button
+                onClick={handlePng}
+                disabled={busy}
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-white/10 border border-white/20 text-white text-xs font-black hover:bg-white/15 disabled:opacity-50"
+              >
+                <ImageIcon className="size-3.5" /> {busy ? "..." : "حفظ كصورة"}
               </button>
               <button
                 onClick={handlePdf}
