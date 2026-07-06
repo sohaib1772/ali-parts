@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 import { PageShell } from "@/components/page-shell";
+import { PushOptIn } from "@/components/push-optin";
 import { Repeat, ChevronLeft, Clock, Search, ThumbsUp, ThumbsDown, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/replacements")({
@@ -38,6 +39,7 @@ function ReplacementsList() {
   return (
     <PageShell title="طلبات الاستبدال">
       <div className="px-4 pt-4 space-y-3">
+        <PushOptIn />
         {isLoading ? (
           <div className="py-12 text-center text-muted-foreground text-sm">جاري التحميل...</div>
         ) : rows.length === 0 ? (
