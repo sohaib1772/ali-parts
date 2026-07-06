@@ -10,6 +10,15 @@ async function assertAdmin(ctx: { supabase: any; userId: string }) {
   if (error || !data) throw new Error("Forbidden");
 }
 
+async function assertModerator(ctx: { supabase: any; userId: string }) {
+  // Allow admins OR staff members with can_block permission.
+  const [{ data: isAdmin }, { data: canBlock }] = await Promise.all([
+    ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "admin" }),
+    ctx.supabase.rpc("staff_can", { _uid: ctx.userId, _perm: "block" }),
+  ]);
+  if (!isAdmin && !canBlock) throw new Error("Forbidden");
+}
+
 const SetPasswordInput = z.object({
   user_id: z.string().uuid(),
   password: z.string().min(6).max(72),
