@@ -282,7 +282,18 @@ function ProductPage() {
       </div>
 
       <div className="fixed bottom-0 inset-x-0 z-30 bg-card border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div className="mx-auto max-w-md flex gap-2">
+        <div className="mx-auto max-w-md flex items-center gap-2">
+          <div className="flex-shrink-0">
+            {product.in_stock ? (
+              <span className="inline-flex items-center gap-1 text-success text-xs font-bold bg-success/10 border border-success/30 px-2 py-1 rounded-full">
+                <CheckCircle2 className="size-3.5" /> متوفر
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-destructive text-xs font-bold bg-destructive/10 border border-destructive/30 px-2 py-1 rounded-full">
+                <XCircle className="size-3.5" /> غير متوفر
+              </span>
+            )}
+          </div>
           <button
             onClick={addToCart}
             disabled={!product.in_stock}
