@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useRouter, useNavigate, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowRight, Heart, Minus, Plus, Share2, Shield, ShoppingCart, Truck, CheckCircle2, XCircle, Facebook, X as CloseIcon } from "lucide-react";
+import { ArrowRight, Heart, Minus, Plus, Share2, Shield, ShoppingCart, Truck, CheckCircle2, XCircle, Facebook, X as CloseIcon, Clock } from "lucide-react";
 import { productByIdQuery, carModelsQuery, brandsQuery } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -262,6 +262,39 @@ function ProductPage() {
             <div className="text-xs font-bold">توصيل سريع</div>
           </div>
         </div>
+
+        <div className="bg-gradient-to-br from-gold/15 to-gold/5 rounded-2xl border-2 border-gold/40 p-4 shadow-card">
+          <div className="flex items-start gap-3">
+            <div className="size-11 rounded-xl bg-gradient-gold text-navy grid place-items-center shrink-0 shadow-gold">
+              <Clock className="size-5" />
+            </div>
+            <div className="flex-1">
+              <div className="text-sm font-extrabold text-navy">التوصيل خلال 72 ساعة</div>
+              <div className="text-[11px] text-foreground/70 mt-0.5 leading-relaxed">
+                يصلك المنتج خلال 72 ساعة كحد أقصى من وقت تأكيد الطلب.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <a
+          href={whatsappLink(`السلام عليكم، لدي استفسار/مشكلة بخصوص: ${product.name_ar}`, waNumber)}
+          target="_blank"
+          rel="noreferrer"
+          className="block bg-card rounded-2xl border border-border p-4 shadow-card hover:border-whatsapp/60 transition"
+        >
+          <div className="flex items-start gap-3">
+            <div className="size-11 rounded-xl bg-whatsapp text-white grid place-items-center shrink-0">
+              <WhatsappIcon className="size-5" />
+            </div>
+            <div className="flex-1">
+              <div className="text-sm font-extrabold">عندك مشكلة أو استفسار؟</div>
+              <div className="text-[11px] text-foreground/70 mt-0.5 leading-relaxed">
+                تواصل مع قسم المبيعات مباشرة عبر واتساب وسنساعدك فوراً.
+              </div>
+            </div>
+          </div>
+        </a>
 
         <div className="flex items-center gap-3">
           <span className="text-sm font-bold">الكمية:</span>
