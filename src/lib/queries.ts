@@ -21,6 +21,8 @@ export type Product = {
   is_deal: boolean;
   specs: Record<string, unknown> | null;
   deal_expires_at?: string | null;
+  created_at?: string | null;
+  condition?: "new" | "used" | null;
 };
 
 export type Category = { id: string; name_ar: string; name_en: string; icon: string | null; image_url: string | null; sort_order: number | null };
@@ -111,6 +113,20 @@ export const bestSellersQuery = () =>
         .limit(20);
       if (error) throw error;
       return (data ?? []) as (Product & { sales_count: number })[];
+    },
+  });
+
+export const allProductsQuery = () =>
+  queryOptions({
+    queryKey: ["products", "all"],
+    staleTime: 2 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Product[];
     },
   });
 

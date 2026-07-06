@@ -3,13 +3,13 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Flame, ChevronLeft } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { ProductCard } from "@/components/product-card";
-import { bestSellersQuery } from "@/lib/queries";
+import { allProductsQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/products")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(bestSellersQuery()),
+  loader: ({ context }) => context.queryClient.ensureQueryData(allProductsQuery()),
   head: () => ({
     meta: [
-      { title: "الأكثر مبيعاً | الساير" },
+      { title: "المنتجات | الساير" },
       { name: "description", content: "تصفح جميع قطع الغيار المتوفرة في متجر الساير." },
     ],
   }),
@@ -17,10 +17,10 @@ export const Route = createFileRoute("/products")({
 });
 
 function AllProductsPage() {
-  const { data: products } = useSuspenseQuery(bestSellersQuery());
+  const { data: products } = useSuspenseQuery(allProductsQuery());
 
   return (
-    <PageShell title="الأكثر مبيعاً">
+    <PageShell title="المنتجات">
       <div className="px-4 pt-3">
         <Link to="/" className="inline-flex items-center gap-1 text-xs text-muted-foreground mb-3">
           <ChevronLeft className="size-3.5 rotate-180" /> الرئيسية
@@ -30,7 +30,7 @@ function AllProductsPage() {
             <Flame className="size-5 text-destructive" />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-base font-extrabold leading-tight">الأكثر مبيعاً</h1>
+            <h1 className="text-base font-extrabold leading-tight">جميع المنتجات</h1>
             <p className="text-[11px] text-muted-foreground">جميع المنتجات المتوفرة ({products.length})</p>
           </div>
         </div>
