@@ -1,10 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Flame, ChevronLeft } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { ProductCard } from "@/components/product-card";
 import { productsInfiniteQuery } from "@/lib/queries";
+
+type ConditionFilter = "all" | "new" | "used";
+
+const FILTER_OPTIONS: { value: ConditionFilter; label: string }[] = [
+  { value: "all", label: "الكل" },
+  { value: "new", label: "جديد" },
+  { value: "used", label: "مستعمل" },
+];
 
 export const Route = createFileRoute("/products")({
   loader: ({ context }) =>
@@ -19,8 +27,9 @@ export const Route = createFileRoute("/products")({
 });
 
 function AllProductsPage() {
+  const [condition, setCondition] = useState<ConditionFilter>("all");
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isPending } =
-    useInfiniteQuery(productsInfiniteQuery());
+    useInfiniteQuery(productsInfiniteQuery(condition === "all" ? null : condition));
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const products = data?.pages.flat() ?? [];
@@ -60,6 +69,25 @@ function AllProductsPage() {
           </div>
         </div>
 
+        <div className="flex gap-2 mb-4">
+          {FILTER_OPTIONS.map((opt) => {
+            const active = condition === opt.value;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => setCondition(opt.value)}
+                className={`flex-1 h-9 rounded-xl text-xs font-bold border transition ${
+                  active
+                    ? "bg-navy text-primary-foreground border-navy"
+                    : "bg-card text-muted-foreground border-border hover:border-navy/50"
+                }`}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+
         {isPending ? (
           <div className="grid grid-cols-2 gap-3 pb-8">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -68,7 +96,7 @@ function AllProductsPage() {
           </div>
         ) : products.length === 0 ? (
           <div className="text-center text-muted-foreground text-sm py-16">
-            لا توجد منتجات حالياً.
+            لا توجد منتجات حالياً في هذا الفلتر.
           </div>
         ) : (
           <>
