@@ -298,37 +298,29 @@ function CategoryIcon({ category, index }: { category: { id: string; name_ar: st
 }
 
 function HeroCarousel({ banners }: { banners: Banner[] }) {
-  const [idx, setIdx] = useState(0);
   const [muted, setMuted] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const slides = banners.length > 0 ? banners : null;
-  const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
+  // Show only the latest uploaded VIDEO as a fixed hero — no rotation.
+  // Hide the whole section when no video has been uploaded.
+  const current = banners.find((b) => !!(b as any).video_url) ?? null;
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const heroRef = useRef<HTMLDivElement | null>(null);
-  // Remember the user's chosen sound preference so we can restore it
-  // when the hero scrolls back into view.
   const userWantsSoundRef = useRef(false);
 
   useEffect(() => { setMounted(true); }, []);
 
-  // Mute + pause the hero video when it scrolls out of view; restore
-  // the user's chosen sound preference when it comes back in.
   useEffect(() => {
     const box = heroRef.current;
     if (!box) return;
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
+          const el = videoRef.current;
           if (!e.isIntersecting || e.intersectionRatio < 0.5) {
             setMuted(true);
-            videoRefs.current.forEach((el) => {
-              if (el) {
-                el.muted = true;
-                el.pause();
-              }
-            });
+            if (el) { el.muted = true; el.pause(); }
           } else {
             if (userWantsSoundRef.current) setMuted(false);
-            const el = videoRefs.current[idx];
             if (el) {
               el.muted = !userWantsSoundRef.current;
               if (userWantsSoundRef.current) el.volume = 1;
@@ -341,101 +333,47 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
     );
     io.observe(box);
     return () => io.disconnect();
-  }, [idx]);
-
-  // Keep the DOM element in sync when muted state or the active slide changes.
-  // Setting the `muted` property + calling play() imperatively is the only
-  // reliable way to unmute after autoplay across mobile browsers.
-  useEffect(() => {
-    videoRefs.current.forEach((el, i) => {
-      if (!el) return;
-      const isActive = i === idx;
-      el.muted = !isActive || muted;
-      if (isActive) {
-        el.currentTime = el.currentTime; // no-op, keeps position
-        const p = el.play();
-        if (p && typeof p.catch === "function") p.catch(() => {});
-      } else {
-        el.pause();
-      }
-    });
-  }, [idx, muted, slides]);
+  }, []);
 
   useEffect(() => {
-    if (!slides || slides.length <= 1) return;
-    // Pause the auto-rotation while a video slide is playing with sound
-    // so the user can hear it. Silent slides keep rotating.
-    const current = slides[idx];
-    const hasAudibleVideo = !!(current as any)?.video_url && !muted;
-    if (hasAudibleVideo) return;
-    const t = setInterval(() => setIdx((i) => (i + 1) % slides.length), 3500);
-    return () => clearInterval(t);
-  }, [slides, idx, muted]);
+    const el = videoRef.current;
+    if (!el) return;
+    el.muted = muted;
+    const p = el.play();
+    if (p && typeof p.catch === "function") p.catch(() => {});
+  }, [muted, current?.id]);
 
-  if (!slides) {
-    return (
-      <div className="px-4 mt-4">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-hero text-primary-foreground p-5 shadow-luxe">
-          <div className="absolute -top-10 -end-10 size-40 rounded-full bg-gold/20 blur-2xl" />
-          <div className="absolute -bottom-16 -start-8 size-40 rounded-full bg-gold/10 blur-3xl" />
-          <div className="relative">
-            <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-gold bg-gold/10 border border-gold/30 rounded-full px-3 py-1 mb-3">
-              <Sparkles className="size-3.5" /> قطع أصلية ١٠٠٪
-            </div>
-            <h1 className="text-2xl font-black leading-tight mb-1">
-              قطع غيار <span className="text-gold">شفروليه</span> و<span className="text-gold">GMC</span> و<span className="text-gold">كاديلاك</span>
-            </h1>
-            <p className="text-sm text-primary-foreground/80 mb-4">توصيل سريع لجميع محافظات العراق</p>
-            <Link
-              to="/search"
-              className="inline-flex items-center gap-2 bg-gradient-gold text-navy font-bold text-sm px-4 py-2.5 rounded-xl shadow-gold hover:brightness-105 transition"
-            >
-              <Search className="size-4" /> ابحث الآن
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (!current) return null;
 
-  const current = slides[idx];
   const content = (
     <div className="relative overflow-hidden rounded-3xl bg-gradient-hero text-primary-foreground shadow-luxe aspect-[16/10]">
-      {slides.map((b, i) => (
-        <div
-          key={b.id}
-          className={`absolute inset-0 transition-opacity duration-700 ${i === idx ? "opacity-100" : "opacity-0"}`}
-        >
-          <img
-            src={b.image_url}
-            loading={i === idx ? "eager" : "lazy"}
-            decoding="async"
-            alt={b.title_ar ?? ""}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          {mounted && (b as any).video_url && i === idx && (
-            <video
-              ref={(el) => { videoRefs.current[i] = el; }}
-              src={(b as any).video_url}
-              poster={b.image_url || undefined}
-              autoPlay
-              muted={muted}
-              loop
-              playsInline
-              preload="metadata"
-              className="absolute inset-0 w-full h-full object-cover cursor-pointer"
-              onVolumeChange={(e) => {
-                if (i !== idx) return;
-                const el = e.currentTarget;
-                setMuted(el.muted);
-                if (!el.muted) userWantsSoundRef.current = true;
-              }}
-            />
-          )}
-        </div>
-      ))}
+      {current.image_url && (
+        <img
+          src={current.image_url}
+          alt={current.title_ar ?? ""}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      )}
+      {mounted && (
+        <video
+          ref={videoRef}
+          src={(current as any).video_url}
+          poster={current.image_url || undefined}
+          autoPlay
+          muted={muted}
+          loop
+          playsInline
+          preload="metadata"
+          className="absolute inset-0 w-full h-full object-cover cursor-pointer"
+          onVolumeChange={(e) => {
+            const el = e.currentTarget;
+            setMuted(el.muted);
+            if (!el.muted) userWantsSoundRef.current = true;
+          }}
+        />
+      )}
       <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/40 to-transparent pointer-events-none" />
-      {mounted && (current as any).video_url && (
+      {mounted && (
         <button
           type="button"
           onClick={(e) => {
@@ -444,7 +382,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
             setMuted((m) => {
               const next = !m;
               userWantsSoundRef.current = !next;
-              const el = videoRefs.current[idx];
+              const el = videoRef.current;
               if (el) {
                 el.muted = next;
                 if (!next) {
@@ -478,18 +416,6 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
         )}
         {current.subtitle_ar && (
           <p className="text-xs text-primary-foreground/85 mb-2">{current.subtitle_ar}</p>
-        )}
-        {slides.length > 1 && (
-          <div className="flex gap-1.5 mt-2">
-            {slides.map((_, i) => (
-              <button
-                key={i}
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIdx(i); }}
-                aria-label={`slide ${i + 1}`}
-                className={`h-1.5 rounded-full transition-all ${i === idx ? "w-6 bg-gold" : "w-1.5 bg-white/40"}`}
-              />
-            ))}
-          </div>
         )}
       </div>
     </div>
