@@ -55,6 +55,7 @@ function ProductPage() {
   const img = product.images?.[activeImg];
   const stockQty = (product as any).stock_qty ?? 0;
   const available = product.in_stock && stockQty > 0;
+  const condition = (product as any).condition === "used" ? "used" : "new";
 
   const requireAuth = () => {
     if (!userId) {
@@ -176,7 +177,16 @@ function ProductPage() {
           <div>
             <div className="text-3xl font-black text-navy">{formatIQD(product.price_iqd)}</div>
           </div>
-          <div className="ms-auto">
+          <div className="ms-auto flex items-center gap-2">
+            <span
+              className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border ${
+                condition === "used"
+                  ? "text-amber-700 bg-amber-500/10 border-amber-500/40"
+                  : "text-emerald-700 bg-emerald-500/10 border-emerald-500/40"
+              }`}
+            >
+              {condition === "used" ? "مستعمل" : "جديد"}
+            </span>
             {available ? (
               <span className="inline-flex items-center gap-1 text-success text-xs font-bold bg-success/10 border border-success/30 px-2.5 py-1 rounded-full">
                 <CheckCircle2 className="size-3.5" /> متوفر · {stockQty} قطعة
