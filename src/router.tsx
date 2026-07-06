@@ -24,7 +24,13 @@ export const getRouter = () => {
     // Reuse preloaded/loaded data on navigation instead of always refetching.
     defaultPreloadStaleTime: 30_000,
     defaultStaleTime: 60_000,
-    defaultPendingMs: 0,
+    // Give short async transitions (e.g. re-running `beforeLoad` after auth
+    // events) a grace window before the router unmounts the current view
+    // to show a pending state. Without this, quick `getUser()` checks make
+    // protected pages like /admin blink out for ~100ms right after login
+    // or session restore.
+    defaultPendingMs: 800,
+    defaultPendingMinMs: 0,
   });
 
   return router;
