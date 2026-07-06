@@ -30,7 +30,7 @@ function AllProductsPage() {
             <Flame className="size-5 text-destructive" />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-base font-extrabold leading-tight">الأكثر مبيعاً</h1>
+            <h1 className="text-base font-extrabold leading-tight">جميع المنتجات</h1>
             <p className="text-[11px] text-muted-foreground">جميع المنتجات المتوفرة ({products.length})</p>
           </div>
         </div>
