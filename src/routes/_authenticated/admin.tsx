@@ -317,6 +317,53 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 
 function AdminPage() {
+
+  return <AdminPageInner />;
+}
+
+function PermissionsBadge({ isAdmin, canOrders, canProducts, canReplacements, canBlock }: {
+  isAdmin: boolean; canOrders: boolean; canProducts: boolean; canReplacements: boolean; canBlock: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const perms: Array<{ key: string; label: string; on: boolean; cls: string }> = [
+    { key: "admin", label: "مدير", on: isAdmin, cls: "bg-primary/10 text-primary border-primary/30" },
+    { key: "orders", label: "الطلبات (can_orders)", on: canOrders, cls: "bg-blue-500/10 text-blue-600 border-blue-500/30" },
+    { key: "products", label: "المنتجات (can_products)", on: canProducts, cls: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30" },
+    { key: "replacements", label: "الاستبدال (can_replacements)", on: canReplacements, cls: "bg-amber-500/10 text-amber-600 border-amber-500/30" },
+    { key: "block", label: "حظر المستخدمين (can_block)", on: canBlock, cls: "bg-rose-500/10 text-rose-600 border-rose-500/30" },
+  ];
+  const activeCount = perms.filter((p) => p.on).length;
+  return (
+    <div className="mb-3 rounded-2xl border border-border bg-card">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center gap-2 px-3 py-2 text-sm font-bold"
+      >
+        <ShieldCheck className="size-4 text-primary" />
+        <span>صلاحياتي</span>
+        <span className="text-[11px] font-normal text-muted-foreground">({activeCount} مُفعّلة)</span>
+        <span className="ms-auto text-muted-foreground">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <div className="px-3 pb-3 flex flex-wrap gap-1.5">
+          {perms.map((p) => (
+            <span
+              key={p.key}
+              className={`inline-flex items-center gap-1 text-[11px] font-bold rounded-full px-2 py-1 border ${
+                p.on ? p.cls : "bg-muted/40 text-muted-foreground border-border"
+              }`}
+            >
+              {p.on ? <CheckCircle2 className="size-3" /> : <Ban className="size-3" />}
+              {p.label}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AdminPageInner() {
   const { isAdmin, isLoading: adminLoading } = useIsAdminStatus();
   const { staff, isLoading: staffLoading } = useStaffPermissionsStatus();
   const navigate = useNavigate();
@@ -366,6 +413,13 @@ function AdminPage() {
   return (
     <PageShell title="لوحة الإدارة">
       <div className="px-4 pt-3 pb-6">
+        <PermissionsBadge
+          isAdmin={isAdmin}
+          canOrders={canOrders}
+          canProducts={canProducts}
+          canReplacements={canReplacements}
+          canBlock={canBlock}
+        />
         <Tabs defaultValue={defaultTab}>
           <TabsList className="w-full grid grid-cols-4 h-auto gap-1">
             {canProducts && (
