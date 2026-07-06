@@ -740,6 +740,7 @@ export type Database = {
       }
       staff_permissions: {
         Row: {
+          can_block: boolean
           can_orders: boolean
           can_products: boolean
           can_replacements: boolean
@@ -749,6 +750,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          can_block?: boolean
           can_orders?: boolean
           can_products?: boolean
           can_replacements?: boolean
@@ -758,6 +760,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          can_block?: boolean
           can_orders?: boolean
           can_products?: boolean
           can_replacements?: boolean

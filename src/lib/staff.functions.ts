@@ -18,6 +18,7 @@ const CreateInput = z.object({
   can_orders: z.boolean().default(false),
   can_products: z.boolean().default(false),
   can_replacements: z.boolean().default(false),
+  can_block: z.boolean().default(false),
 });
 
 const UpdateInput = z.object({
@@ -27,6 +28,7 @@ const UpdateInput = z.object({
   can_orders: z.boolean().optional(),
   can_products: z.boolean().optional(),
   can_replacements: z.boolean().optional(),
+  can_block: z.boolean().optional(),
 });
 
 const IdInput = z.object({ user_id: z.string().uuid() });
@@ -64,6 +66,7 @@ export const createStaff = createServerFn({ method: "POST" })
       can_orders: data.can_orders,
       can_products: data.can_products,
       can_replacements: data.can_replacements,
+      can_block: data.can_block,
     });
     if (permErr) {
       // Roll back the auth user on permission-insert failure so we don't leave orphans.
@@ -93,11 +96,13 @@ export const updateStaff = createServerFn({ method: "POST" })
       can_orders?: boolean;
       can_products?: boolean;
       can_replacements?: boolean;
+      can_block?: boolean;
     } = {};
     if (data.full_name !== undefined) patch.full_name = data.full_name;
     if (data.can_orders !== undefined) patch.can_orders = data.can_orders;
     if (data.can_products !== undefined) patch.can_products = data.can_products;
     if (data.can_replacements !== undefined) patch.can_replacements = data.can_replacements;
+    if (data.can_block !== undefined) patch.can_block = data.can_block;
 
     if (Object.keys(patch).length > 0) {
       const { error } = await supabaseAdmin
@@ -150,7 +155,7 @@ export const listStaff = createServerFn({ method: "GET" })
 
     const { data: staff, error } = await supabaseAdmin
       .from("staff_permissions")
-      .select("user_id, full_name, can_orders, can_products, can_replacements, created_at")
+      .select("user_id, full_name, can_orders, can_products, can_replacements, can_block, created_at")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
 
@@ -177,6 +182,7 @@ export const listStaff = createServerFn({ method: "GET" })
         can_orders: r.can_orders,
         can_products: r.can_products,
         can_replacements: r.can_replacements,
+        can_block: r.can_block,
         created_at: r.created_at,
       })),
     };

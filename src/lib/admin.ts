@@ -30,6 +30,7 @@ export type StaffPermissions = {
   can_orders: boolean;
   can_products: boolean;
   can_replacements: boolean;
+  can_block: boolean;
 };
 
 export const staffPermissionsQuery = (userId: string | null) =>
@@ -39,7 +40,7 @@ export const staffPermissionsQuery = (userId: string | null) =>
       if (!userId) return null;
       const { data, error } = await supabase
         .from("staff_permissions")
-        .select("can_orders, can_products, can_replacements")
+        .select("can_orders, can_products, can_replacements, can_block")
         .eq("user_id", userId)
         .maybeSingle();
       if (error || !data) return null;

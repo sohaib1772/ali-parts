@@ -254,7 +254,8 @@ function AdminPage() {
   const canOrders = isAdmin || !!staff?.can_orders;
   const canProducts = isAdmin || !!staff?.can_products;
   const canReplacements = isAdmin || !!staff?.can_replacements;
-  const hasAnyAccess = isAdmin || canOrders || canProducts || canReplacements;
+  const canBlock = isAdmin || !!staff?.can_block;
+  const hasAnyAccess = isAdmin || canOrders || canProducts || canReplacements || canBlock;
 
   if (!hasAnyAccess) {
     return (
@@ -277,7 +278,9 @@ function AdminPage() {
       ? "orders"
       : canProducts
         ? "products"
-        : "replacements";
+        : canReplacements
+          ? "replacements"
+          : "block-log";
 
   return (
     <PageShell title="لوحة الإدارة">
@@ -305,7 +308,7 @@ function AdminPage() {
             {isAdmin && (
               <TabsTrigger value="staff" className="flex-col gap-1 py-2 text-[10px]"><ShieldCheck className="size-4" />موظفون</TabsTrigger>
             )}
-            {isAdmin && (
+            {canBlock && (
               <TabsTrigger value="block-log" className="flex-col gap-1 py-2 text-[10px]"><History className="size-4" />سجل الحظر</TabsTrigger>
             )}
             {canProducts && (
@@ -326,7 +329,7 @@ function AdminPage() {
           {canReplacements && <TabsContent value="replacements" className="mt-4"><ReplacementsAdmin /></TabsContent>}
           {isAdmin && <TabsContent value="users" className="mt-4"><UsersAdmin /></TabsContent>}
           {isAdmin && <TabsContent value="staff" className="mt-4"><StaffAdmin /></TabsContent>}
-          {isAdmin && <TabsContent value="block-log" className="mt-4"><BlockLogAdmin /></TabsContent>}
+          {canBlock && <TabsContent value="block-log" className="mt-4"><BlockLogAdmin /></TabsContent>}
           {canProducts && <TabsContent value="stock" className="mt-4"><StockMovementsAdmin /></TabsContent>}
           {isAdmin && <TabsContent value="settings" className="mt-4"><SettingsAdmin /></TabsContent>}
           {isAdmin && <TabsContent value="diagnostics" className="mt-4"><DiagnosticsAdmin /></TabsContent>}
@@ -493,6 +496,7 @@ type StaffRow = {
   can_orders: boolean;
   can_products: boolean;
   can_replacements: boolean;
+  can_block: boolean;
   created_at: string | null;
 };
 
@@ -521,12 +525,13 @@ function StaffAdmin() {
     can_orders: false,
     can_products: false,
     can_replacements: false,
+    can_block: false,
   });
   const [busy, setBusy] = useState(false);
 
   const openNew = () => {
     setEditing(null);
-    setForm({ full_name: "", phone: "", password: "", can_orders: false, can_products: false, can_replacements: false });
+    setForm({ full_name: "", phone: "", password: "", can_orders: false, can_products: false, can_replacements: false, can_block: false });
     setOpen(true);
   };
 
@@ -539,6 +544,7 @@ function StaffAdmin() {
       can_orders: r.can_orders,
       can_products: r.can_products,
       can_replacements: r.can_replacements,
+      can_block: r.can_block,
     });
     setOpen(true);
   };
@@ -553,7 +559,7 @@ function StaffAdmin() {
       }
       if (form.password.length < 6) { toast.error("كلمة السر لا تقل عن 6 أحرف"); return; }
     }
-    if (!form.can_orders && !form.can_products && !form.can_replacements) {
+    if (!form.can_orders && !form.can_products && !form.can_replacements && !form.can_block) {
       toast.error("اختر صلاحية واحدة على الأقل");
       return;
     }
@@ -568,6 +574,7 @@ function StaffAdmin() {
             can_orders: form.can_orders,
             can_products: form.can_products,
             can_replacements: form.can_replacements,
+            can_block: form.can_block,
           },
         });
         toast.success("تم تحديث الموظف");
@@ -580,6 +587,7 @@ function StaffAdmin() {
             can_orders: form.can_orders,
             can_products: form.can_products,
             can_replacements: form.can_replacements,
+            can_block: form.can_block,
           },
         });
         toast.success("تم إضافة الموظف");
@@ -636,6 +644,7 @@ function StaffAdmin() {
                   {r.can_orders && <span className="text-[10px] bg-blue-500/10 text-blue-600 rounded-full px-2 py-0.5">طلبات</span>}
                   {r.can_products && <span className="text-[10px] bg-emerald-500/10 text-emerald-600 rounded-full px-2 py-0.5">منتجات</span>}
                   {r.can_replacements && <span className="text-[10px] bg-amber-500/10 text-amber-600 rounded-full px-2 py-0.5">استبدال</span>}
+                  {r.can_block && <span className="text-[10px] bg-rose-500/10 text-rose-600 rounded-full px-2 py-0.5">حظر مستخدمين</span>}
                 </div>
               </div>
               <Button size="icon" variant="ghost" onClick={() => openEdit(r)}><Pencil className="size-4" /></Button>
@@ -674,6 +683,7 @@ function StaffAdmin() {
                 <PermRow label="إدارة الطلبات" desc="عرض وتعديل حالة الطلبات وطباعة الفواتير" checked={form.can_orders} onChange={(v) => setForm({ ...form, can_orders: v })} />
                 <PermRow label="إدارة المنتجات والمخزون" desc="إضافة/تعديل المنتجات وتحديث الكميات" checked={form.can_products} onChange={(v) => setForm({ ...form, can_products: v })} />
                 <PermRow label="إدارة طلبات الاستبدال والتعليقات" desc="الرد على المستخدمين ومعالجة الاستبدال" checked={form.can_replacements} onChange={(v) => setForm({ ...form, can_replacements: v })} />
+                <PermRow label="حظر المستخدمين من التعليق" desc="حظر ورفع الحظر عن المستخدمين المسيئين وعرض سجل الحظر" checked={form.can_block} onChange={(v) => setForm({ ...form, can_block: v })} />
               </div>
             </div>
             <Button className="w-full" onClick={save} disabled={busy}>
