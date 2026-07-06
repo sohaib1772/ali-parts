@@ -162,6 +162,9 @@ function ReplacementDetail() {
           </div>
         )}
 
+        {/* Attachments */}
+        <AttachmentsSection request={request} />
+
         {/* Timeline */}
         <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
           <div className="text-xs font-bold text-gold mb-4">سجل الحالات</div>
