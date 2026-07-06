@@ -10,7 +10,7 @@ import { PageShell } from "@/components/page-shell";
 import { bannersQuery, type Banner } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
-import { useIsAdmin } from "@/lib/admin";
+import { useIsAdmin, useAdminAccessStatus } from "@/lib/admin";
 import { adminSetUserBlocked } from "@/lib/admin.functions";
 import { addBannerComment } from "@/lib/comments.functions";
 import { useServerFn } from "@tanstack/react-start";
