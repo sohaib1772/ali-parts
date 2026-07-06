@@ -1398,9 +1398,34 @@ function SettingsAdmin() {
         />
         <p className="text-xs text-muted-foreground mt-1">يظهر في زر "اتصال هاتفي" بصفحة اتصل بنا. اتركه فارغاً لاستخدام رقم الواتساب.</p>
       </Field>
-      <Field label="العنوان (يظهر في صفحة اتصل بنا)">
+      <Field label="العنوان (يظهر في صفحة اتصل بنا ومن نحن)">
         <Input value={addressVal} onChange={(e) => setAddress(e.target.value)} placeholder="بغداد، العراق" />
       </Field>
+      <Field label="رابط موقع المحل على الخريطة (Google Maps)">
+        <Input
+          value={locationLinkVal}
+          onChange={(e) => setLocationLink(e.target.value)}
+          placeholder="https://maps.google.com/?q=..."
+          dir="ltr"
+        />
+      </Field>
+      <Field label="عدد سنوات الخبرة في السوق">
+        <Input
+          type="number"
+          value={yearsVal}
+          onChange={(e) => setYears(e.target.value)}
+          inputMode="numeric"
+        />
+      </Field>
+      <div>
+        <Label className="text-xs mb-1 block">صورة واجهة المحل</Label>
+        <ImageUploader
+          images={frontImageVal ? [frontImageVal] : []}
+          max={1}
+          onChange={(imgs) => setFrontImage(imgs[0] ?? "")}
+        />
+        <p className="text-xs text-muted-foreground mt-1">تظهر في صفحة من نحن.</p>
+      </div>
       <Field label="نبذة عن المتجر (يظهر في من نحن)">
         <Textarea value={aboutVal} onChange={(e) => setAbout(e.target.value)} rows={4} placeholder="متجر متخصص في بيع قطع غيار..." />
       </Field>
