@@ -6,10 +6,10 @@ import { ProductCard } from "@/components/product-card";
 import { allProductsQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/products")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(bestSellersQuery()),
+  loader: ({ context }) => context.queryClient.ensureQueryData(allProductsQuery()),
   head: () => ({
     meta: [
-      { title: "الأكثر مبيعاً | الساير" },
+      { title: "المنتجات | الساير" },
       { name: "description", content: "تصفح جميع قطع الغيار المتوفرة في متجر الساير." },
     ],
   }),
