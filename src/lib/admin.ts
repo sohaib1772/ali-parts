@@ -26,6 +26,12 @@ export function useIsAdmin() {
   return !!data;
 }
 
+export function useIsAdminStatus() {
+  const { userId } = useAuth();
+  const q = useQuery(isAdminQuery(userId));
+  return { isAdmin: !!q.data, isLoading: !!userId && q.data === undefined };
+}
+
 export type StaffPermissions = {
   can_orders: boolean;
   can_products: boolean;
@@ -54,6 +60,12 @@ export function useStaffPermissions() {
   const { userId } = useAuth();
   const { data } = useQuery(staffPermissionsQuery(userId));
   return data ?? null;
+}
+
+export function useStaffPermissionsStatus() {
+  const { userId } = useAuth();
+  const q = useQuery(staffPermissionsQuery(userId));
+  return { staff: q.data ?? null, isLoading: !!userId && q.data === undefined && q.isLoading };
 }
 
 export const settingsQuery = () =>
