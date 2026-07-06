@@ -118,16 +118,18 @@ export const bestSellersQuery = () =>
 
 const PRODUCTS_PAGE_SIZE = 20;
 
-export const productsInfiniteQuery = () =>
+export const productsInfiniteQuery = (condition?: "new" | "used" | null) =>
   infiniteQueryOptions({
-    queryKey: ["products", "all", "infinite"],
+    queryKey: ["products", "all", "infinite", condition ?? "all"],
     staleTime: 2 * 60_000,
     queryFn: async ({ pageParam = 0 }) => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("products")
         .select("*")
         .order("created_at", { ascending: true })
         .range(pageParam, pageParam + PRODUCTS_PAGE_SIZE - 1);
+      if (condition) q = q.eq("condition", condition);
+      const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as Product[];
     },
