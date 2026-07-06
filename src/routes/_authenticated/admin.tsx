@@ -841,6 +841,7 @@ function BannersAdmin() {
     title_ar: "", subtitle_ar: "", image_url: "", video_url: "", link: "", expires_at: "",
   });
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
   const save = async () => {
@@ -932,7 +933,16 @@ function BannersAdmin() {
                   disabled={uploadingVideo}
                   className="w-full h-24 rounded-xl border-2 border-dashed border-border grid place-items-center text-muted-foreground hover:bg-muted transition text-xs gap-1"
                 >
-                  {uploadingVideo ? "جاري الرفع..." : (<><Upload className="size-5" /> رفع فيديو</>)}
+                  {uploadingVideo ? (
+                    <div className="w-full px-4">
+                      <div className="text-[11px] font-bold mb-1">جاري الرفع… {Math.round(videoProgress * 100)}%</div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full bg-gold transition-all" style={{ width: `${videoProgress * 100}%` }} />
+                      </div>
+                    </div>
+                  ) : (
+                    <><Upload className="size-5" /> رفع فيديو</>
+                  )}
                 </button>
               )}
               <input
@@ -944,14 +954,16 @@ function BannersAdmin() {
                   const f = e.target.files?.[0];
                   if (!f) return;
                   setUploadingVideo(true);
+                  setVideoProgress(0);
                   try {
-                    const url = await uploadMediaFile(f);
+                    const url = await uploadMediaFile(f, setVideoProgress);
                     setForm((prev) => ({ ...prev, video_url: url }));
                     toast.success("تم رفع الفيديو");
                   } catch (err: any) {
                     toast.error(err?.message ?? "فشل رفع الفيديو");
                   } finally {
                     setUploadingVideo(false);
+                    setVideoProgress(0);
                     if (videoInputRef.current) videoInputRef.current.value = "";
                   }
                 }}
@@ -1675,18 +1687,27 @@ async function resizeImageFile(file: File, size: number): Promise<File> {
 
 function ImageUploader({ images, onChange, max = 6, resizeTo }: { images: string[]; onChange: (imgs: string[]) => void; max?: number; resizeTo?: number }) {
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [done, setDone] = useState(0);
+  const [total, setTotal] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setUploading(true);
+    const list = Array.from(files).slice(0, max - images.length);
+    setTotal(list.length);
+    setDone(0);
+    setProgress(0);
     try {
       const urls: string[] = [];
-      for (const f of Array.from(files)) {
+      for (const f of list) {
         if (images.length + urls.length >= max) break;
         const toUpload = resizeTo ? await resizeImageFile(f, resizeTo) : f;
-        const url = await uploadProductImage(toUpload);
+        const url = await uploadProductImage(toUpload, setProgress);
         if (url) urls.push(url);
+        setDone((d) => d + 1);
+        setProgress(0);
       }
       onChange([...images, ...urls]);
       toast.success("تم رفع الصور");
@@ -1694,6 +1715,9 @@ function ImageUploader({ images, onChange, max = 6, resizeTo }: { images: string
       toast.error(e.message ?? "فشل رفع الصور");
     } finally {
       setUploading(false);
+      setProgress(0);
+      setDone(0);
+      setTotal(0);
       if (fileRef.current) fileRef.current.value = "";
     }
   };
@@ -1721,7 +1745,14 @@ function ImageUploader({ images, onChange, max = 6, resizeTo }: { images: string
             disabled={uploading}
             className="size-20 rounded-xl border-2 border-dashed border-border grid place-items-center text-muted-foreground hover:bg-muted transition"
           >
-            {uploading ? <span className="text-xs">...</span> : <Upload className="size-5" />}
+            {uploading ? (
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-[10px] font-bold">{Math.round(progress * 100)}%</span>
+                {total > 1 && <span className="text-[9px] text-muted-foreground">{done + 1}/{total}</span>}
+              </div>
+            ) : (
+              <Upload className="size-5" />
+            )}
           </button>
         )}
       </div>
