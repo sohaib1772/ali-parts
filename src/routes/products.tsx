@@ -17,10 +17,10 @@ export const Route = createFileRoute("/products")({
 });
 
 function AllProductsPage() {
-  const { data: products } = useSuspenseQuery(bestSellersQuery());
+  const { data: products } = useSuspenseQuery(allProductsQuery());
 
   return (
-    <PageShell title="الأكثر مبيعاً">
+    <PageShell title="المنتجات">
       <div className="px-4 pt-3">
         <Link to="/" className="inline-flex items-center gap-1 text-xs text-muted-foreground mb-3">
           <ChevronLeft className="size-3.5 rotate-180" /> الرئيسية
