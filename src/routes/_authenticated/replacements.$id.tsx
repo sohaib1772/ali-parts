@@ -1,9 +1,10 @@
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Clock, Search, ThumbsUp, ThumbsDown, CheckCircle2, PackageX, Repeat, FileText, StickyNote } from "lucide-react";
+import { ArrowRight, Clock, Search, ThumbsUp, ThumbsDown, CheckCircle2, PackageX, Repeat, FileText, StickyNote, Paperclip, ImageIcon, FileIcon, Upload, X, Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/replacements/$id")({
   component: ReplacementDetail,
