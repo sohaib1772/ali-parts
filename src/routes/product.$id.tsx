@@ -59,7 +59,7 @@ function ProductPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("order_items")
-        .select("order_id, orders!inner(id, user_id, status, order_number, created_at)")
+        .select("id, order_id, orders!inner(id, user_id, status, order_number, created_at)")
         .eq("product_id", id)
         .eq("orders.user_id", userId!)
         .eq("orders.status", "delivered")
@@ -71,6 +71,7 @@ function ProductPage() {
     },
   });
   const deliveredOrderId: string | null = deliveredOrder?.order_id ?? null;
+  const deliveredOrderItemId: string | null = deliveredOrder?.id ?? null;
 
   const img = product.images?.[activeImg];
   const stockQty = (product as any).stock_qty ?? 0;
