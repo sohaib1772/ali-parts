@@ -381,13 +381,11 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
         </button>
       )}
       <div className="absolute inset-x-0 bottom-0 p-4">
-        <Link
-          to="/offers"
-          onClick={(e) => e.stopPropagation()}
+        <span
           className="inline-flex items-center gap-1.5 text-[11px] font-bold text-gold bg-gold/10 border border-gold/30 rounded-full px-3 py-1 mb-2 hover:bg-gold/20 transition"
         >
           <Sparkles className="size-3.5" /> عروض حصرية · شاهد الكل
-        </Link>
+        </span>
         {current.expires_at && (
           <div className="mb-2">
             <Countdown to={current.expires_at} />
