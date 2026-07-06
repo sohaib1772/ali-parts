@@ -65,9 +65,9 @@ export const requestAdminOtp = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: actor } = await supabaseAdmin.auth.admin.getUserById(context.userId);
-    const toEmail = actor?.user?.email;
+    const toEmail = process.env.ADMIN_OTP_EMAIL;
     if (!toEmail) {
-      throw new Error("لا يوجد بريد إلكتروني مسجّل في حسابك. يرجى إضافة بريد من صفحة الحساب أولاً.");
+      throw new Error("لم يتم إعداد بريد الإدارة");
     }
 
     // Rate-limit: at most 1 unconsumed challenge per 30s per user
