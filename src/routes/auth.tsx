@@ -8,6 +8,26 @@ import { useSetting } from "@/lib/admin";
 import { whatsappLink } from "@/lib/format";
 import { normalizePhone, phoneToEmail, phoneToEmailLegacy } from "@/lib/phone-auth";
 
+async function resolvePostLoginPath(userId: string): Promise<"/admin" | "/account" | "/"> {
+  try {
+    const [roleRes, staffRes] = await Promise.all([
+      supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle(),
+      supabase.from("staff_permissions").select("can_orders,can_products,can_replacements").eq("user_id", userId).maybeSingle(),
+    ]);
+    if (roleRes.data) return "/admin";
+    const s = staffRes.data as { can_orders?: boolean; can_products?: boolean; can_replacements?: boolean } | null;
+    if (s && (s.can_orders || s.can_products || s.can_replacements)) return "/admin";
+  } catch { /* fall through */ }
+  return "/";
+}
+
+async function navigateAfterLogin(navigate: (opts: { to: string }) => void) {
+  const { data } = await supabase.auth.getUser();
+  const uid = data.user?.id;
+  const to = uid ? await resolvePostLoginPath(uid) : "/";
+  navigate({ to });
+}
+
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -53,8 +73,11 @@ function AuthPage() {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/account" });
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (data.session?.user) {
+        const to = await resolvePostLoginPath(data.session.user.id);
+        navigate({ to });
+      }
     });
   }, [navigate]);
 
@@ -70,7 +93,7 @@ function AuthPage() {
         if (error) throw error;
         setProgress("تم — جاري تحويلك…");
         toast.success("مرحباً بك");
-        navigate({ to: "/" });
+        navigate({ to: "/admin" });
       } catch (err) {
         toast.error(arabicAuthError(err));
       } finally { setLoading(false); setProgress(null); }
@@ -107,7 +130,7 @@ function AuthPage() {
         }
         setProgress("تم — جاري تحويلك…");
         toast.success("مرحباً بعودتك");
-        navigate({ to: "/" });
+        await navigateAfterLogin(navigate);
       }
     } catch (err) {
       toast.error(arabicAuthError(err));
