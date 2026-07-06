@@ -123,9 +123,16 @@ export async function uploadMediaFile(
   } else if (file.type.startsWith("video/")) {
     toUpload = await compressVideoFile(file, onProgress);
   }
+  const isCompressedVideo = toUpload !== file && file.type.startsWith("video/");
   const ext = (toUpload.name.split(".").pop() || "bin").toLowerCase();
   const path = `${crypto.randomUUID()}.${ext}`;
-  await uploadWithProgress("product-images", path, toUpload, onProgress);
+  // If we already used the first 50% of progress for the compression pass,
+  // map the upload's 0..1 into 0.5..1 so the bar keeps moving forward.
+  const uploadProgress = isCompressedVideo && onProgress
+    ? (p: number) => onProgress(0.5 + p * 0.5)
+    : onProgress;
+  await uploadWithProgress("product-images", path, toUpload, uploadProgress);
+  onProgress?.(1);
   const { data } = await supabase.storage
     .from("product-images")
     .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
