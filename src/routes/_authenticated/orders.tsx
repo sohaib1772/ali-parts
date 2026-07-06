@@ -248,18 +248,15 @@ function OrdersPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col-reverse sm:flex-col-reverse gap-2">
-            <AlertDialogCancel asChild>
-              <Button variant="outline" className="w-full">إلغاء</Button>
+            <AlertDialogCancel className="w-full mt-0">
+              إلغاء
             </AlertDialogCancel>
-            <AlertDialogAction asChild>
-              <Button
-                variant="destructive"
-                className="w-full"
-                onClick={executeDelete}
-                disabled={deleting}
-              >
-                {deleting ? "جاري الحذف..." : "حذف نهائي"}
-              </Button>
+            <AlertDialogAction
+              className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={executeDelete}
+              disabled={deleting}
+            >
+              {deleting ? "جاري الحذف..." : "حذف نهائي"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
