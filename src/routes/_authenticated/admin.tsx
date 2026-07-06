@@ -1394,8 +1394,8 @@ function BannersAdmin() {
   const qc = useQueryClient();
   const { data: banners = [] } = useQuery(bannersQuery());
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<{ id?: string; title_ar: string; subtitle_ar: string; image_url: string; video_url: string; link: string; expires_at: string }>({
-    title_ar: "", subtitle_ar: "", image_url: "", video_url: "", link: "", expires_at: "",
+  const [form, setForm] = useState<{ id?: string; title_ar: string; subtitle_ar: string; image_url: string; video_url: string; link: string }>({
+    title_ar: "", subtitle_ar: "", image_url: "", video_url: "", link: "",
   });
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [videoProgress, setVideoProgress] = useState(0);
@@ -1410,7 +1410,7 @@ function BannersAdmin() {
       video_url: form.video_url || null,
       link: form.link || null,
       is_active: true,
-      expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
+      expires_at: null,
     };
     const res = form.id
       ? await supabase.from("banners").update(payload).eq("id", form.id)
@@ -1431,7 +1431,7 @@ function BannersAdmin() {
 
   return (
     <div className="space-y-3">
-      <Button size="sm" onClick={() => { setForm({ title_ar: "", subtitle_ar: "", image_url: "", video_url: "", link: "", expires_at: "" }); setOpen(true); }}>
+      <Button size="sm" onClick={() => { setForm({ title_ar: "", subtitle_ar: "", image_url: "", video_url: "", link: "" }); setOpen(true); }}>
         <Plus className="size-4 me-1" /> إضافة عرض
       </Button>
       {banners.map((b) => (
@@ -1445,13 +1445,8 @@ function BannersAdmin() {
             <div className="flex-1 min-w-0">
               <div className="font-bold text-sm truncate">{b.title_ar ?? "بدون عنوان"}</div>
               <div className="text-xs text-muted-foreground truncate">{b.subtitle_ar ?? ""}</div>
-              {(b as any).expires_at && (
-                <div className="text-[10px] text-gold font-semibold mt-0.5">
-                  ينتهي: {new Date((b as any).expires_at).toLocaleString("ar-IQ")}
-                </div>
-              )}
             </div>
-            <Button size="icon" variant="ghost" onClick={() => { setForm({ id: b.id, title_ar: b.title_ar ?? "", subtitle_ar: b.subtitle_ar ?? "", image_url: b.image_url ?? "", video_url: (b as any).video_url ?? "", link: b.link ?? "", expires_at: (b as any).expires_at ? new Date((b as any).expires_at).toISOString().slice(0,16) : "" }); setOpen(true); }}>
+            <Button size="icon" variant="ghost" onClick={() => { setForm({ id: b.id, title_ar: b.title_ar ?? "", subtitle_ar: b.subtitle_ar ?? "", image_url: b.image_url ?? "", video_url: (b as any).video_url ?? "", link: b.link ?? "" }); setOpen(true); }}>
               <Pencil className="size-4" />
             </Button>
             <Button size="sm" variant="destructive" onClick={() => remove(b.id)} className="gap-1">
@@ -1530,7 +1525,6 @@ function BannersAdmin() {
             <Field label="العنوان"><Input value={form.title_ar} onChange={(e) => setForm({ ...form, title_ar: e.target.value })} /></Field>
             <Field label="العنوان الفرعي"><Input value={form.subtitle_ar} onChange={(e) => setForm({ ...form, subtitle_ar: e.target.value })} /></Field>
             <Field label="رابط (اختياري)"><Input value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} placeholder="/category/..." /></Field>
-            <Field label="ينتهي في (اختياري)"><Input type="datetime-local" value={form.expires_at} onChange={(e) => setForm({ ...form, expires_at: e.target.value })} /></Field>
             <Button className="w-full" onClick={save}>حفظ</Button>
           </div>
         </DialogContent>
