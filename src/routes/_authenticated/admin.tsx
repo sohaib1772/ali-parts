@@ -264,7 +264,7 @@ function AdminPage() {
     <PageShell title="لوحة الإدارة">
       <div className="px-4 pt-3 pb-6">
         <Tabs defaultValue="products">
-          <TabsList className="w-full grid grid-cols-7 h-auto">
+          <TabsList className="w-full grid grid-cols-4 h-auto gap-1">
             <TabsTrigger value="products" className="flex-col gap-1 py-2 text-[10px]"><Package className="size-4" />منتجات</TabsTrigger>
             <TabsTrigger value="banners" className="flex-col gap-1 py-2 text-[10px]"><ImageIcon className="size-4" />عروض</TabsTrigger>
             <TabsTrigger value="taxonomy" className="flex-col gap-1 py-2 text-[10px]"><Tags className="size-4" />تصنيفات</TabsTrigger>
