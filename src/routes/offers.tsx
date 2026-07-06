@@ -413,6 +413,24 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
   const hasMore = comments.length < total;
   const loadingMore = isFetching && !isLoading;
 
+  // Realtime: refresh list + count when comments on this banner change.
+  useEffect(() => {
+    const channel = supabase
+      .channel(`banner_comments:${bannerId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "banner_comments", filter: `banner_id=eq.${bannerId}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["banner_comments", bannerId] });
+          qc.invalidateQueries({ queryKey: ["banner_comments_count", bannerId] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [bannerId, qc]);
+
   const addOrEdit = useMutation({
     mutationFn: async () => {
       const body = text.trim();
