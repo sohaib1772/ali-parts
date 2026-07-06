@@ -39,11 +39,12 @@ export function containsProfanity(text: string): boolean {
   if (!n) return false;
   return NORMALIZED_BAD.some((w) => {
     if (w.includes(" ")) return n.includes(w);
-    // Whole-word match always; substring match only for long tokens
-    // to avoid false positives on innocent words that contain a short
-    // 2-3 char sequence (e.g. "زبون" contains "زب", "مكسور" contains "كس").
+    // Whole-word match only. Substring matching produced too many false
+    // positives on innocent Arabic words (e.g. "الكلاب" contains "كلاب",
+    // "اهلكم" contains "اهلك", "بهيمة" contains "بهيم"), which blocked
+    // legitimate comments and auto-locked users. Bypass attempts via
+    // symbols/repeats are still caught by normalize() collapsing them.
     const re = new RegExp(`(^|\\s)${w}(\\s|$)`, "u");
-    if (re.test(n)) return true;
-    return w.length >= 4 && n.includes(w);
+    return re.test(n);
   });
 }
