@@ -1687,18 +1687,27 @@ async function resizeImageFile(file: File, size: number): Promise<File> {
 
 function ImageUploader({ images, onChange, max = 6, resizeTo }: { images: string[]; onChange: (imgs: string[]) => void; max?: number; resizeTo?: number }) {
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [done, setDone] = useState(0);
+  const [total, setTotal] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setUploading(true);
+    const list = Array.from(files).slice(0, max - images.length);
+    setTotal(list.length);
+    setDone(0);
+    setProgress(0);
     try {
       const urls: string[] = [];
-      for (const f of Array.from(files)) {
+      for (const f of list) {
         if (images.length + urls.length >= max) break;
         const toUpload = resizeTo ? await resizeImageFile(f, resizeTo) : f;
-        const url = await uploadProductImage(toUpload);
+        const url = await uploadProductImage(toUpload, setProgress);
         if (url) urls.push(url);
+        setDone((d) => d + 1);
+        setProgress(0);
       }
       onChange([...images, ...urls]);
       toast.success("تم رفع الصور");
@@ -1706,6 +1715,9 @@ function ImageUploader({ images, onChange, max = 6, resizeTo }: { images: string
       toast.error(e.message ?? "فشل رفع الصور");
     } finally {
       setUploading(false);
+      setProgress(0);
+      setDone(0);
+      setTotal(0);
       if (fileRef.current) fileRef.current.value = "";
     }
   };
@@ -1733,7 +1745,14 @@ function ImageUploader({ images, onChange, max = 6, resizeTo }: { images: string
             disabled={uploading}
             className="size-20 rounded-xl border-2 border-dashed border-border grid place-items-center text-muted-foreground hover:bg-muted transition"
           >
-            {uploading ? <span className="text-xs">...</span> : <Upload className="size-5" />}
+            {uploading ? (
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-[10px] font-bold">{Math.round(progress * 100)}%</span>
+                {total > 1 && <span className="text-[9px] text-muted-foreground">{done + 1}/{total}</span>}
+              </div>
+            ) : (
+              <Upload className="size-5" />
+            )}
           </button>
         )}
       </div>
