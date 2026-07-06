@@ -46,6 +46,7 @@ const STATUSES = ["received", "preparing", "packed", "shipped", "out_for_deliver
 /* ---------------- Block Log ---------------- */
 
 function BlockLogAdmin() {
+  // placeholder anchor
   const qc = useQueryClient();
   const [unblockingId, setUnblockingId] = useState<string | null>(null);
 
