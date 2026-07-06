@@ -301,7 +301,8 @@ export const runStockTests = createServerFn({ method: "POST" })
         const productId = await makeProduct(30);
         const orderId = await makeOrder(productId, 2);
 
-        for (const status of ["preparing", "packed", "shipped", "out_for_delivery", "delivered"]) {
+        const statuses = ["preparing", "packed", "shipped", "out_for_delivery", "delivered"] as const;
+        for (const status of statuses) {
           await supabaseAdmin.from("orders").update({ status }).eq("id", orderId);
         }
 
