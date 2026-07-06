@@ -11,6 +11,9 @@ import { useAuth } from "@/lib/use-auth";
 import { useSetting } from "@/lib/admin";
 import { toast } from "sonner";
 import { WhatsappIcon } from "@/components/icons";
+import { uploadWithProgress } from "@/lib/upload-with-progress";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/product/$id")({
   loader: async ({ context, params }) => {
@@ -155,6 +158,9 @@ function ProductPage() {
   const [pickedFiles, setPickedFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<
+    { name: string; progress: number; status: "pending" | "uploading" | "done" | "error" }[]
+  >([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const openReplaceQuick = () => {
@@ -166,6 +172,7 @@ function ProductPage() {
     setReasonText("");
     setPickedFiles([]);
     setSubmittedId(null);
+    setUploadProgress([]);
     setReplaceOpen(true);
   };
 
@@ -185,6 +192,7 @@ function ProductPage() {
   };
 
   const submitQuickReplace = async () => {
+    if (submitting) return;
     if (!userId || !deliveredOrderId || !deliveredOrderItemId) return;
     const isOther = reasonChoice === "أخرى";
     const finalReason = (isOther ? reasonText : `${reasonChoice}${reasonText ? " — " + reasonText : ""}`).trim();
@@ -193,6 +201,9 @@ function ProductPage() {
       return;
     }
     setSubmitting(true);
+    setUploadProgress(
+      pickedFiles.map((f) => ({ name: f.name, progress: 0, status: "pending" as const })),
+    );
     const { data: inserted, error: insertErr } = await supabase
       .from("replacement_requests" as any)
       .insert({
@@ -207,21 +218,37 @@ function ProductPage() {
       .single();
     if (insertErr || !inserted) {
       setSubmitting(false);
+      setUploadProgress([]);
       toast.error("تعذّر إرسال طلب الاستبدال");
       return;
     }
     const reqId = (inserted as any).id as string;
 
     const uploaded: string[] = [];
-    for (const file of pickedFiles) {
+    for (let i = 0; i < pickedFiles.length; i++) {
+      const file = pickedFiles[i];
       const extMatch = file.name.match(/\.([a-zA-Z0-9]+)$/);
       const ext = extMatch ? extMatch[1] : "bin";
       const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(0, 80) || `file.${ext}`;
       const key = `${userId}/${reqId}/${Date.now()}-${crypto.randomUUID().slice(0, 6)}-${safeName}`;
-      const { error: upErr } = await supabase.storage
-        .from("replacement-attachments")
-        .upload(key, file, { contentType: file.type || undefined, upsert: false });
-      if (!upErr) uploaded.push(key);
+      setUploadProgress((q) =>
+        q.map((it, idx) => (idx === i ? { ...it, status: "uploading" } : it)),
+      );
+      try {
+        await uploadWithProgress("replacement-attachments", key, file, (pct) => {
+          setUploadProgress((q) =>
+            q.map((it, idx) => (idx === i ? { ...it, progress: Math.round(pct * 100) } : it)),
+          );
+        });
+        setUploadProgress((q) =>
+          q.map((it, idx) => (idx === i ? { ...it, progress: 100, status: "done" } : it)),
+        );
+        uploaded.push(key);
+      } catch {
+        setUploadProgress((q) =>
+          q.map((it, idx) => (idx === i ? { ...it, status: "error" } : it)),
+        );
+      }
     }
     if (uploaded.length > 0) {
       await supabase.from("replacement_requests" as any).update({ attachments: uploaded } as any).eq("id", reqId);
@@ -553,7 +580,7 @@ function ProductPage() {
         </div>
       )}
 
-      <AlertDialog open={replaceOpen} onOpenChange={setReplaceOpen}>
+      <AlertDialog open={replaceOpen} onOpenChange={(o) => { if (!submitting) setReplaceOpen(o); }}>
         <AlertDialogContent className="rounded-3xl max-w-md p-0 overflow-hidden">
           <div className="p-5 pb-2">
             <AlertDialogHeader>
@@ -612,17 +639,18 @@ function ProductPage() {
                   accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt"
                   className="hidden"
                   onChange={(e) => onPickFiles(e.target.files)}
+                  disabled={submitting}
                 />
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={pickedFiles.length >= MAX_FILES}
+                  disabled={pickedFiles.length >= MAX_FILES || submitting}
                   className="w-full h-10 rounded-xl border border-dashed border-gold/60 text-navy text-xs font-bold flex items-center justify-center gap-2 hover:bg-gold/5 disabled:opacity-50"
                 >
                   <Paperclip className="size-4 text-gold" />
                   إضافة صور أو مستندات
                 </button>
-                {pickedFiles.length > 0 && (
+                {pickedFiles.length > 0 && uploadProgress.length === 0 && (
                   <ul className="mt-2 space-y-1">
                     {pickedFiles.map((f, idx) => (
                       <li key={idx} className="flex items-center gap-2 text-[11px] bg-muted rounded-lg px-2 py-1.5">
@@ -631,6 +659,7 @@ function ProductPage() {
                         <button
                           type="button"
                           onClick={() => setPickedFiles((prev) => prev.filter((_, i) => i !== idx))}
+                          disabled={submitting}
                           className="size-6 rounded-md grid place-items-center hover:bg-background"
                         >
                           <Trash2 className="size-3.5 text-rose-600" />
@@ -638,6 +667,38 @@ function ProductPage() {
                       </li>
                     ))}
                   </ul>
+                )}
+                {uploadProgress.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {uploadProgress.map((it, idx) => (
+                      <div key={idx} className="rounded-lg border border-border bg-muted/40 p-2">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Paperclip className="size-3 text-gold shrink-0" />
+                          <span className="flex-1 truncate text-[10px] font-bold text-navy">{it.name}</span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {it.status === "error"
+                              ? "فشل"
+                              : it.status === "done"
+                              ? "تم ✓"
+                              : it.status === "pending"
+                              ? "…"
+                              : `${it.progress}%`}
+                          </span>
+                        </div>
+                        <Progress
+                          value={it.status === "error" ? 0 : it.progress}
+                          className="h-1.5"
+                        />
+                      </div>
+                    ))}
+                    <div className="grid grid-cols-3 gap-2 pt-1">
+                      {uploadProgress
+                        .filter((it) => it.status === "uploading" || it.status === "pending")
+                        .map((_, idx) => (
+                          <Skeleton key={idx} className="aspect-square rounded-lg" />
+                        ))}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
