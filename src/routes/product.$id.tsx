@@ -639,6 +639,7 @@ function ProductPage() {
                   accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt"
                   className="hidden"
                   onChange={(e) => onPickFiles(e.target.files)}
+                  disabled={submitting}
                 />
                 <button
                   type="button"
