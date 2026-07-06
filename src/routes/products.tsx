@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
 import { Flame, ChevronLeft } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
@@ -28,18 +29,43 @@ export const Route = createFileRoute("/products")({
 
 function AllProductsPage() {
   const [condition, setCondition] = useState<ConditionFilter>("all");
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isPending } =
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isPending,
+    isError,
+    error,
+    isFetchNextPageError,
+    refetch,
+  } =
     useInfiniteQuery(productsInfiniteQuery(condition === "all" ? null : condition));
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const products = data?.pages.flat() ?? [];
 
   useEffect(() => {
+    if (isFetchNextPageError && error) {
+      console.error("[products] فشل تحميل الدفعة التالية", error);
+      toast.error("تعذّر تحميل المزيد من المنتجات", {
+        description: "يرجى التحقق من الاتصال بالإنترنت والمحاولة مرة أخرى.",
+        action: { label: "إعادة المحاولة", onClick: () => fetchNextPage() },
+      });
+    }
+  }, [isFetchNextPageError, error, fetchNextPage]);
+
+  useEffect(() => {
     const el = loadMoreRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+        if (
+          entries[0].isIntersecting &&
+          hasNextPage &&
+          !isFetchingNextPage &&
+          !isFetchNextPageError
+        ) {
           fetchNextPage();
         }
       },
@@ -47,7 +73,7 @@ function AllProductsPage() {
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, isFetchNextPageError]);
 
   return (
     <PageShell title="المنتجات">
@@ -94,6 +120,21 @@ function AllProductsPage() {
               <div key={i} className="rounded-2xl bg-muted h-64 animate-pulse" />
             ))}
           </div>
+        ) : isError && products.length === 0 ? (
+          <div className="text-center py-16 px-4">
+            <p className="text-sm font-bold text-destructive mb-2">
+              تعذّر تحميل المنتجات
+            </p>
+            <p className="text-xs text-muted-foreground mb-4">
+              حدث خطأ أثناء جلب المنتجات. يرجى التحقق من الاتصال والمحاولة مجدداً.
+            </p>
+            <button
+              onClick={() => refetch()}
+              className="h-9 px-4 rounded-xl bg-navy text-primary-foreground text-xs font-bold"
+            >
+              إعادة المحاولة
+            </button>
+          </div>
         ) : products.length === 0 ? (
           <div className="text-center text-muted-foreground text-sm py-16">
             لا توجد منتجات حالياً في هذا الفلتر.
@@ -109,11 +150,20 @@ function AllProductsPage() {
               ref={loadMoreRef}
               className="h-16 flex items-center justify-center text-xs text-muted-foreground"
             >
-              {isFetchingNextPage
-                ? "جاري تحميل المزيد..."
-                : hasNextPage
-                ? "مرر للأسفل لعرض المزيد"
-                : "وصلت إلى نهاية المنتجات"}
+              {isFetchingNextPage ? (
+                "جاري تحميل المزيد..."
+              ) : isFetchNextPageError ? (
+                <button
+                  onClick={() => fetchNextPage()}
+                  className="text-destructive font-bold underline underline-offset-4"
+                >
+                  فشل التحميل — اضغط لإعادة المحاولة
+                </button>
+              ) : hasNextPage ? (
+                "مرر للأسفل لعرض المزيد"
+              ) : (
+                "وصلت إلى نهاية المنتجات"
+              )}
             </div>
           </>
         )}
