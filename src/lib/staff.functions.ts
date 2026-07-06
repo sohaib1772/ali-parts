@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { normalizePhone, phoneToEmail } from "@/lib/phone-auth";
 
 async function assertAdmin(ctx: { supabase: any; userId: string }) {
   const { data, error } = await ctx.supabase.rpc("has_role", {
@@ -11,7 +12,7 @@ async function assertAdmin(ctx: { supabase: any; userId: string }) {
 }
 
 const CreateInput = z.object({
-  email: z.string().trim().email().max(255),
+  phone: z.string().trim().min(1).max(20),
   password: z.string().min(6).max(72),
   full_name: z.string().trim().min(1).max(100),
   can_orders: z.boolean().default(false),
@@ -37,11 +38,15 @@ export const createStaff = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    const normalized = normalizePhone(data.phone);
+    if (!normalized) throw new Error("رقم الهاتف غير صحيح — مثال: 07XX XXX XXXX");
+    const email = phoneToEmail(normalized);
+
     const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
-      email: data.email,
+      email,
       password: data.password,
       email_confirm: true,
-      user_metadata: { full_name: data.full_name },
+      user_metadata: { full_name: data.full_name, phone: "+" + normalized },
     });
     if (createErr || !created?.user) throw new Error(createErr?.message ?? "فشل إنشاء الحساب");
 
@@ -128,6 +133,15 @@ export const deleteStaff = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+function phoneFromEmail(email: string | null | undefined): string | null {
+  if (!email) return null;
+  const m = email.match(/^p(\d+)@aliparts\.(app|local)$/);
+  if (!m) return null;
+  const n = m[1];
+  if (n.length === 12 && n.startsWith("9647")) return n;
+  return null;
+}
+
 export const listStaff = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -143,12 +157,15 @@ export const listStaff = createServerFn({ method: "GET" })
     const rows = staff ?? [];
     if (rows.length === 0) return { staff: [] as any[] };
 
-    // Fetch emails from auth
-    const emailMap = new Map<string, string | null>();
+    // Fetch phone numbers from auth users (user_metadata or parsed email mapping)
+    const phoneMap = new Map<string, string | null>();
     for (let page = 1; page <= 20; page++) {
       const { data, error: e } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 200 });
       if (e) break;
-      for (const u of data?.users ?? []) emailMap.set(u.id, u.email ?? null);
+      for (const u of data?.users ?? []) {
+        const fromMeta = (u.user_metadata as { phone?: string } | undefined)?.phone?.replace(/^\+/, "");
+        phoneMap.set(u.id, fromMeta ?? phoneFromEmail(u.email) ?? null);
+      }
       if ((data?.users ?? []).length < 200) break;
     }
 
@@ -156,7 +173,7 @@ export const listStaff = createServerFn({ method: "GET" })
       staff: rows.map((r) => ({
         user_id: r.user_id,
         full_name: r.full_name,
-        email: emailMap.get(r.user_id) ?? null,
+        phone: phoneMap.get(r.user_id) ?? null,
         can_orders: r.can_orders,
         can_products: r.can_products,
         can_replacements: r.can_replacements,

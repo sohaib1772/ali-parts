@@ -43,6 +43,7 @@ import { statusLabel, statusColor } from "@/lib/order-status";
 import { PrintableInvoice, InvoicePreviewDialog } from "@/components/printable-invoice";
 import { adminListUsers, adminSetUserBlocked, adminSetUserPassword } from "@/lib/admin.functions";
 import { createStaff, updateStaff, deleteStaff, listStaff } from "@/lib/staff.functions";
+import { normalizePhone } from "@/lib/phone-auth";
 
 const STATUSES = ["received", "preparing", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"] as const;
 
@@ -488,7 +489,7 @@ function UsersAdmin() {
 type StaffRow = {
   user_id: string;
   full_name: string;
-  email: string | null;
+  phone: string | null;
   can_orders: boolean;
   can_products: boolean;
   can_replacements: boolean;
@@ -513,7 +514,7 @@ function StaffAdmin() {
   const [editing, setEditing] = useState<StaffRow | null>(null);
   const [form, setForm] = useState({
     full_name: "",
-    email: "",
+    phone: "",
     password: "",
     can_orders: false,
     can_products: false,
@@ -523,7 +524,7 @@ function StaffAdmin() {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ full_name: "", email: "", password: "", can_orders: false, can_products: false, can_replacements: false });
+    setForm({ full_name: "", phone: "", password: "", can_orders: false, can_products: false, can_replacements: false });
     setOpen(true);
   };
 
@@ -531,7 +532,7 @@ function StaffAdmin() {
     setEditing(r);
     setForm({
       full_name: r.full_name,
-      email: r.email ?? "",
+      phone: r.phone ?? "",
       password: "",
       can_orders: r.can_orders,
       can_products: r.can_products,
@@ -543,9 +544,9 @@ function StaffAdmin() {
   const save = async () => {
     if (!form.full_name.trim()) { toast.error("الاسم مطلوب"); return; }
     if (!editing) {
-      if (!form.email.trim()) { toast.error("الإيميل مطلوب"); return; }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-        toast.error("صيغة الإيميل غير صحيحة");
+      if (!form.phone.trim()) { toast.error("رقم الهاتف مطلوب"); return; }
+      if (!normalizePhone(form.phone.trim())) {
+        toast.error("رقم الهاتف غير صحيح — مثال: 07XX XXX XXXX");
         return;
       }
       if (form.password.length < 6) { toast.error("كلمة السر لا تقل عن 6 أحرف"); return; }
@@ -571,7 +572,7 @@ function StaffAdmin() {
       } else {
         await create({
           data: {
-            email: form.email.trim(),
+            phone: form.phone.trim(),
             password: form.password,
             full_name: form.full_name.trim(),
             can_orders: form.can_orders,
@@ -606,7 +607,7 @@ function StaffAdmin() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-extrabold text-base">إدارة الموظفين</h2>
-          <p className="text-[11px] text-muted-foreground">أضف موظفاً وحدّد صلاحياته وأعطه إيميل وكلمة سر لتسجيل الدخول.</p>
+          <p className="text-[11px] text-muted-foreground">أضف موظفاً وحدّد صلاحياته وأعطه رقم هاتف وكلمة سر لتسجيل الدخول.</p>
         </div>
         <Button size="sm" onClick={openNew} className="gap-1"><UserPlus className="size-4" /> إضافة موظف</Button>
       </div>
@@ -624,7 +625,7 @@ function StaffAdmin() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-sm truncate">{r.full_name}</div>
-                <div className="text-[11px] text-muted-foreground truncate">{r.email ?? "—"}</div>
+                <div className="text-[11px] text-muted-foreground truncate">{r.phone ? `+${r.phone}` : "—"}</div>
                 <div className="flex gap-1 mt-1 flex-wrap">
                   {r.can_orders && <span className="text-[10px] bg-blue-500/10 text-blue-600 rounded-full px-2 py-0.5">طلبات</span>}
                   {r.can_products && <span className="text-[10px] bg-emerald-500/10 text-emerald-600 rounded-full px-2 py-0.5">منتجات</span>}
@@ -645,9 +646,9 @@ function StaffAdmin() {
             <Field label="الاسم الكامل">
               <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="مثال: أحمد علي" />
             </Field>
-            <Field label="الإيميل">
-              <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="staff@example.com" disabled={!!editing} />
-              {editing && <p className="text-[10px] text-muted-foreground mt-1">الإيميل غير قابل للتعديل.</p>}
+            <Field label="رقم الهاتف">
+              <Input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="07XX XXX XXXX" disabled={!!editing} />
+              {editing && <p className="text-[10px] text-muted-foreground mt-1">رقم الهاتف غير قابل للتعديل.</p>}
             </Field>
             <Field label={editing ? "كلمة السر (اتركها فارغة لعدم التغيير)" : "كلمة السر"}>
               <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="6 أحرف على الأقل" />
