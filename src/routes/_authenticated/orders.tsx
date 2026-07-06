@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, ChevronLeft, X, Trash2, CheckSquare, Square } from "lucide-react";
+import { Package, ChevronLeft, X, Trash2, CheckSquare, Square, AlertTriangle } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { ordersQuery } from "@/lib/queries";
 import { useAuth } from "@/lib/use-auth";
@@ -10,6 +10,16 @@ import { formatIQD, formatArabicDate } from "@/lib/format";
 import { statusLabel, statusColor } from "@/lib/order-status";
 import { isOrderUnseen, useOrderSeenMap } from "@/lib/order-updates";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/orders")({
   component: OrdersPage,
@@ -24,6 +34,8 @@ function OrdersPage() {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmMode, setConfirmMode] = useState<"selected" | "all">("selected");
 
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
@@ -36,36 +48,45 @@ function OrdersPage() {
   const selectAll = () => setSelected(new Set(orders.map((o: any) => o.id)));
   const clearSel = () => setSelected(new Set());
 
-  const deleteSelected = async () => {
+  const openDeleteSelected = () => {
     if (!userId || selected.size === 0) return;
-    if (!confirm(`سيتم مسح ${selected.size} طلب من قائمتك. هل أنت متأكد؟`)) return;
-    setDeleting(true);
-    const ids = Array.from(selected);
-    const { error } = await supabase.from("orders").delete().in("id", ids).eq("user_id", userId);
-    setDeleting(false);
-    if (error) {
-      toast.error("تعذّر مسح الطلبات");
-    } else {
-      toast.success("تم مسح الطلبات");
-      setSelected(new Set());
-      setSelectMode(false);
-      qc.invalidateQueries({ queryKey: ["orders", userId] });
-    }
+    setConfirmMode("selected");
+    setConfirmOpen(true);
   };
 
-  const deleteAll = async () => {
+  const openDeleteAll = () => {
     if (!userId || orders.length === 0) return;
-    if (!confirm("سيتم مسح جميع الطلبات من قائمتك. هل أنت متأكد؟")) return;
+    setConfirmMode("all");
+    setConfirmOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!userId) return;
     setDeleting(true);
-    const { error } = await supabase.from("orders").delete().eq("user_id", userId);
-    setDeleting(false);
-    if (error) {
-      toast.error("تعذّر مسح الطلبات");
+    setConfirmOpen(false);
+    if (confirmMode === "selected") {
+      const ids = Array.from(selected);
+      const { error } = await supabase.from("orders").delete().in("id", ids).eq("user_id", userId);
+      setDeleting(false);
+      if (error) {
+        toast.error("تعذّر مسح الطلبات");
+      } else {
+        toast.success("تم مسح الطلبات");
+        setSelected(new Set());
+        setSelectMode(false);
+        qc.invalidateQueries({ queryKey: ["orders", userId] });
+      }
     } else {
-      toast.success("تم مسح جميع الطلبات");
-      setSelected(new Set());
-      setSelectMode(false);
-      qc.invalidateQueries({ queryKey: ["orders", userId] });
+      const { error } = await supabase.from("orders").delete().eq("user_id", userId);
+      setDeleting(false);
+      if (error) {
+        toast.error("تعذّر مسح الطلبات");
+      } else {
+        toast.success("تم مسح جميع الطلبات");
+        setSelected(new Set());
+        setSelectMode(false);
+        qc.invalidateQueries({ queryKey: ["orders", userId] });
+      }
     }
   };
 
@@ -115,7 +136,7 @@ function OrdersPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={deleteAll}
+                  onClick={openDeleteAll}
                   disabled={deleting}
                   className="h-9 px-3 rounded-xl border border-destructive/40 text-destructive text-xs font-bold flex items-center gap-1.5 hover:bg-destructive/10 disabled:opacity-50 ms-auto"
                 >
@@ -142,7 +163,7 @@ function OrdersPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={deleteSelected}
+                  onClick={openDeleteSelected}
                   disabled={deleting || selected.size === 0}
                   className="h-9 px-3 rounded-xl bg-destructive text-white text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
                 >
@@ -210,6 +231,35 @@ function OrdersPage() {
           })
         )}
       </div>
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent dir="rtl" className="max-w-sm">
+          <AlertDialogHeader className="items-center sm:items-center">
+            <div className="size-12 rounded-full bg-destructive/10 grid place-items-center mb-2">
+              <AlertTriangle className="size-6 text-destructive" />
+            </div>
+            <AlertDialogTitle className="text-base sm:text-lg">
+              {confirmMode === "all" ? "مسح جميع الطلبات" : `مسح ${selected.size} طلب`}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              {confirmMode === "all"
+                ? "سيتم حذف جميع طلباتك بشكل نهائي. لا يمكن التراجع عن هذا الإجراء."
+                : "سيتم حذف الطلبات المحددة بشكل نهائي. لا يمكن التراجع عن هذا الإجراء."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col-reverse sm:flex-col-reverse gap-2">
+            <AlertDialogCancel className="w-full mt-0">
+              إلغاء
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={executeDelete}
+              disabled={deleting}
+            >
+              {deleting ? "جاري الحذف..." : "حذف نهائي"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageShell>
   );
 }
