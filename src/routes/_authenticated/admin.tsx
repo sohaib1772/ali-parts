@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import { PageShell } from "@/components/page-shell";
 import { supabase } from "@/integrations/supabase/client";
-import { useIsAdmin, useStaffPermissions, uploadProductImage, uploadMediaFile, settingsQuery } from "@/lib/admin";
+import { useIsAdmin, useStaffPermissions, useIsAdminStatus, useStaffPermissionsStatus, uploadProductImage, uploadMediaFile, settingsQuery } from "@/lib/admin";
 import {
   categoriesQuery,
   brandsQuery,
@@ -317,8 +317,8 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 
 function AdminPage() {
-  const isAdmin = useIsAdmin();
-  const staff = useStaffPermissions();
+  const { isAdmin, isLoading: adminLoading } = useIsAdminStatus();
+  const { staff, isLoading: staffLoading } = useStaffPermissionsStatus();
   const navigate = useNavigate();
 
   const canOrders = isAdmin || !!staff?.can_orders;
@@ -326,6 +326,17 @@ function AdminPage() {
   const canReplacements = isAdmin || !!staff?.can_replacements;
   const canBlock = isAdmin || !!staff?.can_block;
   const hasAnyAccess = isAdmin || canOrders || canProducts || canReplacements || canBlock;
+
+  if (adminLoading || staffLoading) {
+    return (
+      <PageShell title="لوحة الإدارة">
+        <div className="px-4 pt-16 flex flex-col items-center text-center gap-3">
+          <Loader2 className="size-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">جاري التحقق من الصلاحيات…</p>
+        </div>
+      </PageShell>
+    );
+  }
 
   if (!hasAnyAccess) {
     return (
