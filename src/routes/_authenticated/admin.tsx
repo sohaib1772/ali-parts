@@ -53,6 +53,8 @@ function BlockLogAdmin() {
   // placeholder anchor
   const qc = useQueryClient();
   const [unblockingId, setUnblockingId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"all" | "block" | "unblock">("all");
+  const [search, setSearch] = useState("");
 
   const { data: blocked = [], isLoading: loadingBlocked } = useQuery({
     queryKey: ["admin", "blocked-users"],
@@ -139,14 +141,44 @@ function BlockLogAdmin() {
 
   const fmt = (iso: string) => {
     try {
-      return new Date(iso).toLocaleString("ar-IQ", { dateStyle: "medium", timeStyle: "short" });
+      return new Date(iso).toLocaleString("en-GB", {
+        day: "2-digit", month: "2-digit", year: "numeric",
+        hour: "2-digit", minute: "2-digit", hour12: false,
+      });
     } catch { return iso; }
+  };
+  const fmtRelative = (iso: string) => {
+    const diff = Date.now() - new Date(iso).getTime();
+    const s = Math.round(diff / 1000);
+    if (s < 60) return "قبل ثوانٍ";
+    const m = Math.round(s / 60);
+    if (m < 60) return `قبل ${m} دقيقة`;
+    const h = Math.round(m / 60);
+    if (h < 24) return `قبل ${h} ساعة`;
+    const d = Math.round(h / 24);
+    if (d < 30) return `قبل ${d} يوم`;
+    const mo = Math.round(d / 30);
+    if (mo < 12) return `قبل ${mo} شهر`;
+    return `قبل ${Math.round(mo / 12)} سنة`;
   };
   const nameOf = (id: string | null) => {
     if (!id) return "—";
     const p: any = nameMap.get(id);
     return p?.full_name || p?.phone || id.slice(0, 8);
   };
+
+  const filtered = (entries as any[]).filter((e) => {
+    if (filter !== "all" && e.action !== filter) return false;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      const targetName = String(nameOf(e.user_id)).toLowerCase();
+      const actorName = String(nameOf(e.actor_id)).toLowerCase();
+      if (!targetName.includes(q) && !actorName.includes(q)) return false;
+    }
+    return true;
+  });
+  const blockCount = (entries as any[]).filter((e) => e.action === "block").length;
+  const unblockCount = (entries as any[]).filter((e) => e.action === "unblock").length;
 
   return (
     <div className="space-y-4">
@@ -196,15 +228,44 @@ function BlockLogAdmin() {
       </div>
 
       <div className="text-sm font-extrabold flex items-center gap-2 pt-2">
-        <History className="size-4" /> السجل
+        <History className="size-4" /> سجل التدقيق
+        <span className="text-xs font-normal text-muted-foreground">
+          ({entries.length})
+        </span>
       </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="inline-flex rounded-xl border border-border bg-muted/40 p-0.5 text-[11px] font-semibold">
+          <button
+            onClick={() => setFilter("all")}
+            className={`px-3 py-1.5 rounded-lg transition-colors ${filter === "all" ? "bg-card shadow-sm" : "text-muted-foreground"}`}
+          >الكل ({entries.length})</button>
+          <button
+            onClick={() => setFilter("block")}
+            className={`px-3 py-1.5 rounded-lg transition-colors ${filter === "block" ? "bg-destructive/10 text-destructive" : "text-muted-foreground"}`}
+          >حظر ({blockCount})</button>
+          <button
+            onClick={() => setFilter("unblock")}
+            className={`px-3 py-1.5 rounded-lg transition-colors ${filter === "unblock" ? "bg-success/10 text-success" : "text-muted-foreground"}`}
+          >رفع حظر ({unblockCount})</button>
+        </div>
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="بحث باسم الزبون أو المشرف…"
+          className="h-9 text-xs flex-1 min-w-[160px]"
+        />
+      </div>
+
       {isLoading ? (
         <div className="text-center text-sm text-muted-foreground py-8">جاري التحميل…</div>
       ) : !entries.length ? (
         <div className="text-center text-sm text-muted-foreground py-8">لا توجد سجلات بعد</div>
+      ) : !filtered.length ? (
+        <div className="text-center text-sm text-muted-foreground py-8">لا نتائج مطابقة للتصفية</div>
       ) : (
         <div className="space-y-2">
-      {entries.map((e: any) => {
+      {filtered.map((e: any) => {
         const isBlock = e.action === "block";
         const n = matchNotif(e.user_id, e.created_at);
         const delivery = !n
@@ -218,8 +279,13 @@ function BlockLogAdmin() {
               {isBlock ? <Ban className="size-4" /> : <CheckCircle2 className="size-4" />}
             </div>
             <div className="flex-1 min-w-0 text-sm">
-              <div className="font-bold">
-                {isBlock ? "حظر زبون" : "رفع الحظر عن زبون"}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold">
+                  {isBlock ? "حظر زبون" : "رفع الحظر عن زبون"}
+                </span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isBlock ? "bg-destructive/10 text-destructive" : "bg-success/10 text-success"}`}>
+                  {isBlock ? "BLOCK" : "UNBLOCK"}
+                </span>
               </div>
               <div className="text-xs text-muted-foreground mt-0.5">
                 الزبون: <span className="font-semibold text-foreground">{nameOf(e.user_id)}</span>
@@ -227,7 +293,11 @@ function BlockLogAdmin() {
               <div className="text-xs text-muted-foreground">
                 بواسطة: <span className="font-semibold text-foreground">{nameOf(e.actor_id)}</span>
               </div>
-              <div className="text-[11px] text-muted-foreground mt-1">{fmt(e.created_at)}</div>
+              <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5" dir="ltr">
+                <Clock className="size-3" />
+                <span className="font-mono">{fmt(e.created_at)}</span>
+                <span className="text-muted-foreground/70">• {fmtRelative(e.created_at)}</span>
+              </div>
               <div className={`inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold ${delivery.cls}`}>
                 {delivery.icon}
                 <span>{delivery.label}</span>
