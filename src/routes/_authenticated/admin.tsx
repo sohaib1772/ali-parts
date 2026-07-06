@@ -254,7 +254,8 @@ function AdminPage() {
   const canOrders = isAdmin || !!staff?.can_orders;
   const canProducts = isAdmin || !!staff?.can_products;
   const canReplacements = isAdmin || !!staff?.can_replacements;
-  const hasAnyAccess = isAdmin || canOrders || canProducts || canReplacements;
+  const canBlock = isAdmin || !!staff?.can_block;
+  const hasAnyAccess = isAdmin || canOrders || canProducts || canReplacements || canBlock;
 
   if (!hasAnyAccess) {
     return (
@@ -305,7 +306,7 @@ function AdminPage() {
             {isAdmin && (
               <TabsTrigger value="staff" className="flex-col gap-1 py-2 text-[10px]"><ShieldCheck className="size-4" />موظفون</TabsTrigger>
             )}
-            {isAdmin && (
+            {canBlock && (
               <TabsTrigger value="block-log" className="flex-col gap-1 py-2 text-[10px]"><History className="size-4" />سجل الحظر</TabsTrigger>
             )}
             {canProducts && (
@@ -326,7 +327,7 @@ function AdminPage() {
           {canReplacements && <TabsContent value="replacements" className="mt-4"><ReplacementsAdmin /></TabsContent>}
           {isAdmin && <TabsContent value="users" className="mt-4"><UsersAdmin /></TabsContent>}
           {isAdmin && <TabsContent value="staff" className="mt-4"><StaffAdmin /></TabsContent>}
-          {isAdmin && <TabsContent value="block-log" className="mt-4"><BlockLogAdmin /></TabsContent>}
+          {canBlock && <TabsContent value="block-log" className="mt-4"><BlockLogAdmin /></TabsContent>}
           {canProducts && <TabsContent value="stock" className="mt-4"><StockMovementsAdmin /></TabsContent>}
           {isAdmin && <TabsContent value="settings" className="mt-4"><SettingsAdmin /></TabsContent>}
           {isAdmin && <TabsContent value="diagnostics" className="mt-4"><DiagnosticsAdmin /></TabsContent>}
