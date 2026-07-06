@@ -16,6 +16,7 @@ export function ProductCard({ product }: { product: Product }) {
   const waNumber = useSetting("whatsapp_number");
   const stockQty = (product as any).stock_qty ?? 0;
   const available = product.in_stock && stockQty > 0;
+  const condition = (product as any).condition === "used" ? "used" : "new";
 
   const requireAuth = () => {
     if (!userId) {
@@ -83,6 +84,13 @@ export function ProductCard({ product }: { product: Product }) {
         {product.is_deal && (
           <span className="absolute top-2 end-2 px-2 py-0.5 rounded-full bg-gradient-gold text-navy text-[10px] font-bold shadow-gold">عرض</span>
         )}
+        <span
+          className={`absolute top-2 ${product.is_deal ? "end-14" : "end-2"} px-2 py-0.5 rounded-full text-[10px] font-bold shadow ${
+            condition === "used" ? "bg-amber-500 text-white" : "bg-emerald-600 text-white"
+          }`}
+        >
+          {condition === "used" ? "مستعمل" : "جديد"}
+        </span>
         {!available && (
           <div className="absolute inset-0 bg-navy/60 grid place-items-center">
             <span className="px-3 py-1 rounded-full bg-destructive text-destructive-foreground text-xs font-bold">غير متوفر</span>
