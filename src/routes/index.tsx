@@ -218,12 +218,15 @@ function CategoryIcon({ category, index }: { category: { id: string; name_ar: st
 function HeroCarousel({ banners }: { banners: Banner[] }) {
   const [idx, setIdx] = useState(0);
   const [muted, setMuted] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const slides = banners.length > 0 ? banners : null;
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
   const heroRef = useRef<HTMLDivElement | null>(null);
   // Remember the user's chosen sound preference so we can restore it
   // when the hero scrolls back into view.
   const userWantsSoundRef = useRef(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   // Mute + pause the hero video when it scrolls out of view; restore
   // the user's chosen sound preference when it comes back in.
@@ -317,38 +320,40 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   const content = (
     <div className="relative overflow-hidden rounded-3xl bg-gradient-hero text-primary-foreground shadow-luxe aspect-[16/10]">
       {slides.map((b, i) => (
-        (b as any).video_url && i === idx ? (
-          <video
-            key={b.id}
-            ref={(el) => { videoRefs.current[i] = el; }}
-            src={(b as any).video_url}
-            poster={b.image_url || undefined}
-            autoPlay
-            muted={muted || i !== idx}
-            loop
-            playsInline
-            preload="none"
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 cursor-pointer ${i === idx ? "opacity-100" : "opacity-0"}`}
-            onVolumeChange={(e) => {
-              if (i !== idx) return;
-              const el = e.currentTarget;
-              setMuted(el.muted);
-              if (!el.muted) userWantsSoundRef.current = true;
-            }}
-          />
-        ) : (
+        <div
+          key={b.id}
+          className={`absolute inset-0 transition-opacity duration-700 ${i === idx ? "opacity-100" : "opacity-0"}`}
+        >
           <img
-            key={b.id}
             src={b.image_url}
             loading={i === idx ? "eager" : "lazy"}
             decoding="async"
             alt={b.title_ar ?? ""}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${i === idx ? "opacity-100" : "opacity-0"}`}
+            className="absolute inset-0 w-full h-full object-cover"
           />
-        )
+          {mounted && (b as any).video_url && i === idx && (
+            <video
+              ref={(el) => { videoRefs.current[i] = el; }}
+              src={(b as any).video_url}
+              poster={b.image_url || undefined}
+              autoPlay
+              muted={muted}
+              loop
+              playsInline
+              preload="metadata"
+              className="absolute inset-0 w-full h-full object-cover cursor-pointer"
+              onVolumeChange={(e) => {
+                if (i !== idx) return;
+                const el = e.currentTarget;
+                setMuted(el.muted);
+                if (!el.muted) userWantsSoundRef.current = true;
+              }}
+            />
+          )}
+        </div>
       ))}
       <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/40 to-transparent pointer-events-none" />
-      {(current as any).video_url && (
+      {mounted && (current as any).video_url && (
         <button
           type="button"
           onClick={(e) => {
@@ -376,13 +381,11 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
         </button>
       )}
       <div className="absolute inset-x-0 bottom-0 p-4">
-        <Link
-          to="/offers"
-          onClick={(e) => e.stopPropagation()}
+        <span
           className="inline-flex items-center gap-1.5 text-[11px] font-bold text-gold bg-gold/10 border border-gold/30 rounded-full px-3 py-1 mb-2 hover:bg-gold/20 transition"
         >
           <Sparkles className="size-3.5" /> عروض حصرية · شاهد الكل
-        </Link>
+        </span>
         {current.expires_at && (
           <div className="mb-2">
             <Countdown to={current.expires_at} />
@@ -419,8 +422,9 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
 
 function Countdown({ to }: { to: string }) {
   const target = new Date(to).getTime();
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(() => target);
   useEffect(() => {
+    setNow(Date.now());
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
@@ -449,8 +453,9 @@ function Countdown({ to }: { to: string }) {
 
 function MiniCountdown({ to }: { to: string }) {
   const target = new Date(to).getTime();
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(() => target);
   useEffect(() => {
+    setNow(Date.now());
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
