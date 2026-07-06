@@ -108,7 +108,7 @@ export function VehiclePicker({ open, onOpenChange, mandatory }: { open: boolean
 
   const years = useMemo(() => {
     const arr: string[] = [];
-    for (let y = 2025; y >= 2005; y--) arr.push(String(y));
+    for (let y = 2025; y >= 2016; y--) arr.push(String(y));
     return arr;
   }, []);
 
