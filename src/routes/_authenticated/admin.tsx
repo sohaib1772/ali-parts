@@ -459,6 +459,7 @@ type ProductForm = {
   is_deal: boolean;
   compatible_models: string[];
   deal_expires_at: string;
+  condition: "new" | "used";
 };
 
 const emptyProduct: ProductForm = {
@@ -466,6 +467,7 @@ const emptyProduct: ProductForm = {
   price_iqd: "", compare_price_iqd: "", shipping_iqd: "", category_id: "", brand_id: "",
   images: [], in_stock: true, is_featured: false, is_deal: false,
   compatible_models: [], deal_expires_at: "", stock_qty: "0",
+  condition: "new",
 };
 
 function ProductsAdmin() {
