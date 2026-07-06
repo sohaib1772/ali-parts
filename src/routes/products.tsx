@@ -3,7 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Flame, ChevronLeft } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { ProductCard } from "@/components/product-card";
-import { bestSellersQuery } from "@/lib/queries";
+import { allProductsQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/products")({
   loader: ({ context }) => context.queryClient.ensureQueryData(bestSellersQuery()),
