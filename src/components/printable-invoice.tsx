@@ -330,7 +330,7 @@ function InvoiceBody({ order, items, customer }: { order: any; items: any[]; cus
           <div style={{ display: "inline-block", padding: "6px 14px", background: "linear-gradient(135deg,#f5c96a,#c9a24a)", color: "#0a1a3a", fontWeight: 900, fontSize: "12px", letterSpacing: "0.18em", borderRadius: "4px", boxShadow: "0 3px 10px rgba(201,162,74,0.4)" }}>INVOICE · فاتورة</div>
           <div style={{ marginTop: "10px", fontSize: "11px", color: "#cfd6e6" }}>
             <div>رقم الفاتورة: <span style={{ fontFamily: "ui-monospace, monospace", color: "#f5c96a", fontWeight: 700 }}>{order.order_number}</span></div>
-            <div>التاريخ: <span style={{ color: "#ffffff", fontWeight: 700 }}>{formatArabicDate(order.created_at)}</span></div>
+            <div>التاريخ: <span style={{ color: "#ffffff", fontWeight: 700 }}>{formatDateEn(order.created_at)}</span></div>
             <div>الحالة: <span style={{ color: "#ffffff", fontWeight: 700 }}>{statusLabel(order.status)}</span></div>
           </div>
         </div>
@@ -395,8 +395,8 @@ function InvoiceBody({ order, items, customer }: { order: any; items: any[]; cus
                 </td>
                 <td style={{ ...tdStyle, textAlign: "center", fontWeight: 700 }}>{it.side ?? "-"}</td>
                 <td style={{ ...tdStyle, textAlign: "center" }}>× {it.quantity}</td>
-                <td style={{ ...tdStyle, textAlign: "left", fontFamily: "ui-monospace, monospace" }}>{formatIQD(Number(it.unit_price_iqd))}</td>
-                <td style={{ ...tdStyle, textAlign: "left", fontFamily: "ui-monospace, monospace", fontWeight: 800 }}>{formatIQD(Number(it.unit_price_iqd) * it.quantity)}</td>
+                <td style={{ ...tdStyle, textAlign: "left", fontFamily: "ui-monospace, monospace" }}>{formatIQDEn(Number(it.unit_price_iqd))}</td>
+                <td style={{ ...tdStyle, textAlign: "left", fontFamily: "ui-monospace, monospace", fontWeight: 800 }}>{formatIQDEn(Number(it.unit_price_iqd) * it.quantity)}</td>
               </tr>
             ))}
           </tbody>
@@ -411,12 +411,12 @@ function InvoiceBody({ order, items, customer }: { order: any; items: any[]; cus
             )}
           </div>
           <div style={{ border: "1px solid #e6e2d5", borderRadius: "6px", padding: "10px 12px", fontSize: "12px", background: "#fff" }}>
-            <TotalRow label="المجموع الفرعي" value={formatIQD(order.subtotal_iqd)} />
-            <TotalRow label="التوصيل" value={formatIQD(order.shipping_iqd)} />
-            {pointsDiscount > 0 && <TotalRow label={`خصم نقاط (${order.points_used})`} value={`- ${formatIQD(pointsDiscount)}`} />}
+            <TotalRow label="المجموع الفرعي" value={formatIQDEn(order.subtotal_iqd)} />
+            <TotalRow label="التوصيل" value={formatIQDEn(order.shipping_iqd)} />
+            {pointsDiscount > 0 && <TotalRow label={`خصم نقاط (${order.points_used})`} value={`- ${formatIQDEn(pointsDiscount)}`} />}
             <div style={{ borderTop: "2px solid #0a1a3a", marginTop: "6px", paddingTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <span style={{ fontWeight: 900 }}>الإجمالي</span>
-              <span style={{ fontSize: "18px", fontWeight: 900, color: "#0a1a3a", fontFamily: "ui-monospace, monospace" }}>{formatIQD(order.total_iqd)}</span>
+              <span style={{ fontSize: "18px", fontWeight: 900, color: "#0a1a3a", fontFamily: "ui-monospace, monospace" }}>{formatIQDEn(order.total_iqd)}</span>
             </div>
           </div>
         </div>
