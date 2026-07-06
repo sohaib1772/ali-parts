@@ -156,11 +156,31 @@ function AuthListener() {
   const router = useRouter();
   const { queryClient } = Route.useRouteContext();
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((event) => {
+    // Track the last known user id so we only react to real identity
+    // transitions. Supabase re-fires `SIGNED_IN` on every tab mount when a
+    // session is restored from storage, and also on `TOKEN_REFRESHED` in some
+    // versions — invalidating the router on those spurious events causes the
+    // just-rendered protected page (e.g. the admin panel) to flash off while
+    // `_authenticated`'s `beforeLoad` re-runs `getUser()`.
+    let lastUserId: string | null | undefined = undefined;
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      router.invalidate();
-      // Only refresh user-scoped queries; public catalog data does not depend on session.
-      if (event === "USER_UPDATED") queryClient.invalidateQueries();
+      const nextUserId = session?.user?.id ?? null;
+      const identityChanged = lastUserId !== undefined && lastUserId !== nextUserId;
+      lastUserId = nextUserId;
+      if (event === "SIGNED_OUT") {
+        router.invalidate();
+        return;
+      }
+      if (event === "USER_UPDATED") {
+        queryClient.invalidateQueries();
+        return;
+      }
+      // SIGNED_IN: only invalidate when the identity actually changed
+      // (i.e. a real login, not the initial session restore).
+      if (identityChanged) {
+        router.invalidate();
+      }
     });
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
