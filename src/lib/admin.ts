@@ -18,7 +18,6 @@ export const isAdminQuery = (userId: string | null) =>
       return !!data;
     },
     enabled: !!userId,
-    retry: 1,
   });
 
 export function useIsAdmin() {
@@ -61,7 +60,6 @@ export const staffPermissionsQuery = (userId: string | null) =>
     },
     enabled: !!userId,
     staleTime: 60_000,
-    retry: 1,
   });
 
 export function useStaffPermissions() {
