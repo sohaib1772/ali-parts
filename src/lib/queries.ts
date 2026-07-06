@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions, infiniteQueryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export type Product = {
@@ -116,18 +116,24 @@ export const bestSellersQuery = () =>
     },
   });
 
-export const allProductsQuery = () =>
-  queryOptions({
-    queryKey: ["products", "all"],
+const PRODUCTS_PAGE_SIZE = 20;
+
+export const productsInfiniteQuery = () =>
+  infiniteQueryOptions({
+    queryKey: ["products", "all", "infinite"],
     staleTime: 2 * 60_000,
-    queryFn: async () => {
+    queryFn: async ({ pageParam = 0 }) => {
       const { data, error } = await supabase
         .from("products")
         .select("*")
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: true })
+        .range(pageParam, pageParam + PRODUCTS_PAGE_SIZE - 1);
       if (error) throw error;
       return (data ?? []) as Product[];
     },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === PRODUCTS_PAGE_SIZE ? allPages.length * PRODUCTS_PAGE_SIZE : undefined,
   });
 
 export const productByIdQuery = (id: string) =>

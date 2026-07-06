@@ -39,8 +39,11 @@ export function clearVehicle() {
 }
 
 export function useSavedVehicle(): Vehicle | null {
-  const [v, setV] = useState<Vehicle | null>(() => getSavedVehicle());
+  const [v, setV] = useState<Vehicle | null>(null);
+  const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    setMounted(true);
+    setV(getSavedVehicle());
     const on = () => setV(getSavedVehicle());
     window.addEventListener("vehicle-changed", on);
     window.addEventListener("storage", on);
@@ -49,7 +52,7 @@ export function useSavedVehicle(): Vehicle | null {
       window.removeEventListener("storage", on);
     };
   }, []);
-  return v;
+  return mounted ? v : null;
 }
 
 import type { Product } from "@/lib/queries";
