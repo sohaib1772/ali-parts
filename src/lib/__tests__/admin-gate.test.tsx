@@ -46,10 +46,13 @@ vi.mock("@/integrations/supabase/client", () => {
 import { useIsAdminStatus, useStaffPermissionsStatus } from "@/lib/admin";
 
 function Harness() {
-  const { isAdmin, isLoading: adminLoading } = useIsAdminStatus();
-  const { staff, isLoading: staffLoading } = useStaffPermissionsStatus();
+  const { isAdmin, isLoading: adminLoading, isError: adminError } = useIsAdminStatus();
+  const { staff, isLoading: staffLoading, isError: staffError } = useStaffPermissionsStatus();
   if (adminLoading || staffLoading) {
     return <div data-testid="state">جاري التحقق من الصلاحيات…</div>;
+  }
+  if (adminError || staffError) {
+    return <div data-testid="state">تعذر التحقق من الصلاحيات</div>;
   }
   const hasAccess =
     isAdmin ||
