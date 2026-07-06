@@ -10,7 +10,7 @@ import { PageShell } from "@/components/page-shell";
 import { bannersQuery, type Banner } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
-import { useIsAdmin } from "@/lib/admin";
+import { useIsAdmin, useAdminAccessStatus } from "@/lib/admin";
 import { adminSetUserBlocked } from "@/lib/admin.functions";
 import { addBannerComment } from "@/lib/comments.functions";
 import { useServerFn } from "@tanstack/react-start";
@@ -380,6 +380,7 @@ function CommentsSheet({ bannerId, onClose }: { bannerId: string | null; onClose
 function CommentsBody({ bannerId }: { bannerId: string }) {
   const { userId } = useAuth();
   const isAdmin = useIsAdmin();
+  const { canBlock } = useAdminAccessStatus();
   const qc = useQueryClient();
   const [text, setText] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -562,6 +563,7 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
               c={c}
               currentUserId={userId}
               isAdmin={isAdmin}
+              canBlock={canBlock}
               onEdit={() => { setEditingId(c.id); setText(c.content); }}
               onDelete={() => del.mutate(c.id)}
               onBlock={() => {
@@ -642,11 +644,12 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
 }
 
 function CommentRowView({
-  c, currentUserId, isAdmin, onEdit, onDelete, onBlock,
+  c, currentUserId, isAdmin, canBlock, onEdit, onDelete, onBlock,
 }: {
   c: CommentRow;
   currentUserId: string | null;
   isAdmin: boolean;
+  canBlock: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onBlock: () => void;
@@ -688,15 +691,15 @@ function CommentRowView({
             </>
           )}
           {!mine && isAdmin && (
-            <>
-              <button type="button" onClick={onDelete} className="inline-flex items-center gap-1 hover:text-destructive">
-                <Trash2 className="size-3" /> حذف
-              </button>
-              <button type="button" onClick={onBlock} className={`inline-flex items-center gap-1 ${c.profile?.is_blocked ? "hover:text-success" : "hover:text-destructive"}`}>
-                {c.profile?.is_blocked ? <Check className="size-3" /> : <Ban className="size-3" />}
-                {c.profile?.is_blocked ? "رفع الحظر" : "حظر المستخدم"}
-              </button>
-            </>
+            <button type="button" onClick={onDelete} className="inline-flex items-center gap-1 hover:text-destructive">
+              <Trash2 className="size-3" /> حذف
+            </button>
+          )}
+          {!mine && canBlock && (
+            <button type="button" onClick={onBlock} className={`inline-flex items-center gap-1 ${c.profile?.is_blocked ? "hover:text-success" : "hover:text-destructive"}`}>
+              {c.profile?.is_blocked ? <Check className="size-3" /> : <Ban className="size-3" />}
+              {c.profile?.is_blocked ? "رفع الحظر" : "حظر المستخدم"}
+            </button>
           )}
         </div>
       </div>
