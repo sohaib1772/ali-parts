@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import { PageShell } from "@/components/page-shell";
 import { supabase } from "@/integrations/supabase/client";
-import { useIsAdmin, uploadProductImage, uploadMediaFile, settingsQuery } from "@/lib/admin";
+import { useIsAdmin, useStaffPermissions, uploadProductImage, uploadMediaFile, settingsQuery } from "@/lib/admin";
 import {
   categoriesQuery,
   brandsQuery,
@@ -31,7 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote, Receipt, Search as SearchIcon, Ban, CheckCircle2, History, Users as UsersIcon, KeyRound, Loader2, Repeat, Boxes, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote, Receipt, Search as SearchIcon, Ban, CheckCircle2, History, Users as UsersIcon, KeyRound, Loader2, Repeat, Boxes, ArrowUp, ArrowDown, UserPlus, ShieldCheck } from "lucide-react";
 import { BellRing, MailCheck, MailX, Clock } from "lucide-react";
 import { Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw } from "lucide-react";
 import { runDiagnostics, type DiagnosticsReport, type CheckStatus } from "@/lib/diagnostics.functions";
@@ -42,6 +42,7 @@ import { formatIQD, whatsappLink } from "@/lib/format";
 import { statusLabel, statusColor } from "@/lib/order-status";
 import { PrintableInvoice, InvoicePreviewDialog } from "@/components/printable-invoice";
 import { adminListUsers, adminSetUserBlocked, adminSetUserPassword } from "@/lib/admin.functions";
+import { createStaff, updateStaff, deleteStaff, listStaff } from "@/lib/staff.functions";
 
 const STATUSES = ["received", "preparing", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"] as const;
 
@@ -246,9 +247,15 @@ export const Route = createFileRoute("/_authenticated/admin")({
 
 function AdminPage() {
   const isAdmin = useIsAdmin();
+  const staff = useStaffPermissions();
   const navigate = useNavigate();
 
-  if (!isAdmin) {
+  const canOrders = isAdmin || !!staff?.can_orders;
+  const canProducts = isAdmin || !!staff?.can_products;
+  const canReplacements = isAdmin || !!staff?.can_replacements;
+  const hasAnyAccess = isAdmin || canOrders || canProducts || canReplacements;
+
+  if (!hasAnyAccess) {
     return (
       <PageShell title="لوحة الإدارة">
         <div className="px-4 pt-10 flex flex-col items-center text-center gap-3">
@@ -263,33 +270,65 @@ function AdminPage() {
     );
   }
 
+  const defaultTab = isAdmin
+    ? "products"
+    : canOrders
+      ? "orders"
+      : canProducts
+        ? "products"
+        : "replacements";
+
   return (
     <PageShell title="لوحة الإدارة">
       <div className="px-4 pt-3 pb-6">
-        <Tabs defaultValue="products">
+        <Tabs defaultValue={defaultTab}>
           <TabsList className="w-full grid grid-cols-4 h-auto gap-1">
-            <TabsTrigger value="products" className="flex-col gap-1 py-2 text-[10px]"><Package className="size-4" />منتجات</TabsTrigger>
-            <TabsTrigger value="banners" className="flex-col gap-1 py-2 text-[10px]"><ImageIcon className="size-4" />عروض</TabsTrigger>
-            <TabsTrigger value="taxonomy" className="flex-col gap-1 py-2 text-[10px]"><Tags className="size-4" />تصنيفات</TabsTrigger>
-            <TabsTrigger value="orders" className="flex-col gap-1 py-2 text-[10px]"><ClipboardList className="size-4" />طلبات</TabsTrigger>
-            <TabsTrigger value="replacements" className="flex-col gap-1 py-2 text-[10px]"><Repeat className="size-4" />استبدال</TabsTrigger>
-            <TabsTrigger value="users" className="flex-col gap-1 py-2 text-[10px]"><UsersIcon className="size-4" />مستخدمون</TabsTrigger>
-            <TabsTrigger value="block-log" className="flex-col gap-1 py-2 text-[10px]"><History className="size-4" />سجل الحظر</TabsTrigger>
-            <TabsTrigger value="stock" className="flex-col gap-1 py-2 text-[10px]"><Boxes className="size-4" />سجل المخزون</TabsTrigger>
-            <TabsTrigger value="settings" className="flex-col gap-1 py-2 text-[10px]"><SettingsIcon className="size-4" />إعدادات</TabsTrigger>
-            <TabsTrigger value="diagnostics" className="flex-col gap-1 py-2 text-[10px]"><Activity className="size-4" />تشخيص</TabsTrigger>
+            {canProducts && (
+              <TabsTrigger value="products" className="flex-col gap-1 py-2 text-[10px]"><Package className="size-4" />منتجات</TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="banners" className="flex-col gap-1 py-2 text-[10px]"><ImageIcon className="size-4" />عروض</TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="taxonomy" className="flex-col gap-1 py-2 text-[10px]"><Tags className="size-4" />تصنيفات</TabsTrigger>
+            )}
+            {canOrders && (
+              <TabsTrigger value="orders" className="flex-col gap-1 py-2 text-[10px]"><ClipboardList className="size-4" />طلبات</TabsTrigger>
+            )}
+            {canReplacements && (
+              <TabsTrigger value="replacements" className="flex-col gap-1 py-2 text-[10px]"><Repeat className="size-4" />استبدال</TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="users" className="flex-col gap-1 py-2 text-[10px]"><UsersIcon className="size-4" />مستخدمون</TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="staff" className="flex-col gap-1 py-2 text-[10px]"><ShieldCheck className="size-4" />موظفون</TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="block-log" className="flex-col gap-1 py-2 text-[10px]"><History className="size-4" />سجل الحظر</TabsTrigger>
+            )}
+            {canProducts && (
+              <TabsTrigger value="stock" className="flex-col gap-1 py-2 text-[10px]"><Boxes className="size-4" />سجل المخزون</TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="settings" className="flex-col gap-1 py-2 text-[10px]"><SettingsIcon className="size-4" />إعدادات</TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="diagnostics" className="flex-col gap-1 py-2 text-[10px]"><Activity className="size-4" />تشخيص</TabsTrigger>
+            )}
           </TabsList>
 
-          <TabsContent value="products" className="mt-4"><ProductsAdmin /></TabsContent>
-          <TabsContent value="banners" className="mt-4"><BannersAdmin /></TabsContent>
-          <TabsContent value="taxonomy" className="mt-4"><TaxonomyAdmin /></TabsContent>
-          <TabsContent value="orders" className="mt-4"><OrdersAdmin /></TabsContent>
-          <TabsContent value="replacements" className="mt-4"><ReplacementsAdmin /></TabsContent>
-          <TabsContent value="users" className="mt-4"><UsersAdmin /></TabsContent>
-          <TabsContent value="block-log" className="mt-4"><BlockLogAdmin /></TabsContent>
-          <TabsContent value="stock" className="mt-4"><StockMovementsAdmin /></TabsContent>
-          <TabsContent value="settings" className="mt-4"><SettingsAdmin /></TabsContent>
-          <TabsContent value="diagnostics" className="mt-4"><DiagnosticsAdmin /></TabsContent>
+          {canProducts && <TabsContent value="products" className="mt-4"><ProductsAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="banners" className="mt-4"><BannersAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="taxonomy" className="mt-4"><TaxonomyAdmin /></TabsContent>}
+          {canOrders && <TabsContent value="orders" className="mt-4"><OrdersAdmin /></TabsContent>}
+          {canReplacements && <TabsContent value="replacements" className="mt-4"><ReplacementsAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="users" className="mt-4"><UsersAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="staff" className="mt-4"><StaffAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="block-log" className="mt-4"><BlockLogAdmin /></TabsContent>}
+          {canProducts && <TabsContent value="stock" className="mt-4"><StockMovementsAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="settings" className="mt-4"><SettingsAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="diagnostics" className="mt-4"><DiagnosticsAdmin /></TabsContent>}
         </Tabs>
       </div>
     </PageShell>
@@ -441,6 +480,201 @@ function UsersAdmin() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+/* ---------------- Staff ---------------- */
+
+type StaffRow = {
+  user_id: string;
+  full_name: string;
+  email: string | null;
+  can_orders: boolean;
+  can_products: boolean;
+  can_replacements: boolean;
+  created_at: string | null;
+};
+
+function StaffAdmin() {
+  const list = useServerFn(listStaff);
+  const create = useServerFn(createStaff);
+  const update = useServerFn(updateStaff);
+  const del = useServerFn(deleteStaff);
+  const qc = useQueryClient();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["staff", "list"],
+    queryFn: () => list(),
+  });
+
+  const rows: StaffRow[] = (data as any)?.staff ?? [];
+
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<StaffRow | null>(null);
+  const [form, setForm] = useState({
+    full_name: "",
+    email: "",
+    password: "",
+    can_orders: false,
+    can_products: false,
+    can_replacements: false,
+  });
+  const [busy, setBusy] = useState(false);
+
+  const openNew = () => {
+    setEditing(null);
+    setForm({ full_name: "", email: "", password: "", can_orders: false, can_products: false, can_replacements: false });
+    setOpen(true);
+  };
+
+  const openEdit = (r: StaffRow) => {
+    setEditing(r);
+    setForm({
+      full_name: r.full_name,
+      email: r.email ?? "",
+      password: "",
+      can_orders: r.can_orders,
+      can_products: r.can_products,
+      can_replacements: r.can_replacements,
+    });
+    setOpen(true);
+  };
+
+  const save = async () => {
+    if (!form.full_name.trim()) { toast.error("الاسم مطلوب"); return; }
+    if (!editing) {
+      if (!form.email.trim()) { toast.error("الإيميل مطلوب"); return; }
+      if (form.password.length < 6) { toast.error("كلمة السر لا تقل عن 6 أحرف"); return; }
+    }
+    if (!form.can_orders && !form.can_products && !form.can_replacements) {
+      toast.error("اختر صلاحية واحدة على الأقل");
+      return;
+    }
+    setBusy(true);
+    try {
+      if (editing) {
+        await update({
+          data: {
+            user_id: editing.user_id,
+            full_name: form.full_name,
+            password: form.password || undefined,
+            can_orders: form.can_orders,
+            can_products: form.can_products,
+            can_replacements: form.can_replacements,
+          },
+        });
+        toast.success("تم تحديث الموظف");
+      } else {
+        await create({
+          data: {
+            email: form.email.trim(),
+            password: form.password,
+            full_name: form.full_name.trim(),
+            can_orders: form.can_orders,
+            can_products: form.can_products,
+            can_replacements: form.can_replacements,
+          },
+        });
+        toast.success("تم إضافة الموظف");
+      }
+      setOpen(false);
+      qc.invalidateQueries({ queryKey: ["staff", "list"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "فشلت العملية");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (r: StaffRow) => {
+    if (!window.confirm(`حذف الموظف "${r.full_name}"؟ سيُحذف حسابه نهائياً.`)) return;
+    try {
+      await del({ data: { user_id: r.user_id } });
+      toast.success("تم الحذف");
+      qc.invalidateQueries({ queryKey: ["staff", "list"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "فشل الحذف");
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-extrabold text-base">إدارة الموظفين</h2>
+          <p className="text-[11px] text-muted-foreground">أضف موظفاً وحدّد صلاحياته وأعطه إيميل وكلمة سر لتسجيل الدخول.</p>
+        </div>
+        <Button size="sm" onClick={openNew} className="gap-1"><UserPlus className="size-4" /> إضافة موظف</Button>
+      </div>
+
+      {isLoading ? (
+        <div className="text-center text-sm text-muted-foreground py-6">جاري التحميل…</div>
+      ) : rows.length === 0 ? (
+        <div className="text-center text-sm text-muted-foreground py-6">لا يوجد موظفون حتى الآن.</div>
+      ) : (
+        <div className="space-y-2">
+          {rows.map((r) => (
+            <div key={r.user_id} className="bg-card border border-border rounded-2xl p-3 flex items-center gap-3">
+              <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center">
+                <ShieldCheck className="size-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-sm truncate">{r.full_name}</div>
+                <div className="text-[11px] text-muted-foreground truncate">{r.email ?? "—"}</div>
+                <div className="flex gap-1 mt-1 flex-wrap">
+                  {r.can_orders && <span className="text-[10px] bg-blue-500/10 text-blue-600 rounded-full px-2 py-0.5">طلبات</span>}
+                  {r.can_products && <span className="text-[10px] bg-emerald-500/10 text-emerald-600 rounded-full px-2 py-0.5">منتجات</span>}
+                  {r.can_replacements && <span className="text-[10px] bg-amber-500/10 text-amber-600 rounded-full px-2 py-0.5">استبدال</span>}
+                </div>
+              </div>
+              <Button size="icon" variant="ghost" onClick={() => openEdit(r)}><Pencil className="size-4" /></Button>
+              <Button size="icon" variant="destructive" onClick={() => remove(r)}><Trash2 className="size-4" /></Button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editing ? "تعديل موظف" : "إضافة موظف"}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <Field label="الاسم الكامل">
+              <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="مثال: أحمد علي" />
+            </Field>
+            <Field label="الإيميل">
+              <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="staff@example.com" disabled={!!editing} />
+              {editing && <p className="text-[10px] text-muted-foreground mt-1">الإيميل غير قابل للتعديل.</p>}
+            </Field>
+            <Field label={editing ? "كلمة السر (اتركها فارغة لعدم التغيير)" : "كلمة السر"}>
+              <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="6 أحرف على الأقل" />
+            </Field>
+            <div>
+              <Label className="text-xs mb-2 block">الصلاحيات</Label>
+              <div className="space-y-2">
+                <PermRow label="إدارة الطلبات" desc="عرض وتعديل حالة الطلبات وطباعة الفواتير" checked={form.can_orders} onChange={(v) => setForm({ ...form, can_orders: v })} />
+                <PermRow label="إدارة المنتجات والمخزون" desc="إضافة/تعديل المنتجات وتحديث الكميات" checked={form.can_products} onChange={(v) => setForm({ ...form, can_products: v })} />
+                <PermRow label="إدارة طلبات الاستبدال والتعليقات" desc="الرد على المستخدمين ومعالجة الاستبدال" checked={form.can_replacements} onChange={(v) => setForm({ ...form, can_replacements: v })} />
+              </div>
+            </div>
+            <Button className="w-full" onClick={save} disabled={busy}>
+              {busy ? <Loader2 className="size-4 animate-spin" /> : (editing ? "حفظ التعديلات" : "إضافة الموظف")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function PermRow({ label, desc, checked, onChange }: { label: string; desc: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-start gap-3 p-3 rounded-xl border border-border hover:bg-muted/40 transition cursor-pointer">
+      <Switch checked={checked} onCheckedChange={onChange} />
+      <div className="flex-1 min-w-0">
+        <div className="font-bold text-sm">{label}</div>
+        <div className="text-[11px] text-muted-foreground">{desc}</div>
+      </div>
+    </label>
   );
 }
 

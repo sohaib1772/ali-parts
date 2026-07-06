@@ -735,6 +735,36 @@ export type Database = {
           },
         ]
       }
+      staff_permissions: {
+        Row: {
+          can_orders: boolean
+          can_products: boolean
+          can_replacements: boolean
+          created_at: string
+          full_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_orders?: boolean
+          can_products?: boolean
+          can_replacements?: boolean
+          created_at?: string
+          full_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_orders?: boolean
+          can_products?: boolean
+          can_replacements?: boolean
+          created_at?: string
+          full_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       stock_movements: {
         Row: {
           actor_id: string | null
@@ -880,6 +910,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_staff: { Args: { _uid: string }; Returns: boolean }
       place_order: {
         Args: {
           p_address: Json
@@ -889,6 +920,7 @@ export type Database = {
         }
         Returns: string
       }
+      staff_can: { Args: { _perm: string; _uid: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user"
