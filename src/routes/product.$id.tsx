@@ -172,6 +172,7 @@ function ProductPage() {
     setReasonText("");
     setPickedFiles([]);
     setSubmittedId(null);
+    setUploadProgress([]);
     setReplaceOpen(true);
   };
 
@@ -642,13 +643,13 @@ function ProductPage() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={pickedFiles.length >= MAX_FILES}
+                  disabled={pickedFiles.length >= MAX_FILES || submitting}
                   className="w-full h-10 rounded-xl border border-dashed border-gold/60 text-navy text-xs font-bold flex items-center justify-center gap-2 hover:bg-gold/5 disabled:opacity-50"
                 >
                   <Paperclip className="size-4 text-gold" />
                   إضافة صور أو مستندات
                 </button>
-                {pickedFiles.length > 0 && (
+                {pickedFiles.length > 0 && uploadProgress.length === 0 && (
                   <ul className="mt-2 space-y-1">
                     {pickedFiles.map((f, idx) => (
                       <li key={idx} className="flex items-center gap-2 text-[11px] bg-muted rounded-lg px-2 py-1.5">
@@ -657,6 +658,7 @@ function ProductPage() {
                         <button
                           type="button"
                           onClick={() => setPickedFiles((prev) => prev.filter((_, i) => i !== idx))}
+                          disabled={submitting}
                           className="size-6 rounded-md grid place-items-center hover:bg-background"
                         >
                           <Trash2 className="size-3.5 text-rose-600" />
@@ -664,6 +666,38 @@ function ProductPage() {
                       </li>
                     ))}
                   </ul>
+                )}
+                {uploadProgress.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {uploadProgress.map((it, idx) => (
+                      <div key={idx} className="rounded-lg border border-border bg-muted/40 p-2">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Paperclip className="size-3 text-gold shrink-0" />
+                          <span className="flex-1 truncate text-[10px] font-bold text-navy">{it.name}</span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {it.status === "error"
+                              ? "فشل"
+                              : it.status === "done"
+                              ? "تم ✓"
+                              : it.status === "pending"
+                              ? "…"
+                              : `${it.progress}%`}
+                          </span>
+                        </div>
+                        <Progress
+                          value={it.status === "error" ? 0 : it.progress}
+                          className="h-1.5"
+                        />
+                      </div>
+                    ))}
+                    <div className="grid grid-cols-3 gap-2 pt-1">
+                      {uploadProgress
+                        .filter((it) => it.status === "uploading" || it.status === "pending")
+                        .map((_, idx) => (
+                          <Skeleton key={idx} className="aspect-square rounded-lg" />
+                        ))}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
