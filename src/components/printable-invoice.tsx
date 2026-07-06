@@ -1,9 +1,9 @@
 import type React from "react";
-import { formatIQD, formatArabicDate } from "@/lib/format";
+import { formatIQDEn, formatDateEn } from "@/lib/format";
 import { statusLabel } from "@/lib/order-status";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Printer, FileDown, X } from "lucide-react";
+import { Printer, FileDown, Image as ImageIcon, X } from "lucide-react";
 import { toast } from "sonner";
 import logoAsset from "@/assets/ali-chevrolet-logo.jpeg.asset.json";
 
@@ -20,15 +20,15 @@ export function PrintableInvoice({ order, items, domId, customer }: { order: any
 }
 
 const thStyle: React.CSSProperties = {
-  padding: "8px 10px",
+  padding: "6px 8px",
   textAlign: "center",
   fontSize: "10px",
   fontWeight: 800,
   letterSpacing: "0.1em",
 };
 const tdStyle: React.CSSProperties = {
-  padding: "8px 10px",
-  verticalAlign: "top",
+  padding: "6px 8px",
+  verticalAlign: "middle",
 };
 
 function TotalRow({ label, value }: { label: string; value: string }) {
@@ -179,6 +179,56 @@ export async function downloadInvoicePdf(elementId: string, filename: string) {
 }
 
 /**
+ * downloadInvoicePng — renders the invoice DOM to a high-resolution PNG
+ * and triggers a download. Uses the same offscreen iframe technique as the
+ * PDF export so the capture is not affected by dialog scaling.
+ */
+export async function downloadInvoicePng(elementId: string, filename: string) {
+  const source = document.getElementById(elementId);
+  if (!source) return;
+  const { toPng } = await import("html-to-image");
+  const frame = document.createElement("iframe");
+  frame.setAttribute("aria-hidden", "true");
+  frame.style.cssText = "position:fixed;left:-10000px;top:0;width:900px;height:1300px;border:0;background:#ffffff";
+  document.body.appendChild(frame);
+  const frameDoc = frame.contentDocument;
+  if (!frameDoc) { frame.remove(); throw new Error("PNG frame unavailable"); }
+  frameDoc.open();
+  frameDoc.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><style>
+    html,body{margin:0;padding:0;background:#fff;color:#0a1a3a;font-family:'IBM Plex Sans Arabic',Arial,sans-serif;}
+    *{box-sizing:border-box;box-shadow:none!important;text-shadow:none!important;}
+    table{border-collapse:collapse;}
+  </style></head><body></body></html>`);
+  frameDoc.close();
+  const captureNode = source.cloneNode(true) as HTMLElement;
+  captureNode.removeAttribute("id");
+  captureNode.className = "";
+  captureNode.style.cssText = "display:block!important;position:relative!important;width:820px!important;background:#ffffff!important;color:#0a1a3a!important;opacity:1!important;transform:none!important;font-family:'IBM Plex Sans Arabic', system-ui, sans-serif!important";
+  frameDoc.body.appendChild(captureNode);
+  try {
+    await frameDoc.fonts?.ready;
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    const w = captureNode.scrollWidth || 820;
+    const h = captureNode.scrollHeight || 1123;
+    const dataUrl = await toPng(captureNode, {
+      backgroundColor: "#ffffff",
+      cacheBust: true,
+      pixelRatio: 2,
+      width: w,
+      height: h,
+    });
+    const link = document.createElement("a");
+    link.href = dataUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } finally {
+    frame.remove();
+  }
+}
+
+/**
  * InvoicePreviewDialog — opens a modal with a live preview of the invoice
  * and buttons for printing / downloading PDF. Renders the actual
  * PrintableInvoice inside a scaled viewport so the user can inspect it
@@ -213,6 +263,18 @@ export function InvoicePreviewDialog({
     }
   };
 
+  const handlePng = async () => {
+    setBusy(true);
+    try {
+      await downloadInvoicePng(domId, `invoice-${order.order_number ?? order.id}.png`);
+      toast.success("تم حفظ الفاتورة كصورة");
+    } catch {
+      toast.error("تعذّر حفظ الصورة");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handlePrint = () => {
     printOnlyThisInvoice(domId);
   };
@@ -235,6 +297,13 @@ export function InvoicePreviewDialog({
                 className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-gradient-gold text-navy text-xs font-black shadow-gold"
               >
                 <Printer className="size-3.5" /> طباعة
+              </button>
+              <button
+                onClick={handlePng}
+                disabled={busy}
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-white/10 border border-white/20 text-white text-xs font-black hover:bg-white/15 disabled:opacity-50"
+              >
+                <ImageIcon className="size-3.5" /> {busy ? "..." : "حفظ كصورة"}
               </button>
               <button
                 onClick={handlePdf}
@@ -330,7 +399,7 @@ function InvoiceBody({ order, items, customer }: { order: any; items: any[]; cus
           <div style={{ display: "inline-block", padding: "6px 14px", background: "linear-gradient(135deg,#f5c96a,#c9a24a)", color: "#0a1a3a", fontWeight: 900, fontSize: "12px", letterSpacing: "0.18em", borderRadius: "4px", boxShadow: "0 3px 10px rgba(201,162,74,0.4)" }}>INVOICE · فاتورة</div>
           <div style={{ marginTop: "10px", fontSize: "11px", color: "#cfd6e6" }}>
             <div>رقم الفاتورة: <span style={{ fontFamily: "ui-monospace, monospace", color: "#f5c96a", fontWeight: 700 }}>{order.order_number}</span></div>
-            <div>التاريخ: <span style={{ color: "#ffffff", fontWeight: 700 }}>{formatArabicDate(order.created_at)}</span></div>
+            <div>التاريخ: <span style={{ color: "#ffffff", fontWeight: 700 }}>{formatDateEn(order.created_at)}</span></div>
             <div>الحالة: <span style={{ color: "#ffffff", fontWeight: 700 }}>{statusLabel(order.status)}</span></div>
           </div>
         </div>
@@ -389,14 +458,20 @@ function InvoiceBody({ order, items, customer }: { order: any; items: any[]; cus
               <tr key={it.id} style={{ borderBottom: "1px solid #eee" }}>
                 <td style={tdStyle}>{idx + 1}</td>
                 <td style={{ ...tdStyle, textAlign: "right" }}>
-                  <div style={{ fontWeight: 700 }}>{it.name_ar}</div>
-                  {it.oem_number && <div style={{ fontSize: "9px", color: "#5c6c8a", fontFamily: "ui-monospace, monospace" }}>OEM: {it.oem_number}</div>}
-                  {it.note && <div style={{ fontSize: "10px", color: "#8a6a1a", marginTop: "2px" }}>ملاحظة: {it.note}</div>}
+                  <div style={{ fontWeight: 800, lineHeight: 1.25, color: "#0a1a3a" }}>{it.name_ar}</div>
+                  {it.oem_number && (
+                    <div style={{ fontSize: "9px", color: "#5c6c8a", fontFamily: "ui-monospace, monospace", direction: "ltr", textAlign: "right", marginTop: "1px" }}>
+                      OEM: {it.oem_number}
+                    </div>
+                  )}
+                  {it.note && (
+                    <div style={{ fontSize: "10px", color: "#8a6a1a", marginTop: "1px", lineHeight: 1.3 }}>ملاحظة: {it.note}</div>
+                  )}
                 </td>
                 <td style={{ ...tdStyle, textAlign: "center", fontWeight: 700 }}>{it.side ?? "-"}</td>
                 <td style={{ ...tdStyle, textAlign: "center" }}>× {it.quantity}</td>
-                <td style={{ ...tdStyle, textAlign: "left", fontFamily: "ui-monospace, monospace" }}>{formatIQD(Number(it.unit_price_iqd))}</td>
-                <td style={{ ...tdStyle, textAlign: "left", fontFamily: "ui-monospace, monospace", fontWeight: 800 }}>{formatIQD(Number(it.unit_price_iqd) * it.quantity)}</td>
+                <td style={{ ...tdStyle, textAlign: "left", fontFamily: "ui-monospace, monospace" }}>{formatIQDEn(Number(it.unit_price_iqd))}</td>
+                <td style={{ ...tdStyle, textAlign: "left", fontFamily: "ui-monospace, monospace", fontWeight: 800 }}>{formatIQDEn(Number(it.unit_price_iqd) * it.quantity)}</td>
               </tr>
             ))}
           </tbody>
@@ -411,12 +486,12 @@ function InvoiceBody({ order, items, customer }: { order: any; items: any[]; cus
             )}
           </div>
           <div style={{ border: "1px solid #e6e2d5", borderRadius: "6px", padding: "10px 12px", fontSize: "12px", background: "#fff" }}>
-            <TotalRow label="المجموع الفرعي" value={formatIQD(order.subtotal_iqd)} />
-            <TotalRow label="التوصيل" value={formatIQD(order.shipping_iqd)} />
-            {pointsDiscount > 0 && <TotalRow label={`خصم نقاط (${order.points_used})`} value={`- ${formatIQD(pointsDiscount)}`} />}
+            <TotalRow label="المجموع الفرعي" value={formatIQDEn(order.subtotal_iqd)} />
+            <TotalRow label="التوصيل" value={formatIQDEn(order.shipping_iqd)} />
+            {pointsDiscount > 0 && <TotalRow label={`خصم نقاط (${order.points_used})`} value={`- ${formatIQDEn(pointsDiscount)}`} />}
             <div style={{ borderTop: "2px solid #0a1a3a", marginTop: "6px", paddingTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <span style={{ fontWeight: 900 }}>الإجمالي</span>
-              <span style={{ fontSize: "18px", fontWeight: 900, color: "#0a1a3a", fontFamily: "ui-monospace, monospace" }}>{formatIQD(order.total_iqd)}</span>
+              <span style={{ fontSize: "18px", fontWeight: 900, color: "#0a1a3a", fontFamily: "ui-monospace, monospace" }}>{formatIQDEn(order.total_iqd)}</span>
             </div>
           </div>
         </div>
