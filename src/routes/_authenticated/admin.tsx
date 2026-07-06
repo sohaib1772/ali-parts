@@ -1137,19 +1137,47 @@ function OrdersAdmin() {
     qc.invalidateQueries({ queryKey: ["admin", "orders"] });
   };
 
+  const deleteOrder = async (id: string) => {
+    if (!confirm("سيتم حذف هذا الطلب نهائياً. متأكد؟")) return;
+    const { error } = await supabase.from("orders").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("تم حذف الطلب");
+    qc.invalidateQueries({ queryKey: ["admin", "orders"] });
+  };
+
+  const deleteAllOrders = async () => {
+    if (!orders.length) return;
+    if (!confirm(`سيتم حذف جميع الطلبات (${orders.length}) نهائياً. متأكد؟`)) return;
+    if (!confirm("تأكيد نهائي: لا يمكن التراجع عن هذا الإجراء.")) return;
+    const ids = orders.map((o: any) => o.id);
+    const { error } = await supabase.from("orders").delete().in("id", ids);
+    if (error) { toast.error(error.message); return; }
+    toast.success("تم حذف جميع الطلبات");
+    qc.invalidateQueries({ queryKey: ["admin", "orders"] });
+  };
+
   if (isLoading) return <div className="text-center text-sm text-muted-foreground py-8">جاري التحميل...</div>;
   if (!orders.length) return <div className="text-center text-sm text-muted-foreground py-8">لا توجد طلبات</div>;
 
   return (
     <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs text-muted-foreground">{orders.length} طلب</span>
+        <button
+          onClick={deleteAllOrders}
+          className="h-9 px-3 rounded-xl border border-destructive/40 text-destructive text-xs font-bold flex items-center gap-1.5 hover:bg-destructive/10"
+        >
+          <Trash2 className="size-3.5" /> حذف جميع الطلبات
+        </button>
+      </div>
       {orders.map((o: any) => (
-        <OrderAdminCard key={o.id} order={o} onStatusChange={updateStatus} />
+        <OrderAdminCard key={o.id} order={o} onStatusChange={updateStatus} onDelete={deleteOrder} />
       ))}
     </div>
   );
 }
 
-function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChange: (id: string, status: string) => void }) {
+function OrderAdminCard({ order: o, onStatusChange, onDelete }: { order: any; onStatusChange: (id: string, status: string) => void; onDelete: (id: string) => void }) {
   const addr = (o.address ?? {}) as { label?: string; full_name?: string; phone?: string; city?: string; area?: string; street?: string; notes?: string };
   const phoneDigits = String(addr.phone ?? "").replace(/\D/g, "");
   const copy = async (text: string, label: string) => {
@@ -1354,6 +1382,12 @@ function OrderAdminCard({ order: o, onStatusChange }: { order: any; onStatusChan
           {blockSaving ? "جاري التحديث…" : isBlocked ? (<><CheckCircle2 className="size-4" /> رفع الحظر عن الزبون</>) : (<><Ban className="size-4" /> حظر الزبون من الطلبات</>)}
         </button>
       )}
+      <button
+        onClick={() => onDelete(o.id)}
+        className="w-full h-10 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border border-destructive/40 text-destructive bg-destructive/5 hover:bg-destructive/10 transition"
+      >
+        <Trash2 className="size-4" /> حذف الطلب نهائياً
+      </button>
     </div>
   );
 }
