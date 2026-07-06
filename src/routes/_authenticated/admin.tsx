@@ -1641,3 +1641,108 @@ function ImageUploader({ images, onChange, max = 6, resizeTo }: { images: string
     </div>
   );
 }
+
+/* ---------------- Diagnostics ---------------- */
+
+function DiagnosticsAdmin() {
+  const [report, setReport] = useState<DiagnosticsReport | null>(null);
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const run = async () => {
+    if (running) return;
+    setRunning(true);
+    setError(null);
+    try {
+      const r = await runDiagnostics();
+      setReport(r);
+    } catch (e: any) {
+      setError(e?.message || "تعذّر تشغيل الفحص");
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  // Auto-run once on first open
+  const didRunRef = useRef(false);
+  if (!didRunRef.current && !running && !report && !error) {
+    didRunRef.current = true;
+    void run();
+  }
+
+  const statusMeta = (s: CheckStatus) =>
+    s === "ok"
+      ? { icon: <CheckCircle className="size-4" />, cls: "bg-success/10 text-success", label: "سليم" }
+      : s === "warn"
+      ? { icon: <AlertTriangle className="size-4" />, cls: "bg-amber-500/10 text-amber-600", label: "تحذير" }
+      : { icon: <XCircle className="size-4" />, cls: "bg-destructive/10 text-destructive", label: "فشل" };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-sm font-extrabold flex items-center gap-2">
+          <Activity className="size-4" /> تشخيص النظام
+        </div>
+        <Button size="sm" variant="secondary" onClick={run} disabled={running} className="gap-1">
+          {running ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
+          إعادة الفحص
+        </Button>
+      </div>
+
+      {report && (
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-2xl bg-success/10 text-success p-3 text-center">
+            <div className="text-xl font-extrabold">{report.summary.ok}</div>
+            <div className="text-[11px]">سليم</div>
+          </div>
+          <div className="rounded-2xl bg-amber-500/10 text-amber-600 p-3 text-center">
+            <div className="text-xl font-extrabold">{report.summary.warn}</div>
+            <div className="text-[11px]">تحذير</div>
+          </div>
+          <div className="rounded-2xl bg-destructive/10 text-destructive p-3 text-center">
+            <div className="text-xl font-extrabold">{report.summary.fail}</div>
+            <div className="text-[11px]">فشل</div>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-destructive/10 text-destructive rounded-2xl p-3 text-sm">{error}</div>
+      )}
+
+      {running && !report && (
+        <div className="text-center text-xs text-muted-foreground py-8 flex flex-col items-center gap-2">
+          <Loader2 className="size-6 animate-spin" />
+          جاري تنفيذ الفحص الشامل…
+        </div>
+      )}
+
+      {report?.sections.map((sec) => (
+        <div key={sec.title} className="space-y-2">
+          <div className="text-xs font-bold text-muted-foreground pt-2">{sec.title}</div>
+          {sec.checks.map((c) => {
+            const m = statusMeta(c.status);
+            return (
+              <div key={c.id} className="bg-card border border-border rounded-2xl p-3 flex items-start gap-3">
+                <div className={`size-9 rounded-full grid place-items-center shrink-0 ${m.cls}`}>{m.icon}</div>
+                <div className="flex-1 min-w-0 text-sm">
+                  <div className="font-bold flex items-center gap-2">
+                    {c.label}
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${m.cls}`}>{m.label}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{c.detail}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ))}
+
+      {report && (
+        <div className="text-[11px] text-muted-foreground text-center pt-2">
+          آخر فحص: {new Date(report.ranAt).toLocaleString("ar-IQ", { dateStyle: "medium", timeStyle: "short" })}
+        </div>
+      )}
+    </div>
+  );
+}
