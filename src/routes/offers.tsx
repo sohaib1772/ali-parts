@@ -15,6 +15,24 @@ import { adminSetUserBlocked } from "@/lib/admin.functions";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function CommentsSkeleton({ count = 5 }: { count?: number }) {
+  return (
+    <div className="space-y-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="flex gap-2.5">
+          <Skeleton className="size-9 rounded-full shrink-0" />
+          <div className="flex-1 space-y-1.5">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-3/4" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/offers")({
   head: () => ({
@@ -364,15 +382,18 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
   const [text, setText] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [asAdmin, setAsAdmin] = useState(false);
+  const PAGE_SIZE = 10;
+  const [limit, setLimit] = useState(PAGE_SIZE);
 
-  const { data: comments = [], isLoading } = useQuery({
-    queryKey: ["banner_comments", bannerId],
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ["banner_comments", bannerId, limit],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error, count } = await supabase
         .from("banner_comments")
-        .select("*")
+        .select("*", { count: "exact" })
         .eq("banner_id", bannerId)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .range(0, limit - 1);
       if (error) throw error;
       const rows = (data ?? []) as CommentRow[];
       const ids = Array.from(new Set(rows.map((r) => r.user_id)));
@@ -383,9 +404,14 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
         const map = new Map<string, any>(((profs ?? []) as any[]).map((p) => [p.id, p]));
         for (const r of rows) r.profile = map.get(r.user_id) ?? null;
       }
-      return rows;
+      return { rows, total: count ?? rows.length };
     },
+    placeholderData: (prev) => prev,
   });
+  const comments = data?.rows ?? [];
+  const total = data?.total ?? 0;
+  const hasMore = comments.length < total;
+  const loadingMore = isFetching && !isLoading;
 
   const addOrEdit = useMutation({
     mutationFn: async () => {
@@ -412,15 +438,15 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
     onMutate: async () => {
       const body = text.trim();
       if (!body || !userId) return;
-      const key = ["banner_comments", bannerId];
+      const key = ["banner_comments", bannerId, limit];
       await qc.cancelQueries({ queryKey: key });
-      const previous = qc.getQueryData<CommentRow[]>(key);
+      const previous = qc.getQueryData<{ rows: CommentRow[]; total: number }>(key);
       if (editingId) {
-        qc.setQueryData<CommentRow[]>(key, (rows) =>
-          (rows ?? []).map((r) => (r.id === editingId ? { ...r, content: body } : r)),
+        qc.setQueryData<{ rows: CommentRow[]; total: number }>(key, (d) =>
+          d ? { ...d, rows: d.rows.map((r) => (r.id === editingId ? { ...r, content: body } : r)) } : d,
         );
       } else {
-        const prevProfile = (previous ?? []).find((r) => r.user_id === userId)?.profile ?? null;
+        const prevProfile = (previous?.rows ?? []).find((r) => r.user_id === userId)?.profile ?? null;
         const optimistic: CommentRow = {
           id: `optimistic-${Date.now()}`,
           banner_id: bannerId,
@@ -432,7 +458,11 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
           updated_at: new Date().toISOString(),
           profile: prevProfile,
         };
-        qc.setQueryData<CommentRow[]>(key, (rows) => [optimistic, ...(rows ?? [])]);
+        qc.setQueryData<{ rows: CommentRow[]; total: number }>(key, (d) =>
+          d
+            ? { rows: [optimistic, ...d.rows], total: d.total + 1 }
+            : { rows: [optimistic], total: 1 },
+        );
         qc.setQueryData<number>(["banner_comments_count", bannerId], (n) => (n ?? 0) + 1);
       }
       // Clear the input immediately so the UI feels instant.
@@ -446,7 +476,7 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
       qc.invalidateQueries({ queryKey: ["banner_comments_count", bannerId] });
     },
     onError: (e: Error, _vars, ctx) => {
-      if (ctx?.previous) qc.setQueryData(["banner_comments", bannerId], ctx.previous);
+      if (ctx?.previous) qc.setQueryData(["banner_comments", bannerId, limit], ctx.previous);
       qc.invalidateQueries({ queryKey: ["banner_comments_count", bannerId] });
       if (e.message === "auth") toast.error("سجّل الدخول لكتابة تعليق");
       else if (e.message === "profanity")
@@ -493,11 +523,12 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
     <>
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
         {isLoading ? (
-          <div className="text-center text-sm text-muted-foreground py-10">جاري التحميل…</div>
+          <CommentsSkeleton count={5} />
         ) : comments.length === 0 ? (
           <div className="text-center text-sm text-muted-foreground py-10">لا توجد تعليقات بعد — كن أول من يعلّق!</div>
         ) : (
-          comments.map((c) => (
+          <>
+            {comments.map((c) => (
             <CommentRowView
               key={c.id}
               c={c}
@@ -512,7 +543,21 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
                 block.mutate({ uid: c.user_id, blocked: next });
               }}
             />
-          ))
+            ))}
+            {loadingMore && <CommentsSkeleton count={3} />}
+            {hasMore && !loadingMore && (
+              <div className="pt-1 pb-3 flex justify-center">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setLimit((n) => n + PAGE_SIZE)}
+                >
+                  عرض المزيد ({total - comments.length})
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
