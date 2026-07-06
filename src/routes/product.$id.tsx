@@ -11,6 +11,9 @@ import { useAuth } from "@/lib/use-auth";
 import { useSetting } from "@/lib/admin";
 import { toast } from "sonner";
 import { WhatsappIcon } from "@/components/icons";
+import { uploadWithProgress } from "@/lib/upload-with-progress";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/product/$id")({
   loader: async ({ context, params }) => {
@@ -155,6 +158,9 @@ function ProductPage() {
   const [pickedFiles, setPickedFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<
+    { name: string; progress: number; status: "pending" | "uploading" | "done" | "error" }[]
+  >([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const openReplaceQuick = () => {
@@ -185,6 +191,7 @@ function ProductPage() {
   };
 
   const submitQuickReplace = async () => {
+    if (submitting) return;
     if (!userId || !deliveredOrderId || !deliveredOrderItemId) return;
     const isOther = reasonChoice === "أخرى";
     const finalReason = (isOther ? reasonText : `${reasonChoice}${reasonText ? " — " + reasonText : ""}`).trim();
@@ -193,6 +200,9 @@ function ProductPage() {
       return;
     }
     setSubmitting(true);
+    setUploadProgress(
+      pickedFiles.map((f) => ({ name: f.name, progress: 0, status: "pending" as const })),
+    );
     const { data: inserted, error: insertErr } = await supabase
       .from("replacement_requests" as any)
       .insert({
@@ -207,21 +217,37 @@ function ProductPage() {
       .single();
     if (insertErr || !inserted) {
       setSubmitting(false);
+      setUploadProgress([]);
       toast.error("تعذّر إرسال طلب الاستبدال");
       return;
     }
     const reqId = (inserted as any).id as string;
 
     const uploaded: string[] = [];
-    for (const file of pickedFiles) {
+    for (let i = 0; i < pickedFiles.length; i++) {
+      const file = pickedFiles[i];
       const extMatch = file.name.match(/\.([a-zA-Z0-9]+)$/);
       const ext = extMatch ? extMatch[1] : "bin";
       const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(0, 80) || `file.${ext}`;
       const key = `${userId}/${reqId}/${Date.now()}-${crypto.randomUUID().slice(0, 6)}-${safeName}`;
-      const { error: upErr } = await supabase.storage
-        .from("replacement-attachments")
-        .upload(key, file, { contentType: file.type || undefined, upsert: false });
-      if (!upErr) uploaded.push(key);
+      setUploadProgress((q) =>
+        q.map((it, idx) => (idx === i ? { ...it, status: "uploading" } : it)),
+      );
+      try {
+        await uploadWithProgress("replacement-attachments", key, file, (pct) => {
+          setUploadProgress((q) =>
+            q.map((it, idx) => (idx === i ? { ...it, progress: Math.round(pct * 100) } : it)),
+          );
+        });
+        setUploadProgress((q) =>
+          q.map((it, idx) => (idx === i ? { ...it, progress: 100, status: "done" } : it)),
+        );
+        uploaded.push(key);
+      } catch {
+        setUploadProgress((q) =>
+          q.map((it, idx) => (idx === i ? { ...it, status: "error" } : it)),
+        );
+      }
     }
     if (uploaded.length > 0) {
       await supabase.from("replacement_requests" as any).update({ attachments: uploaded } as any).eq("id", reqId);
