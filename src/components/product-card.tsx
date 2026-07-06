@@ -30,6 +30,17 @@ export function ProductCard({ product }: { product: Product }) {
     e.preventDefault();
     e.stopPropagation();
     if (!requireAuth()) return;
+    const { data: existing } = await supabase
+      .from("cart_items")
+      .select("id, quantity, side")
+      .eq("user_id", userId!)
+      .eq("product_id", product.id)
+      .is("side", null)
+      .maybeSingle();
+    if (existing && existing.quantity === 1) {
+      toast.error("المنتج مضاف مسبقاً للسلة، غيّر الكمية من صفحة المنتج");
+      return;
+    }
     const { error } = await (supabase as any).rpc("add_cart_item", {
       p_product_id: product.id,
       p_quantity: 1,

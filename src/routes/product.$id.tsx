@@ -67,6 +67,16 @@ function ProductPage() {
 
   const addToCart = async () => {
     if (!requireAuth()) return false;
+    const q = supabase
+      .from("cart_items")
+      .select("id, quantity, side")
+      .eq("user_id", userId!)
+      .eq("product_id", product.id);
+    const { data: existing } = await (side ? q.eq("side", side) : q.is("side", null)).maybeSingle();
+    if (existing && existing.quantity === qty) {
+      toast.error("هذا المنتج مضاف مسبقاً بنفس الكمية، غيّر الكمية أولاً");
+      return false;
+    }
     const { error } = await (supabase as any).rpc("add_cart_item", {
       p_product_id: product.id,
       p_quantity: qty,
