@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, ChevronLeft, X } from "lucide-react";
+import { Package, ChevronLeft, X, Trash2, CheckSquare, Square } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { ordersQuery } from "@/lib/queries";
 import { useAuth } from "@/lib/use-auth";
@@ -21,6 +21,53 @@ function OrdersPage() {
   const seen = useOrderSeenMap();
   const qc = useQueryClient();
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => setSelected(new Set(orders.map((o: any) => o.id)));
+  const clearSel = () => setSelected(new Set());
+
+  const deleteSelected = async () => {
+    if (!userId || selected.size === 0) return;
+    if (!confirm(`سيتم مسح ${selected.size} طلب من قائمتك. هل أنت متأكد؟`)) return;
+    setDeleting(true);
+    const ids = Array.from(selected);
+    const { error } = await supabase.from("orders").update({ hidden_by_user: true }).in("id", ids).eq("user_id", userId);
+    setDeleting(false);
+    if (error) {
+      toast.error("تعذّر مسح الطلبات");
+    } else {
+      toast.success("تم مسح الطلبات");
+      setSelected(new Set());
+      setSelectMode(false);
+      qc.invalidateQueries({ queryKey: ["orders", userId] });
+    }
+  };
+
+  const deleteAll = async () => {
+    if (!userId || orders.length === 0) return;
+    if (!confirm("سيتم مسح جميع الطلبات من قائمتك. هل أنت متأكد؟")) return;
+    setDeleting(true);
+    const { error } = await supabase.from("orders").update({ hidden_by_user: true }).eq("user_id", userId).eq("hidden_by_user", false);
+    setDeleting(false);
+    if (error) {
+      toast.error("تعذّر مسح الطلبات");
+    } else {
+      toast.success("تم مسح جميع الطلبات");
+      setSelected(new Set());
+      setSelectMode(false);
+      qc.invalidateQueries({ queryKey: ["orders", userId] });
+    }
+  };
 
   const cancelOrder = async (e: React.MouseEvent, id: string) => {
     e.preventDefault();
@@ -55,6 +102,56 @@ function OrdersPage() {
   return (
     <PageShell title="طلباتي">
       <div className="px-4 pt-4 space-y-3">
+        {orders.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {!selectMode ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setSelectMode(true)}
+                  className="h-9 px-3 rounded-xl border border-border text-xs font-bold flex items-center gap-1.5 hover:bg-muted"
+                >
+                  <CheckSquare className="size-3.5" /> تحديد
+                </button>
+                <button
+                  type="button"
+                  onClick={deleteAll}
+                  disabled={deleting}
+                  className="h-9 px-3 rounded-xl border border-destructive/40 text-destructive text-xs font-bold flex items-center gap-1.5 hover:bg-destructive/10 disabled:opacity-50 ms-auto"
+                >
+                  <Trash2 className="size-3.5" /> مسح الكل
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={selected.size === orders.length ? clearSel : selectAll}
+                  className="h-9 px-3 rounded-xl border border-border text-xs font-bold flex items-center gap-1.5 hover:bg-muted"
+                >
+                  {selected.size === orders.length ? <Square className="size-3.5" /> : <CheckSquare className="size-3.5" />}
+                  {selected.size === orders.length ? "إلغاء تحديد الكل" : "تحديد الكل"}
+                </button>
+                <span className="text-xs text-muted-foreground">{selected.size} محدد</span>
+                <button
+                  type="button"
+                  onClick={() => { setSelectMode(false); clearSel(); }}
+                  className="h-9 px-3 rounded-xl border border-border text-xs font-bold ms-auto hover:bg-muted"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="button"
+                  onClick={deleteSelected}
+                  disabled={deleting || selected.size === 0}
+                  className="h-9 px-3 rounded-xl bg-destructive text-white text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <Trash2 className="size-3.5" /> مسح المحدد
+                </button>
+              </>
+            )}
+          </div>
+        )}
         {orders.length === 0 ? (
           <div className="py-20 text-center">
             <div className="size-20 rounded-full bg-muted grid place-items-center mx-auto mb-4">
@@ -67,14 +164,26 @@ function OrdersPage() {
         ) : (
           orders.map((o: any) => {
             const updated = isOrderUnseen(seen, o.id, o.updated_at, o.created_at);
+            const isSelected = selected.has(o.id);
             return (
             <Link
               key={o.id}
               to="/orders/$id"
               params={{ id: o.id }}
+              onClick={(e) => {
+                if (selectMode) {
+                  e.preventDefault();
+                  toggleSelect(o.id);
+                }
+              }}
               className={`block bg-card rounded-2xl border p-4 shadow-card hover:shadow-luxe transition ${updated ? "border-gold ring-1 ring-gold/40" : "border-border"}`}
             >
               <div className="flex items-center gap-2 mb-2">
+                {selectMode && (
+                  <span className={`size-5 rounded-md border-2 grid place-items-center shrink-0 ${isSelected ? "bg-gold border-gold text-navy" : "border-border"}`}>
+                    {isSelected && <CheckSquare className="size-3" />}
+                  </span>
+                )}
                 <span className="text-xs font-mono text-muted-foreground">{o.order_number}</span>
                 {updated && (
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500 text-white">تحديث جديد</span>
