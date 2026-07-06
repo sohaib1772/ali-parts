@@ -51,8 +51,8 @@ function AddressesPage() {
                   <div className="font-bold text-sm">{a.label ?? "عنوان"}</div>
                   {a.is_default && <span className="text-[10px] px-2 py-0.5 rounded-full bg-gold/20 text-gold font-bold">افتراضي</span>}
                 </div>
-                <div className="text-sm mt-1">{a.full_name} · {a.phone}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">{a.city} · {a.area} · {a.street}</div>
+                <div className="text-sm mt-1">{a.full_name} · {a.phone}{a.phone2 ? ` · ${a.phone2}` : ""}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">{a.city} · {a.area}{a.street ? ` · ${a.street}` : ""}</div>
               </div>
             </div>
             <div className="flex gap-2 mt-3">
@@ -83,31 +83,31 @@ function AddressesPage() {
 function AddressForm({ onDone }: { onDone: () => void }) {
   const { userId } = useAuth();
   const qc = useQueryClient();
-  const [f, setF] = useState({ label: "المنزل", full_name: "", phone: "", city: "بغداد", area: "", street: "", notes: "" });
+  const [f, setF] = useState({ full_name: "", city: "بغداد", area: "", street: "", phone: "", phone2: "" });
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId) return;
-    const { error } = await supabase.from("addresses").insert({ ...f, user_id: userId });
+    const { error } = await supabase.from("addresses").insert({ ...f, user_id: userId } as any);
     if (error) return toast.error("تعذّر الحفظ");
     toast.success("تمت إضافة العنوان");
     qc.invalidateQueries({ queryKey: ["addresses"] });
     onDone();
   };
 
-  const input = (k: keyof typeof f, ph: string, req = true) => (
-    <input required={req} placeholder={ph} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })}
+  const input = (k: keyof typeof f, ph: string, req = true, type: string = "text") => (
+    <input required={req} type={type} placeholder={ph} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })}
       className="h-11 w-full px-4 rounded-xl bg-card border border-border text-sm outline-none focus:border-gold" />
   );
 
   return (
     <form onSubmit={save} className="bg-card rounded-2xl border border-border p-4 shadow-card space-y-2">
-      {input("label", "التسمية (المنزل، العمل…)", false)}
-      {input("full_name", "الاسم الكامل")}
-      {input("phone", "رقم الهاتف")}
+      {input("full_name", "الاسم")}
       {input("city", "المحافظة")}
       {input("area", "المنطقة")}
-      {input("street", "الشارع / تفاصيل إضافية")}
+      {input("street", "أقرب نقطة دالة")}
+      {input("phone", "الرقم الأول", true, "tel")}
+      {input("phone2", "الرقم الثاني (اختياري)", false, "tel")}
       <div className="flex gap-2 pt-2">
         <button type="button" onClick={onDone} className="flex-1 h-11 rounded-xl border border-border font-bold text-sm">إلغاء</button>
         <button type="submit" className="flex-1 h-11 rounded-xl bg-gradient-gold text-navy font-bold text-sm shadow-gold">حفظ</button>
