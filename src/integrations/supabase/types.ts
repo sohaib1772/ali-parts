@@ -606,6 +606,7 @@ export type Database = {
       replacement_requests: {
         Row: {
           admin_notes: string | null
+          attachments: string[]
           created_at: string
           id: string
           order_id: string
@@ -619,6 +620,7 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          attachments?: string[]
           created_at?: string
           id?: string
           order_id: string
@@ -632,6 +634,7 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          attachments?: string[]
           created_at?: string
           id?: string
           order_id?: string

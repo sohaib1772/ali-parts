@@ -1,9 +1,10 @@
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Clock, Search, ThumbsUp, ThumbsDown, CheckCircle2, PackageX, Repeat, FileText, StickyNote } from "lucide-react";
+import { ArrowRight, Clock, Search, ThumbsUp, ThumbsDown, CheckCircle2, PackageX, Repeat, FileText, StickyNote, Paperclip, ImageIcon, FileIcon, Upload, X, Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/replacements/$id")({
   component: ReplacementDetail,
@@ -161,6 +162,9 @@ function ReplacementDetail() {
           </div>
         )}
 
+        {/* Attachments */}
+        <AttachmentsSection request={request} />
+
         {/* Timeline */}
         <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
           <div className="text-xs font-bold text-gold mb-4">سجل الحالات</div>
@@ -205,3 +209,211 @@ function ReplacementDetail() {
 
 // Silence unused import warning for toast (kept for future actions)
 void toast;
+
+const MAX_ATTACHMENTS = 6;
+const MAX_FILE_MB = 10;
+const ACCEPT = "image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt";
+
+function fileExt(name: string) {
+  const i = name.lastIndexOf(".");
+  return i >= 0 ? name.slice(i + 1).toLowerCase() : "";
+}
+function isImageExt(ext: string) {
+  return ["png", "jpg", "jpeg", "webp", "gif", "heic"].includes(ext);
+}
+function baseName(p: string) {
+  const parts = p.split("/");
+  return parts[parts.length - 1] ?? p;
+}
+
+function AttachmentsSection({ request }: { request: any }) {
+  const qc = useQueryClient();
+  const { userId } = useAuth();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [removing, setRemoving] = useState<string | null>(null);
+  const [urls, setUrls] = useState<Record<string, string>>({});
+
+  const paths: string[] = Array.isArray(request.attachments) ? request.attachments : [];
+  const isOwner = userId === request.user_id;
+  const canUpload = isOwner && paths.length < MAX_ATTACHMENTS;
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (paths.length === 0) {
+        setUrls({});
+        return;
+      }
+      const { data, error } = await supabase.storage
+        .from("replacement-attachments")
+        .createSignedUrls(paths, 60 * 60);
+      if (error || cancelled) return;
+      const map: Record<string, string> = {};
+      data?.forEach((d) => {
+        if (d.path && d.signedUrl) map[d.path] = d.signedUrl;
+      });
+      setUrls(map);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [paths.join("|")]);
+
+  const handlePick = () => inputRef.current?.click();
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !userId) return;
+    const slots = MAX_ATTACHMENTS - paths.length;
+    const list = Array.from(files).slice(0, slots);
+    if (list.length === 0) {
+      toast.error(`الحد الأقصى ${MAX_ATTACHMENTS} ملفات`);
+      return;
+    }
+    setUploading(true);
+    const uploaded: string[] = [];
+    for (const file of list) {
+      if (file.size > MAX_FILE_MB * 1024 * 1024) {
+        toast.error(`${file.name}: يتجاوز ${MAX_FILE_MB} ميغابايت`);
+        continue;
+      }
+      const ext = fileExt(file.name) || "bin";
+      const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(0, 80);
+      const key = `${userId}/${request.id}/${Date.now()}-${crypto.randomUUID().slice(0, 6)}-${safeName || "file." + ext}`;
+      const { error } = await supabase.storage
+        .from("replacement-attachments")
+        .upload(key, file, { contentType: file.type || undefined, upsert: false });
+      if (error) {
+        toast.error(`تعذّر رفع ${file.name}`);
+        continue;
+      }
+      uploaded.push(key);
+    }
+    if (uploaded.length > 0) {
+      const next = [...paths, ...uploaded];
+      const { error } = await supabase
+        .from("replacement_requests" as any)
+        .update({ attachments: next } as any)
+        .eq("id", request.id);
+      if (error) {
+        toast.error("تعذّر حفظ المرفقات");
+      } else {
+        toast.success("تم رفع المرفقات");
+        qc.invalidateQueries({ queryKey: ["replacement", request.id] });
+      }
+    }
+    setUploading(false);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const removeAttachment = async (path: string) => {
+    if (!isOwner) return;
+    setRemoving(path);
+    await supabase.storage.from("replacement-attachments").remove([path]);
+    const next = paths.filter((p) => p !== path);
+    const { error } = await supabase
+      .from("replacement_requests" as any)
+      .update({ attachments: next } as any)
+      .eq("id", request.id);
+    setRemoving(null);
+    if (error) {
+      toast.error("تعذّر حذف المرفق");
+      return;
+    }
+    toast.success("تم حذف المرفق");
+    qc.invalidateQueries({ queryKey: ["replacement", request.id] });
+  };
+
+  return (
+    <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
+      <div className="flex items-center gap-2 mb-3">
+        <Paperclip className="size-4 text-gold" />
+        <span className="text-xs font-bold text-gold">مرفقات (صور / مستندات)</span>
+        <span className="text-[10px] text-muted-foreground ms-auto">
+          {paths.length}/{MAX_ATTACHMENTS}
+        </span>
+      </div>
+
+      {paths.length === 0 && !canUpload && (
+        <div className="text-xs text-muted-foreground text-center py-3">لا توجد مرفقات</div>
+      )}
+
+      {paths.length > 0 && (
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          {paths.map((p) => {
+            const ext = fileExt(p);
+            const img = isImageExt(ext);
+            const url = urls[p];
+            return (
+              <div key={p} className="relative group aspect-square rounded-xl border border-border overflow-hidden bg-muted">
+                {img && url ? (
+                  <a href={url} target="_blank" rel="noreferrer" className="block size-full">
+                    <img src={url} alt="" className="size-full object-cover" />
+                  </a>
+                ) : (
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="size-full flex flex-col items-center justify-center gap-1 p-2 text-center hover:bg-muted/70"
+                  >
+                    <FileIcon className="size-6 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground line-clamp-2 break-all">
+                      {baseName(p).slice(baseName(p).indexOf("-", 15) + 1) || baseName(p)}
+                    </span>
+                    <Download className="size-3 text-gold" />
+                  </a>
+                )}
+                {isOwner && (
+                  <button
+                    type="button"
+                    onClick={() => removeAttachment(p)}
+                    disabled={removing === p}
+                    aria-label="حذف المرفق"
+                    className="absolute top-1 start-1 size-6 rounded-full bg-black/60 text-white grid place-items-center hover:bg-destructive disabled:opacity-50"
+                  >
+                    {removing === p ? <Loader2 className="size-3 animate-spin" /> : <X className="size-3" />}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {canUpload && (
+        <>
+          <input
+            ref={inputRef}
+            type="file"
+            accept={ACCEPT}
+            multiple
+            className="hidden"
+            onChange={(e) => handleFiles(e.target.files)}
+          />
+          <button
+            type="button"
+            onClick={handlePick}
+            disabled={uploading}
+            className="w-full h-11 rounded-xl border-2 border-dashed border-gold/50 text-navy text-sm font-bold flex items-center justify-center gap-2 hover:bg-gold/5 disabled:opacity-50"
+          >
+            {uploading ? (
+              <>
+                <Loader2 className="size-4 animate-spin" /> جاري الرفع...
+              </>
+            ) : (
+              <>
+                <Upload className="size-4 text-gold" />
+                <ImageIcon className="size-4 text-gold" />
+                إرفاق صور أو مستندات
+              </>
+            )}
+          </button>
+          <div className="text-[10px] text-muted-foreground text-center mt-1.5">
+            صور، PDF، Word، Excel — حتى {MAX_FILE_MB} ميغابايت لكل ملف
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
