@@ -489,6 +489,7 @@ export type Database = {
           category_id: string | null
           compare_price_iqd: number | null
           compatible_models: string[] | null
+          condition: string
           created_at: string
           deal_expires_at: string | null
           description_ar: string | null
@@ -512,6 +513,7 @@ export type Database = {
           category_id?: string | null
           compare_price_iqd?: number | null
           compatible_models?: string[] | null
+          condition?: string
           created_at?: string
           deal_expires_at?: string | null
           description_ar?: string | null
@@ -535,6 +537,7 @@ export type Database = {
           category_id?: string | null
           compare_price_iqd?: number | null
           compatible_models?: string[] | null
+          condition?: string
           created_at?: string
           deal_expires_at?: string | null
           description_ar?: string | null

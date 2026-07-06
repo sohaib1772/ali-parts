@@ -1,0 +1,1 @@
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS condition text NOT NULL DEFAULT 'new' CHECK (condition IN ('new','used'));
