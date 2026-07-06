@@ -14,6 +14,8 @@ export function ProductCard({ product }: { product: Product }) {
   const qc = useQueryClient();
   const img = product.images?.[0];
   const waNumber = useSetting("whatsapp_number");
+  const stockQty = (product as any).stock_qty ?? 0;
+  const available = product.in_stock && stockQty > 0;
 
   const requireAuth = () => {
     if (!userId) {
@@ -81,10 +83,15 @@ export function ProductCard({ product }: { product: Product }) {
         {product.is_deal && (
           <span className="absolute top-2 end-2 px-2 py-0.5 rounded-full bg-gradient-gold text-navy text-[10px] font-bold shadow-gold">عرض</span>
         )}
-        {!product.in_stock && (
+        {!available && (
           <div className="absolute inset-0 bg-navy/60 grid place-items-center">
             <span className="px-3 py-1 rounded-full bg-destructive text-destructive-foreground text-xs font-bold">غير متوفر</span>
           </div>
+        )}
+        {available && stockQty <= 5 && (
+          <span className="absolute bottom-2 start-2 px-2 py-0.5 rounded-full bg-navy/85 text-primary-foreground text-[10px] font-bold">
+            متبقي {stockQty}
+          </span>
         )}
       </div>
 
@@ -101,7 +108,7 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="flex items-center gap-1.5 pt-1">
           <button
             onClick={addToCart}
-            disabled={!product.in_stock}
+            disabled={!available}
             className="flex-1 h-9 rounded-xl bg-navy text-primary-foreground text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-gold hover:text-navy disabled:opacity-50 disabled:pointer-events-none transition"
           >
             <ShoppingCart className="size-3.5" />

@@ -16,6 +16,7 @@ export type Product = {
   compatible_models: string[] | null;
   images: string[] | null;
   in_stock: boolean;
+  stock_qty: number;
   is_featured: boolean;
   is_deal: boolean;
   specs: Record<string, unknown> | null;
