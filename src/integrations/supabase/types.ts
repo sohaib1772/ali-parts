@@ -667,6 +667,38 @@ export type Database = {
           },
         ]
       }
+      replacement_status_log: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          request_id: string
+          status: Database["public"]["Enums"]["replacement_status"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          request_id: string
+          status: Database["public"]["Enums"]["replacement_status"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          request_id?: string
+          status?: Database["public"]["Enums"]["replacement_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "replacement_status_log_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "replacement_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_block_log: {
         Row: {
           action: string
