@@ -88,9 +88,13 @@ export function ProductCard({ product }: { product: Product }) {
             <span className="px-3 py-1 rounded-full bg-destructive text-destructive-foreground text-xs font-bold">غير متوفر</span>
           </div>
         )}
-        {available && stockQty <= 5 && (
-          <span className="absolute bottom-2 start-2 px-2 py-0.5 rounded-full bg-navy/85 text-primary-foreground text-[10px] font-bold">
-            متبقي {stockQty}
+        {available && (
+          <span
+            className={`absolute bottom-2 start-2 px-2 py-0.5 rounded-full text-[10px] font-bold shadow ${
+              stockQty <= 5 ? "bg-destructive text-destructive-foreground" : "bg-success text-white"
+            }`}
+          >
+            {stockQty <= 5 ? `متبقي ${stockQty}` : `متوفر · ${stockQty}`}
           </span>
         )}
       </div>
@@ -103,6 +107,13 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="mt-auto space-y-1">
           <div className="flex items-baseline gap-2">
             <span className="text-base font-extrabold text-navy">{formatIQD(product.price_iqd)}</span>
+            {available ? (
+              <span className="ms-auto text-[10px] font-bold text-success">
+                متوفر · {stockQty} قطعة
+              </span>
+            ) : (
+              <span className="ms-auto text-[10px] font-bold text-destructive">غير متوفر</span>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-1.5 pt-1">
