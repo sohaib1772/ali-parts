@@ -377,11 +377,10 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
       const rows = (data ?? []) as CommentRow[];
       const ids = Array.from(new Set(rows.map((r) => r.user_id)));
       if (ids.length) {
-        const { data: profs } = await supabase
-          .from("profiles")
-          .select("id, full_name, avatar_url, is_blocked")
-          .in("id", ids);
-        const map = new Map((profs ?? []).map((p) => [p.id, p]));
+        // Safe public identity lookup (name + avatar only). is_blocked
+        // is loaded separately for the admin block/unblock button.
+        const { data: profs } = await (supabase as any).rpc("get_public_profiles", { _ids: ids });
+        const map = new Map<string, any>(((profs ?? []) as any[]).map((p) => [p.id, p]));
         for (const r of rows) r.profile = map.get(r.user_id) ?? null;
       }
       return rows;
