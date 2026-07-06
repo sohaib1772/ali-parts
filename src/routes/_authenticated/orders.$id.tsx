@@ -12,12 +12,14 @@ import { PrintableInvoice, InvoicePreviewDialog } from "@/components/printable-i
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useAuth } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/orders/$id")({
   loader: ({ context, params }) => context.queryClient.ensureQueryData(orderByIdQuery(params.id)),
@@ -53,6 +55,42 @@ function OrderDetail() {
   const qc = useQueryClient();
   const [previewOpen, setPreviewOpen] = useState(false);
   const [replaceOpen, setReplaceOpen] = useState(false);
+  const [replaceItem, setReplaceItem] = useState<any>(null);
+  const [replaceReason, setReplaceReason] = useState("");
+  const [replaceSubmitting, setReplaceSubmitting] = useState(false);
+  const [replaceDone, setReplaceDone] = useState(false);
+  const { userId } = useAuth();
+
+  const openReplace = (it: any) => {
+    setReplaceItem(it);
+    setReplaceReason("");
+    setReplaceDone(false);
+    setReplaceOpen(true);
+  };
+
+  const submitReplace = async () => {
+    if (!userId || !replaceItem) return;
+    const reason = replaceReason.trim();
+    if (reason.length < 5) {
+      toast.error("يرجى كتابة سبب الاستبدال (5 أحرف على الأقل)");
+      return;
+    }
+    setReplaceSubmitting(true);
+    const { error } = await supabase.from("replacement_requests").insert({
+      user_id: userId,
+      order_id: order.id,
+      order_item_id: replaceItem.id,
+      product_id: replaceItem.product_id,
+      product_name_ar: replaceItem.name_ar,
+      reason,
+    });
+    setReplaceSubmitting(false);
+    if (error) {
+      toast.error("تعذّر إرسال طلب الاستبدال");
+      return;
+    }
+    setReplaceDone(true);
+  };
 
   useEffect(() => {
     const ch = supabase
@@ -178,7 +216,7 @@ function OrderDetail() {
                 {canReplace && (
                   <button
                     type="button"
-                    onClick={() => setReplaceOpen(true)}
+                    onClick={() => openReplace(it)}
                     className="mt-2 w-full h-9 rounded-xl border border-gold/50 text-navy text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-gold/10"
                   >
                     <RefreshCw className="size-3.5 text-gold" />
