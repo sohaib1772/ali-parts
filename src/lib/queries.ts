@@ -130,7 +130,19 @@ export const productsInfiniteQuery = (condition?: "new" | "used" | null) =>
         .range(pageParam, pageParam + PRODUCTS_PAGE_SIZE - 1);
       if (condition) q = q.eq("condition", condition);
       const { data, error } = await q;
-      if (error) throw error;
+      if (error) {
+        console.error("[productsInfiniteQuery] فشل جلب المنتجات", {
+          pageParam,
+          condition: condition ?? "all",
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+        });
+        throw new Error(
+          `تعذّر تحميل المنتجات. يرجى التحقق من الاتصال والمحاولة مجدداً. (${error.message})`,
+        );
+      }
       return (data ?? []) as Product[];
     },
     initialPageParam: 0,
