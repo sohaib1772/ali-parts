@@ -21,12 +21,11 @@ export const Route = createFileRoute("/_authenticated/admin/stock-test")({
 });
 
 function StockTestPage() {
-  const { isAdmin, loading } = useIsAdmin();
+  const isAdmin = useIsAdmin();
   const runFn = useServerFn(runStockTests);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
 
-  if (loading) return <PageShell title="اختبار المخزون"><div className="p-8 text-center text-muted-foreground">جارٍ التحميل…</div></PageShell>;
   if (!isAdmin) {
     return (
       <PageShell title="اختبار المخزون">
