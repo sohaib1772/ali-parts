@@ -89,3 +89,59 @@ export async function sendReplacementPush(input: {
 
   return { sent, removed };
 }
+
+export async function sendBroadcastPush(input: {
+  title: string;
+  body: string;
+  url?: string;
+  tag?: string;
+}): Promise<{ sent: number; removed: number }> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const { data: subs, error } = await supabaseAdmin
+    .from("push_subscriptions")
+    .select("endpoint, p256dh, auth");
+  if (error) throw error;
+  if (!subs || subs.length === 0) return { sent: 0, removed: 0 };
+
+  const applicationServerKeys = await keys();
+  const subject = process.env.WEB_PUSH_SUBJECT ?? "mailto:admin@example.com";
+  const payload = JSON.stringify({
+    title: input.title,
+    body: input.body,
+    url: input.url ?? "/offers",
+    tag: input.tag ?? `banner-${Date.now()}`,
+  });
+
+  let sent = 0;
+  let removed = 0;
+
+  await Promise.all(
+    subs.map(async (s: any) => {
+      try {
+        const req = await generatePushHTTPRequest({
+          payload,
+          applicationServerKeys,
+          target: { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+          adminContact: subject,
+          ttl: 60 * 60 * 24,
+          urgency: "normal",
+        });
+        const res = await fetch(req.endpoint, { method: "POST", headers: req.headers, body: req.body });
+        if (res.ok || res.status === 201 || res.status === 202) {
+          sent++;
+        } else if (res.status === 404 || res.status === 410) {
+          await supabaseAdmin.from("push_subscriptions").delete().eq("endpoint", s.endpoint);
+          removed++;
+        } else {
+          const text = await res.text().catch(() => "");
+          console.error("[push] non-ok response", res.status, text);
+        }
+      } catch (err) {
+        console.error("[push] endpoint error", err);
+      }
+    }),
+  );
+
+  return { sent, removed };
+}
