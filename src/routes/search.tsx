@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { Search as SearchIcon, Hash, Camera, Loader2 } from "lucide-react";
+import { Search as SearchIcon, Hash, Camera, Loader2, ImageIcon, Sparkles, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { PageShell } from "@/components/page-shell";
@@ -25,11 +25,15 @@ function SearchPage() {
   const { q: initialQ, mode } = Route.useSearch();
   const [q, setQ] = useState(initialQ ?? "");
   const [analyzing, setAnalyzing] = useState(false);
+  const [stage, setStage] = useState<"idle" | "compress" | "upload" | "analyze" | "done">("idle");
+  const [progress, setProgress] = useState(0);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageMatchIds, setImageMatchIds] = useState<string[]>([]);
   const [exactIds, setExactIds] = useState<string[]>([]);
   const [similarIds, setSimilarIds] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+  const reqIdRef = useRef(0);
+  const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { data: textResults, isFetching: textFetching } = useQuery(searchProductsQuery(q));
   const { data: imageResults, isFetching: imageFetching } = useQuery(productsByIdsQuery(imageMatchIds));
   const usingImage = imageMatchIds.length > 0;
@@ -61,11 +65,29 @@ function SearchPage() {
   };
 
   const handleImage = async (file: File) => {
+    // Cancel/ignore any prior in-flight analysis.
+    const myId = ++reqIdRef.current;
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+
     try {
       setAnalyzing(true);
+      setStage("compress");
+      setProgress(5);
       const dataUrl = await compress(file);
+      if (reqIdRef.current !== myId) return; // stale
       setImagePreview(dataUrl);
+      setStage("upload");
+      setProgress(25);
+      // Smoothly creep progress while the server thinks.
+      progressTimerRef.current = setInterval(() => {
+        setProgress((p) => (p < 90 ? p + 2 : p));
+      }, 300);
+      setStage("analyze");
       const result = await analyzeProductImage({ data: { imageDataUrl: dataUrl } });
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+      if (reqIdRef.current !== myId) return; // stale — a newer image was picked
+      setProgress(100);
+      setStage("done");
       if (!result.productIds.length) {
         setImageMatchIds([]);
         setExactIds([]);
@@ -79,11 +101,25 @@ function SearchPage() {
       setSimilarIds(result.similarIds ?? []);
       toast.success(`تم العثور على ${result.productIds.length} منتج${result.name_ar ? ` — ${result.name_ar}` : ""}`);
     } catch (e) {
+      if (reqIdRef.current !== myId) return; // stale error
       toast.error(e instanceof Error ? e.message : "تعذر تحليل الصورة");
     } finally {
-      setAnalyzing(false);
+      if (reqIdRef.current === myId) {
+        setAnalyzing(false);
+        if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+        setTimeout(() => {
+          if (reqIdRef.current === myId) { setStage("idle"); setProgress(0); }
+        }, 400);
+      }
     }
   };
+
+  const stageLabel =
+    stage === "compress" ? "جاري تحضير الصورة…" :
+    stage === "upload" ? "جاري رفع الصورة…" :
+    stage === "analyze" ? "الذكاء الاصطناعي يحلل القطعة…" :
+    stage === "done" ? "اكتمل التحليل" :
+    "";
 
   return (
     <PageShell title="بحث">
@@ -102,9 +138,8 @@ function SearchPage() {
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            disabled={analyzing}
             aria-label="بحث بالصورة"
-            className="size-12 shrink-0 rounded-2xl bg-gradient-gold text-navy grid place-items-center shadow-gold disabled:opacity-60"
+            className="size-12 shrink-0 rounded-2xl bg-gradient-gold text-navy grid place-items-center shadow-gold"
           >
             {analyzing ? <Loader2 className="size-5 animate-spin" /> : <Camera className="size-5" />}
           </button>
@@ -121,17 +156,59 @@ function SearchPage() {
           />
         </div>
         {imagePreview && (
-          <div className="mt-3 flex items-center gap-3 bg-card border border-border rounded-2xl p-2">
-            <img src={imagePreview} alt="preview" className="size-14 rounded-xl object-cover" />
-            <div className="text-xs text-muted-foreground flex-1">
-              {analyzing ? "جاري تحليل الصورة…" : "تم البحث بالصورة"}
+          <div className="mt-3 bg-card border border-border rounded-2xl p-2">
+            <div className="flex items-center gap-3">
+              <div className="relative shrink-0">
+                <img src={imagePreview} alt="preview" className={`size-14 rounded-xl object-cover ${analyzing ? "opacity-70" : ""}`} />
+                {analyzing && (
+                  <div className="absolute inset-0 rounded-xl bg-black/20 grid place-items-center">
+                    <Loader2 className="size-5 text-white animate-spin" />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold flex items-center gap-1.5">
+                  {analyzing ? (
+                    <>
+                      {stage === "compress" && <ImageIcon className="size-3.5 text-gold" />}
+                      {stage === "upload" && <Loader2 className="size-3.5 text-gold animate-spin" />}
+                      {stage === "analyze" && <Sparkles className="size-3.5 text-gold" />}
+                      <span>{stageLabel}</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="size-3.5 text-emerald-500" />
+                      <span>تم البحث بالصورة</span>
+                    </>
+                  )}
+                </div>
+                {analyzing && (
+                  <div className="mt-1.5 h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-gold transition-all duration-300"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  // Cancel any in-flight request and clear UI.
+                  reqIdRef.current += 1;
+                  if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+                  setAnalyzing(false);
+                  setStage("idle");
+                  setProgress(0);
+                  setImagePreview(null);
+                  setImageMatchIds([]);
+                  setExactIds([]);
+                  setSimilarIds([]);
+                }}
+                className="text-xs text-muted-foreground hover:text-destructive px-2 shrink-0"
+              >
+                {analyzing ? "إلغاء" : "إزالة"}
+              </button>
             </div>
-            <button
-              onClick={() => { setImagePreview(null); setImageMatchIds([]); setExactIds([]); setSimilarIds([]); }}
-              className="text-xs text-muted-foreground hover:text-destructive px-2"
-            >
-              إزالة
-            </button>
           </div>
         )}
       </div>
