@@ -136,7 +136,12 @@ export const requestAdminOtp = createServerFn({ method: "POST" })
     if (!resp.ok) {
       const text = await resp.text();
       console.error("Resend send failed", resp.status, text);
-      throw new Error("تعذر إرسال رمز التحقق");
+      let detail = text;
+      try {
+        const j = JSON.parse(text);
+        detail = j?.message || j?.error || text;
+      } catch {}
+      throw new Error(`تعذر إرسال رمز التحقق: ${detail}`);
     }
 
     return { ok: true, email: maskEmail(toEmail), expiresAt: expires_at };
