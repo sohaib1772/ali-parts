@@ -2,13 +2,22 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, PackageCheck, Package as PackageIcon, PackageOpen, Truck, MapPin, Home, XCircle, StickyNote, Receipt } from "lucide-react";
+import { ArrowRight, PackageCheck, Package as PackageIcon, PackageOpen, Truck, MapPin, Home, XCircle, StickyNote, Receipt, RefreshCw, Headphones } from "lucide-react";
 import { orderByIdQuery } from "@/lib/queries";
 import { formatIQD, formatArabicDate } from "@/lib/format";
 import { statusLabel } from "@/lib/order-status";
 import { markOrderSeen } from "@/lib/order-updates";
 import { toast } from "sonner";
 import { PrintableInvoice, InvoicePreviewDialog } from "@/components/printable-invoice";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/orders/$id")({
   loader: ({ context, params }) => context.queryClient.ensureQueryData(orderByIdQuery(params.id)),
@@ -43,6 +52,7 @@ function OrderDetail() {
   const router = useRouter();
   const qc = useQueryClient();
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [replaceOpen, setReplaceOpen] = useState(false);
 
   useEffect(() => {
     const ch = supabase
@@ -68,6 +78,7 @@ function OrderDetail() {
   const activeIdx = TIMELINE.findIndex((t) => t.key === order.status);
   const cancelled = order.status === "cancelled";
   const canCancel = order.status === "received" || order.status === "preparing";
+  const canReplace = order.status === "delivered";
   const [cancelling, setCancelling] = useState(false);
 
   const handleCancel = async () => {
@@ -163,6 +174,16 @@ function OrderDetail() {
                 </div>
                 <div className="text-sm font-bold self-center">{formatIQD(Number(it.unit_price_iqd) * it.quantity)}</div>
               </div>
+                {canReplace && (
+                  <button
+                    type="button"
+                    onClick={() => setReplaceOpen(true)}
+                    className="mt-2 w-full h-9 rounded-xl border border-gold/50 text-navy text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-gold/10"
+                  >
+                    <RefreshCw className="size-3.5 text-gold" />
+                    استبدال
+                  </button>
+                )}
             ))}
           </div>
         </div>
