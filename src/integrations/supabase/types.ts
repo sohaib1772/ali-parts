@@ -650,24 +650,7 @@ export type Database = {
       }
     }
     Views: {
-      public_profiles: {
-        Row: {
-          avatar_url: string | null
-          full_name: string | null
-          id: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          full_name?: string | null
-          id?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          full_name?: string | null
-          id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       _contains_profanity: { Args: { input: string }; Returns: boolean }
@@ -679,6 +662,14 @@ export type Database = {
       admin_set_user_blocked: {
         Args: { p_blocked: boolean; p_reason?: string; p_user_id: string }
         Returns: undefined
+      }
+      get_public_profiles: {
+        Args: { _ids: string[] }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          id: string
+        }[]
       }
       has_role: {
         Args: {
