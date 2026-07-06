@@ -401,11 +401,10 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
           .eq("id", editingId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("banner_comments").insert({
-          banner_id: bannerId,
-          user_id: userId,
-          content: body,
-          is_admin_reply: isAdmin && asAdmin,
+        const { error } = await (supabase as any).rpc("add_banner_comment", {
+          p_banner_id: bannerId,
+          p_content: body,
+          p_is_admin_reply: isAdmin && asAdmin,
         });
         if (error) throw error;
       }

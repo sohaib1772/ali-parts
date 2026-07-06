@@ -655,6 +655,29 @@ export type Database = {
     Functions: {
       _contains_profanity: { Args: { input: string }; Returns: boolean }
       _normalize_ar: { Args: { input: string }; Returns: string }
+      add_banner_comment: {
+        Args: {
+          p_banner_id: string
+          p_content: string
+          p_is_admin_reply?: boolean
+        }
+        Returns: {
+          banner_id: string
+          content: string
+          created_at: string
+          id: string
+          is_admin_reply: boolean
+          parent_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "banner_comments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       add_cart_item: {
         Args: { p_product_id: string; p_quantity?: number; p_side?: string }
         Returns: undefined
