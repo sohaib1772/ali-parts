@@ -20,6 +20,16 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote, Receipt, Search as SearchIcon, Ban, CheckCircle2, History, Users as UsersIcon, KeyRound, Loader2 } from "lucide-react";
 import { WhatsappIcon } from "@/components/icons";
@@ -476,6 +486,8 @@ function ProductsAdmin() {
   const [form, setForm] = useState<ProductForm>(emptyProduct);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
+  const [deleteProduct, setDeleteProduct] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["admin", "products"],
@@ -567,7 +579,7 @@ function ProductsAdmin() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm("هل أنت متأكد من حذف هذا المنتج؟")) return;
+    setDeleting(true);
     const { error, count } = await supabase
       .from("products")
       .delete({ count: "exact" })
@@ -575,13 +587,17 @@ function ProductsAdmin() {
     if (error) {
       console.error("[admin] delete product failed", error);
       toast.error("تعذّر حذف المنتج", { description: error.message });
+      setDeleting(false);
       return;
     }
     if (!count) {
       toast.error("لم يتم الحذف — تحقق من صلاحيات المشرف");
+      setDeleting(false);
       return;
     }
     toast.success("تم حذف المنتج");
+    setDeleteProduct(null);
+    setDeleting(false);
     qc.invalidateQueries({ queryKey: ["admin", "products"] });
     qc.invalidateQueries({ queryKey: ["products"] });
   };
@@ -623,7 +639,7 @@ function ProductsAdmin() {
               </div>
               <div className="flex flex-col gap-1">
                 <Button size="icon" variant="ghost" onClick={() => openEdit(p)}><Pencil className="size-4" /></Button>
-                <Button size="icon" variant="ghost" onClick={() => remove(p.id)}><Trash2 className="size-4 text-destructive" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => setDeleteProduct({ id: p.id, name: p.name_ar })}><Trash2 className="size-4 text-destructive" /></Button>
               </div>
             </div>
           ))}
