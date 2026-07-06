@@ -179,6 +179,56 @@ export async function downloadInvoicePdf(elementId: string, filename: string) {
 }
 
 /**
+ * downloadInvoicePng — renders the invoice DOM to a high-resolution PNG
+ * and triggers a download. Uses the same offscreen iframe technique as the
+ * PDF export so the capture is not affected by dialog scaling.
+ */
+export async function downloadInvoicePng(elementId: string, filename: string) {
+  const source = document.getElementById(elementId);
+  if (!source) return;
+  const { toPng } = await import("html-to-image");
+  const frame = document.createElement("iframe");
+  frame.setAttribute("aria-hidden", "true");
+  frame.style.cssText = "position:fixed;left:-10000px;top:0;width:900px;height:1300px;border:0;background:#ffffff";
+  document.body.appendChild(frame);
+  const frameDoc = frame.contentDocument;
+  if (!frameDoc) { frame.remove(); throw new Error("PNG frame unavailable"); }
+  frameDoc.open();
+  frameDoc.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><style>
+    html,body{margin:0;padding:0;background:#fff;color:#0a1a3a;font-family:'IBM Plex Sans Arabic',Arial,sans-serif;}
+    *{box-sizing:border-box;box-shadow:none!important;text-shadow:none!important;}
+    table{border-collapse:collapse;}
+  </style></head><body></body></html>`);
+  frameDoc.close();
+  const captureNode = source.cloneNode(true) as HTMLElement;
+  captureNode.removeAttribute("id");
+  captureNode.className = "";
+  captureNode.style.cssText = "display:block!important;position:relative!important;width:820px!important;background:#ffffff!important;color:#0a1a3a!important;opacity:1!important;transform:none!important;font-family:'IBM Plex Sans Arabic', system-ui, sans-serif!important";
+  frameDoc.body.appendChild(captureNode);
+  try {
+    await frameDoc.fonts?.ready;
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    const w = captureNode.scrollWidth || 820;
+    const h = captureNode.scrollHeight || 1123;
+    const dataUrl = await toPng(captureNode, {
+      backgroundColor: "#ffffff",
+      cacheBust: true,
+      pixelRatio: 2,
+      width: w,
+      height: h,
+    });
+    const link = document.createElement("a");
+    link.href = dataUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } finally {
+    frame.remove();
+  }
+}
+
+/**
  * InvoicePreviewDialog — opens a modal with a live preview of the invoice
  * and buttons for printing / downloading PDF. Renders the actual
  * PrintableInvoice inside a scaled viewport so the user can inspect it
