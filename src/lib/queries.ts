@@ -68,7 +68,11 @@ export const bannersQuery = () =>
     queryKey: ["banners"],
     staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("banners").select("*").eq("is_active", true).order("sort_order");
+      const { data, error } = await supabase
+        .from("banners")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
       if (error) throw error;
       const now = Date.now();
       return ((data ?? []) as Banner[]).filter((b) => !b.expires_at || new Date(b.expires_at).getTime() > now);
