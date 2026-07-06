@@ -380,6 +380,7 @@ function CommentsSheet({ bannerId, onClose }: { bannerId: string | null; onClose
 function CommentsBody({ bannerId }: { bannerId: string }) {
   const { userId } = useAuth();
   const isAdmin = useIsAdmin();
+  const { canBlock } = useAdminAccessStatus();
   const qc = useQueryClient();
   const [text, setText] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
