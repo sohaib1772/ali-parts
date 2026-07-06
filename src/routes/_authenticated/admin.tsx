@@ -317,6 +317,105 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
+function AdminOtpGate({ email, onVerified }: { email: string; onVerified: () => void }) {
+  const requestFn = useServerFn(requestAdminOtp);
+  const verifyFn = useServerFn(verifyAdminOtp);
+  const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [code, setCode] = useState("");
+  const [cooldown, setCooldown] = useState(0);
+
+  const send = async () => {
+    if (sending || cooldown > 0) return;
+    setSending(true);
+    try {
+      await requestFn();
+      setSent(true);
+      setCooldown(30);
+      toast.success("تم إرسال رمز التحقق إلى بريد الإدارة");
+      const t = setInterval(() => {
+        setCooldown((c) => {
+          if (c <= 1) { clearInterval(t); return 0; }
+          return c - 1;
+        });
+      }, 1000);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "تعذر الإرسال");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const verify = async () => {
+    if (verifying) return;
+    if (!/^\d{6}$/.test(code)) {
+      toast.error("أدخل رمزاً مكوّناً من 6 أرقام");
+      return;
+    }
+    setVerifying(true);
+    try {
+      await verifyFn({ data: { code } });
+      toast.success("تم التحقق بنجاح");
+      onVerified();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "رمز غير صحيح");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  return (
+    <div className="px-4 pt-8 pb-10 max-w-md mx-auto">
+      <div className="rounded-3xl border border-border bg-card p-6 flex flex-col items-center text-center gap-4">
+        <div className="size-16 rounded-full bg-primary/10 grid place-items-center">
+          <ShieldCheck className="size-8 text-primary" />
+        </div>
+        <div>
+          <div className="text-lg font-extrabold">تحقق دخول الإدارة</div>
+          <p className="text-sm text-muted-foreground mt-1">
+            لحماية اللوحة، نرسل رمزاً مكوناً من 6 أرقام إلى بريد الإدارة{email ? ` (${email})` : ""}.
+          </p>
+        </div>
+        {!sent ? (
+          <Button className="w-full" onClick={send} disabled={sending}>
+            {sending ? <Loader2 className="size-4 animate-spin" /> : <MailCheck className="size-4" />}
+            إرسال رمز التحقق
+          </Button>
+        ) : (
+          <>
+            <Input
+              inputMode="numeric"
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              placeholder="——————"
+              className="text-center text-2xl tracking-[0.5em] font-bold h-14"
+              dir="ltr"
+            />
+            <Button className="w-full" onClick={verify} disabled={verifying || code.length !== 6}>
+              {verifying ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
+              تأكيد الدخول
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={send}
+              disabled={sending || cooldown > 0}
+              className="text-xs"
+            >
+              {cooldown > 0 ? `إعادة الإرسال بعد ${cooldown}s` : "إعادة إرسال الرمز"}
+            </Button>
+          </>
+        )}
+        <p className="text-[11px] text-muted-foreground">
+          الرمز صالح لمدة 10 دقائق. جلسة التحقق تدوم 8 ساعات.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function AdminPage() {
 
   return <AdminPageInner />;
