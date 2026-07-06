@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -329,9 +329,15 @@ function OrderDetail() {
           )}
           <AlertDialogFooter>
             {replaceDone ? (
-              <AlertDialogAction className="w-full bg-gradient-gold text-navy hover:brightness-105">
-                حسناً
-              </AlertDialogAction>
+              <div className="flex flex-col-reverse gap-2 w-full">
+                <AlertDialogAction className="w-full">حسناً</AlertDialogAction>
+                <Link
+                  to="/replacements"
+                  className="w-full h-10 rounded-xl bg-gradient-gold text-navy font-bold shadow-gold hover:brightness-105 flex items-center justify-center"
+                >
+                  عرض طلبات الاستبدال
+                </Link>
+              </div>
             ) : (
               <div className="flex flex-col-reverse gap-2 w-full">
                 <AlertDialogCancel className="w-full mt-0">إلغاء</AlertDialogCancel>
