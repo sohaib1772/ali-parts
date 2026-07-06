@@ -1830,3 +1830,273 @@ function DiagnosticsAdmin() {
     </div>
   );
 }
+
+/* ---------------- Replacements ---------------- */
+
+const REPLACEMENT_STATUSES = ["pending", "in_review", "approved", "rejected", "resolved"] as const;
+type ReplacementStatus = typeof REPLACEMENT_STATUSES[number];
+
+function replacementStatusLabel(s: string) {
+  switch (s) {
+    case "pending": return "بانتظار المراجعة";
+    case "in_review": return "قيد المراجعة";
+    case "approved": return "مقبول";
+    case "rejected": return "مرفوض";
+    case "resolved": return "منجز";
+    default: return s;
+  }
+}
+
+function replacementStatusColor(s: string) {
+  switch (s) {
+    case "pending": return "bg-amber-100 text-amber-800 border-amber-300";
+    case "in_review": return "bg-blue-100 text-blue-800 border-blue-300";
+    case "approved": return "bg-emerald-100 text-emerald-800 border-emerald-300";
+    case "rejected": return "bg-rose-100 text-rose-800 border-rose-300";
+    case "resolved": return "bg-navy text-primary-foreground border-navy";
+    default: return "bg-muted text-muted-foreground border-border";
+  }
+}
+
+function ReplacementsAdmin() {
+  const qc = useQueryClient();
+  const [filter, setFilter] = useState<"all" | ReplacementStatus>("all");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ["admin", "replacements"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("replacement_requests" as any)
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  const userIds = Array.from(new Set(rows.map((r) => r.user_id).filter(Boolean)));
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["admin", "replacement-profiles", userIds.sort().join(",")],
+    enabled: userIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_public_profiles", { _ids: userIds });
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+  const profileMap = new Map(profiles.map((p: any) => [p.id, p]));
+
+  const filtered = filter === "all" ? rows : rows.filter((r) => r.status === filter);
+
+  const changeStatus = async (id: string, status: ReplacementStatus) => {
+    const { error } = await supabase
+      .from("replacement_requests" as any)
+      .update({ status } as any)
+      .eq("id", id);
+    if (error) {
+      toast.error("تعذّر تحديث الحالة");
+      return;
+    }
+    toast.success("تم تحديث الحالة");
+    qc.invalidateQueries({ queryKey: ["admin", "replacements"] });
+  };
+
+  const saveNotes = async (id: string, notes: string) => {
+    const { error } = await supabase
+      .from("replacement_requests" as any)
+      .update({ admin_notes: notes } as any)
+      .eq("id", id);
+    if (error) {
+      toast.error("تعذّر حفظ الملاحظات");
+      return;
+    }
+    toast.success("تم حفظ الملاحظات");
+    qc.invalidateQueries({ queryKey: ["admin", "replacements"] });
+  };
+
+  const executeDelete = async () => {
+    if (!confirmDeleteId) return;
+    const { error } = await supabase
+      .from("replacement_requests" as any)
+      .delete()
+      .eq("id", confirmDeleteId);
+    setConfirmDeleteId(null);
+    if (error) {
+      toast.error("تعذّر حذف الطلب");
+      return;
+    }
+    toast.success("تم حذف الطلب");
+    qc.invalidateQueries({ queryKey: ["admin", "replacements"] });
+  };
+
+  const counts = rows.reduce<Record<string, number>>((acc, r) => {
+    acc[r.status] = (acc[r.status] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          type="button"
+          onClick={() => setFilter("all")}
+          className={`h-8 px-3 rounded-full text-xs font-bold border ${filter === "all" ? "bg-navy text-primary-foreground border-navy" : "border-border hover:bg-muted"}`}
+        >
+          الكل ({rows.length})
+        </button>
+        {REPLACEMENT_STATUSES.map((s) => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => setFilter(s)}
+            className={`h-8 px-3 rounded-full text-xs font-bold border ${filter === s ? "bg-navy text-primary-foreground border-navy" : "border-border hover:bg-muted"}`}
+          >
+            {replacementStatusLabel(s)} ({counts[s] ?? 0})
+          </button>
+        ))}
+      </div>
+
+      {isLoading ? (
+        <div className="py-12 text-center text-muted-foreground text-sm">جاري التحميل...</div>
+      ) : filtered.length === 0 ? (
+        <div className="py-12 text-center">
+          <div className="size-16 rounded-full bg-muted grid place-items-center mx-auto mb-3">
+            <Repeat className="size-8 text-muted-foreground" />
+          </div>
+          <div className="text-sm text-muted-foreground">لا توجد طلبات استبدال</div>
+        </div>
+      ) : (
+        filtered.map((r) => (
+          <ReplacementCard
+            key={r.id}
+            row={r}
+            profile={profileMap.get(r.user_id)}
+            onStatusChange={changeStatus}
+            onSaveNotes={saveNotes}
+            onDelete={() => setConfirmDeleteId(r.id)}
+          />
+        ))
+      )}
+
+      <AlertDialog open={!!confirmDeleteId} onOpenChange={(o) => !o && setConfirmDeleteId(null)}>
+        <AlertDialogContent dir="rtl" className="max-w-sm">
+          <AlertDialogHeader className="items-center sm:items-center">
+            <div className="size-12 rounded-full bg-destructive/10 grid place-items-center mb-2">
+              <AlertTriangle className="size-6 text-destructive" />
+            </div>
+            <AlertDialogTitle>حذف طلب الاستبدال</AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              سيتم حذف الطلب نهائياً. لا يمكن التراجع عن هذا الإجراء.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col-reverse gap-2">
+            <AlertDialogCancel className="w-full mt-0">إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={executeDelete}
+            >
+              حذف نهائي
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+function ReplacementCard({
+  row,
+  profile,
+  onStatusChange,
+  onSaveNotes,
+  onDelete,
+}: {
+  row: any;
+  profile: any;
+  onStatusChange: (id: string, s: ReplacementStatus) => void;
+  onSaveNotes: (id: string, notes: string) => void;
+  onDelete: () => void;
+}) {
+  const [notes, setNotes] = useState<string>(row.admin_notes ?? "");
+  const [saving, setSaving] = useState(false);
+  const dirty = (notes ?? "") !== (row.admin_notes ?? "");
+
+  return (
+    <div className="bg-card rounded-2xl border border-border p-4 shadow-card space-y-3">
+      <div className="flex items-start gap-2 flex-wrap">
+        <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${replacementStatusColor(row.status)}`}>
+          {replacementStatusLabel(row.status)}
+        </span>
+        <span className="text-[10px] text-muted-foreground ms-auto">
+          {new Date(row.created_at).toLocaleString("ar-IQ", { dateStyle: "short", timeStyle: "short" })}
+        </span>
+      </div>
+
+      <div>
+        <div className="text-sm font-bold text-navy">{row.product_name_ar ?? "منتج غير معروف"}</div>
+        <div className="text-[11px] text-muted-foreground font-mono">طلب #{String(row.order_id).slice(0, 8)}</div>
+      </div>
+
+      {profile && (
+        <div className="flex items-center gap-2 text-xs">
+          <UserIcon className="size-3.5 text-muted-foreground" />
+          <span className="font-semibold">{profile.full_name ?? "بدون اسم"}</span>
+        </div>
+      )}
+
+      <div className="rounded-xl bg-muted/40 p-3">
+        <div className="text-[11px] font-bold text-gold mb-1">سبب الاستبدال</div>
+        <div className="text-sm whitespace-pre-wrap">{row.reason}</div>
+      </div>
+
+      <div>
+        <Label className="text-[11px] font-bold text-gold mb-1 block">ملاحظات الإدارة</Label>
+        <Textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="ملاحظات داخلية عن المتابعة..."
+          rows={2}
+          className="text-sm"
+          dir="rtl"
+        />
+        {dirty && (
+          <Button
+            size="sm"
+            variant="secondary"
+            className="mt-2"
+            disabled={saving}
+            onClick={async () => {
+              setSaving(true);
+              await onSaveNotes(row.id, notes);
+              setSaving(false);
+            }}
+          >
+            {saving ? "جاري الحفظ..." : "حفظ الملاحظات"}
+          </Button>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        <Select value={row.status} onValueChange={(v) => onStatusChange(row.id, v as ReplacementStatus)}>
+          <SelectTrigger className="h-9 w-auto min-w-40 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {REPLACEMENT_STATUSES.map((s) => (
+              <SelectItem key={s} value={s}>{replacementStatusLabel(s)}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <button
+          type="button"
+          onClick={onDelete}
+          className="h-9 px-3 rounded-xl border border-destructive/40 text-destructive text-xs font-bold flex items-center gap-1.5 hover:bg-destructive/10 ms-auto"
+        >
+          <Trash2 className="size-3.5" /> حذف
+        </button>
+      </div>
+    </div>
+  );
+}
