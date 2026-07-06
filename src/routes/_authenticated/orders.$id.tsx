@@ -258,6 +258,28 @@ function OrderDetail() {
         onOpenChange={setPreviewOpen}
         domId="invoice-preview-target"
       />
+      <AlertDialog open={replaceOpen} onOpenChange={setReplaceOpen}>
+        <AlertDialogContent dir="rtl" className="max-w-sm">
+          <AlertDialogHeader className="items-center sm:items-center">
+            <div className="size-12 rounded-full bg-gold/15 grid place-items-center mb-2">
+              <Headphones className="size-6 text-gold" />
+            </div>
+            <AlertDialogTitle className="text-base sm:text-lg">
+              طلب استبدال
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center leading-relaxed">
+              سوف يتواصل معك قسم متابعة الاستبدال لمعرفة أسباب الخلل خلال 72 ساعة.
+              <br />
+              نأسف على تأخر الرد بسبب الضغط.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction className="w-full bg-gradient-gold text-navy hover:brightness-105">
+              حسناً
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
