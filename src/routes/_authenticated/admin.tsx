@@ -647,7 +647,16 @@ function StaffAdmin() {
               <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="مثال: أحمد علي" />
             </Field>
             <Field label="رقم الهاتف">
-              <Input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="07XX XXX XXXX" disabled={!!editing} />
+              <Input
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                dir="ltr"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                placeholder="07XX XXX XXXX"
+                disabled={!!editing}
+              />
               {editing && <p className="text-[10px] text-muted-foreground mt-1">رقم الهاتف غير قابل للتعديل.</p>}
             </Field>
             <Field label={editing ? "كلمة السر (اتركها فارغة لعدم التغيير)" : "كلمة السر"}>
