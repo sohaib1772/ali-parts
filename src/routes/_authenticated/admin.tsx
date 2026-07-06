@@ -364,8 +364,8 @@ function PermissionsBadge({ isAdmin, canOrders, canProducts, canReplacements, ca
 }
 
 function AdminPageInner() {
-  const { isAdmin, isLoading: adminLoading } = useIsAdminStatus();
-  const { staff, isLoading: staffLoading } = useStaffPermissionsStatus();
+  const { isAdmin, isLoading: adminLoading, isError: adminError } = useIsAdminStatus();
+  const { staff, isLoading: staffLoading, isError: staffError } = useStaffPermissionsStatus();
   const navigate = useNavigate();
 
   const canOrders = isAdmin || !!staff?.can_orders;
@@ -380,6 +380,23 @@ function AdminPageInner() {
         <div className="px-4 pt-16 flex flex-col items-center text-center gap-3">
           <Loader2 className="size-8 animate-spin text-muted-foreground" />
           <p className="text-sm text-muted-foreground">جاري التحقق من الصلاحيات…</p>
+        </div>
+      </PageShell>
+    );
+  }
+
+  if (adminError || staffError) {
+    return (
+      <PageShell title="لوحة الإدارة">
+        <div className="px-4 pt-10 flex flex-col items-center text-center gap-3" role="alert">
+          <div className="size-16 rounded-full bg-amber-500/10 grid place-items-center">
+            <ShieldAlert className="size-8 text-amber-600" />
+          </div>
+          <div className="font-extrabold text-lg">تعذر التحقق من الصلاحيات</div>
+          <p className="text-sm text-muted-foreground">
+            حدث خلل في الاتصال بالخادم. تحقق من الإنترنت ثم أعد المحاولة.
+          </p>
+          <Button onClick={() => window.location.reload()}>إعادة المحاولة</Button>
         </div>
       </PageShell>
     );
