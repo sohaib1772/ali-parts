@@ -23,6 +23,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
 import { Route as OrderSuccessIdRouteImport } from './routes/order-success.$id'
 import { Route as CategoryIdRouteImport } from './routes/category.$id'
+import { Route as AuthenticatedReplacementsRouteImport } from './routes/_authenticated/replacements'
 import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated/orders'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
@@ -33,6 +34,7 @@ import { Route as AuthenticatedCartRouteImport } from './routes/_authenticated/c
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAddressesRouteImport } from './routes/_authenticated/addresses'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
+import { Route as AuthenticatedReplacementsIdRouteImport } from './routes/_authenticated/replacements.$id'
 import { Route as AuthenticatedOrdersIdRouteImport } from './routes/_authenticated/orders.$id'
 
 const SearchRoute = SearchRouteImport.update({
@@ -104,6 +106,12 @@ const CategoryIdRoute = CategoryIdRouteImport.update({
   path: '/category/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedReplacementsRoute =
+  AuthenticatedReplacementsRouteImport.update({
+    id: '/replacements',
+    path: '/replacements',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOrdersRoute = AuthenticatedOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -156,6 +164,12 @@ const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedReplacementsIdRoute =
+  AuthenticatedReplacementsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedReplacementsRoute,
+  } as any)
 const AuthenticatedOrdersIdRoute = AuthenticatedOrdersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -183,10 +197,12 @@ export interface FileRoutesByFullPath {
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/orders': typeof AuthenticatedOrdersRouteWithChildren
+  '/replacements': typeof AuthenticatedReplacementsRouteWithChildren
   '/category/$id': typeof CategoryIdRoute
   '/order-success/$id': typeof OrderSuccessIdRoute
   '/product/$id': typeof ProductIdRoute
   '/orders/$id': typeof AuthenticatedOrdersIdRoute
+  '/replacements/$id': typeof AuthenticatedReplacementsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -209,10 +225,12 @@ export interface FileRoutesByTo {
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/orders': typeof AuthenticatedOrdersRouteWithChildren
+  '/replacements': typeof AuthenticatedReplacementsRouteWithChildren
   '/category/$id': typeof CategoryIdRoute
   '/order-success/$id': typeof OrderSuccessIdRoute
   '/product/$id': typeof ProductIdRoute
   '/orders/$id': typeof AuthenticatedOrdersIdRoute
+  '/replacements/$id': typeof AuthenticatedReplacementsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -237,10 +255,12 @@ export interface FileRoutesById {
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/orders': typeof AuthenticatedOrdersRouteWithChildren
+  '/_authenticated/replacements': typeof AuthenticatedReplacementsRouteWithChildren
   '/category/$id': typeof CategoryIdRoute
   '/order-success/$id': typeof OrderSuccessIdRoute
   '/product/$id': typeof ProductIdRoute
   '/_authenticated/orders/$id': typeof AuthenticatedOrdersIdRoute
+  '/_authenticated/replacements/$id': typeof AuthenticatedReplacementsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -265,10 +285,12 @@ export interface FileRouteTypes {
     | '/messages'
     | '/notifications'
     | '/orders'
+    | '/replacements'
     | '/category/$id'
     | '/order-success/$id'
     | '/product/$id'
     | '/orders/$id'
+    | '/replacements/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -291,10 +313,12 @@ export interface FileRouteTypes {
     | '/messages'
     | '/notifications'
     | '/orders'
+    | '/replacements'
     | '/category/$id'
     | '/order-success/$id'
     | '/product/$id'
     | '/orders/$id'
+    | '/replacements/$id'
   id:
     | '__root__'
     | '/'
@@ -318,10 +342,12 @@ export interface FileRouteTypes {
     | '/_authenticated/messages'
     | '/_authenticated/notifications'
     | '/_authenticated/orders'
+    | '/_authenticated/replacements'
     | '/category/$id'
     | '/order-success/$id'
     | '/product/$id'
     | '/_authenticated/orders/$id'
+    | '/_authenticated/replacements/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -441,6 +467,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CategoryIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/replacements': {
+      id: '/_authenticated/replacements'
+      path: '/replacements'
+      fullPath: '/replacements'
+      preLoaderRoute: typeof AuthenticatedReplacementsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/orders': {
       id: '/_authenticated/orders'
       path: '/orders'
@@ -511,6 +544,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/replacements/$id': {
+      id: '/_authenticated/replacements/$id'
+      path: '/$id'
+      fullPath: '/replacements/$id'
+      preLoaderRoute: typeof AuthenticatedReplacementsIdRouteImport
+      parentRoute: typeof AuthenticatedReplacementsRoute
+    }
     '/_authenticated/orders/$id': {
       id: '/_authenticated/orders/$id'
       path: '/$id'
@@ -532,6 +572,20 @@ const AuthenticatedOrdersRouteChildren: AuthenticatedOrdersRouteChildren = {
 const AuthenticatedOrdersRouteWithChildren =
   AuthenticatedOrdersRoute._addFileChildren(AuthenticatedOrdersRouteChildren)
 
+interface AuthenticatedReplacementsRouteChildren {
+  AuthenticatedReplacementsIdRoute: typeof AuthenticatedReplacementsIdRoute
+}
+
+const AuthenticatedReplacementsRouteChildren: AuthenticatedReplacementsRouteChildren =
+  {
+    AuthenticatedReplacementsIdRoute: AuthenticatedReplacementsIdRoute,
+  }
+
+const AuthenticatedReplacementsRouteWithChildren =
+  AuthenticatedReplacementsRoute._addFileChildren(
+    AuthenticatedReplacementsRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedAddressesRoute: typeof AuthenticatedAddressesRoute
@@ -543,6 +597,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedOrdersRoute: typeof AuthenticatedOrdersRouteWithChildren
+  AuthenticatedReplacementsRoute: typeof AuthenticatedReplacementsRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -556,6 +611,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedOrdersRoute: AuthenticatedOrdersRouteWithChildren,
+  AuthenticatedReplacementsRoute: AuthenticatedReplacementsRouteWithChildren,
 }
 
 const AuthenticatedRouteRouteWithChildren =
