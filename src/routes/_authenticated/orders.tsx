@@ -137,7 +137,7 @@ function OrdersPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={deleteAll}
+                  onClick={openDeleteAll}
                   disabled={deleting}
                   className="h-9 px-3 rounded-xl border border-destructive/40 text-destructive text-xs font-bold flex items-center gap-1.5 hover:bg-destructive/10 disabled:opacity-50 ms-auto"
                 >
@@ -164,7 +164,7 @@ function OrdersPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={deleteSelected}
+                  onClick={openDeleteSelected}
                   disabled={deleting || selected.size === 0}
                   className="h-9 px-3 rounded-xl bg-destructive text-white text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
                 >
