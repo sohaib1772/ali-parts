@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote, Receipt, Search as SearchIcon, Ban, CheckCircle2, History, Users as UsersIcon, KeyRound, Loader2 } from "lucide-react";
+import { BellRing, MailCheck, MailX, Clock } from "lucide-react";
 import { WhatsappIcon } from "@/components/icons";
 import { formatIQD, whatsappLink } from "@/lib/format";
 import { statusLabel, statusColor } from "@/lib/order-status";
@@ -98,6 +99,36 @@ function BlockLogAdmin() {
     },
   });
   const nameMap = new Map((profiles as any[]).map((p) => [p.id, p]));
+
+  // Notification delivery status for each block/unblock action
+  const userIds = Array.from(new Set(entries.map((e: any) => e.user_id).filter(Boolean)));
+  const { data: notifs = [] } = useQuery({
+    queryKey: ["admin", "block-log-notifs", userIds],
+    enabled: userIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("id, user_id, title, read_at, created_at")
+        .eq("type", "account_status")
+        .in("user_id", userIds)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  // Match each log entry with the closest notification for that user within ±10s
+  const matchNotif = (uid: string, iso: string) => {
+    const t = new Date(iso).getTime();
+    let best: any = null;
+    let bestDiff = Infinity;
+    for (const n of notifs as any[]) {
+      if (n.user_id !== uid) continue;
+      const diff = Math.abs(new Date(n.created_at).getTime() - t);
+      if (diff < bestDiff && diff <= 10_000) { bestDiff = diff; best = n; }
+    }
+    return best;
+  };
 
   const fmt = (iso: string) => {
     try {
@@ -168,6 +199,12 @@ function BlockLogAdmin() {
         <div className="space-y-2">
       {entries.map((e: any) => {
         const isBlock = e.action === "block";
+        const n = matchNotif(e.user_id, e.created_at);
+        const delivery = !n
+          ? { icon: <MailX className="size-3" />, label: "لم يُرسل الإشعار", cls: "bg-destructive/10 text-destructive" }
+          : n.read_at
+          ? { icon: <MailCheck className="size-3" />, label: `تم الاستلام • ${fmt(n.read_at)}`, cls: "bg-success/10 text-success" }
+          : { icon: <Clock className="size-3" />, label: "أُرسل — لم يُقرأ بعد", cls: "bg-muted text-muted-foreground" };
         return (
           <div key={e.id} className="bg-card border border-border rounded-2xl p-3 flex items-start gap-3">
             <div className={`size-9 rounded-full grid place-items-center shrink-0 ${isBlock ? "bg-destructive/10 text-destructive" : "bg-success/10 text-success"}`}>
@@ -184,6 +221,10 @@ function BlockLogAdmin() {
                 بواسطة: <span className="font-semibold text-foreground">{nameOf(e.actor_id)}</span>
               </div>
               <div className="text-[11px] text-muted-foreground mt-1">{fmt(e.created_at)}</div>
+              <div className={`inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold ${delivery.cls}`}>
+                {delivery.icon}
+                <span>{delivery.label}</span>
+              </div>
             </div>
           </div>
         );
