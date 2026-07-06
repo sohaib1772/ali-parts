@@ -12,12 +12,14 @@ import { PrintableInvoice, InvoicePreviewDialog } from "@/components/printable-i
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useAuth } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/_authenticated/orders/$id")({
   loader: ({ context, params }) => context.queryClient.ensureQueryData(orderByIdQuery(params.id)),
@@ -53,6 +55,42 @@ function OrderDetail() {
   const qc = useQueryClient();
   const [previewOpen, setPreviewOpen] = useState(false);
   const [replaceOpen, setReplaceOpen] = useState(false);
+  const [replaceItem, setReplaceItem] = useState<any>(null);
+  const [replaceReason, setReplaceReason] = useState("");
+  const [replaceSubmitting, setReplaceSubmitting] = useState(false);
+  const [replaceDone, setReplaceDone] = useState(false);
+  const { userId } = useAuth();
+
+  const openReplace = (it: any) => {
+    setReplaceItem(it);
+    setReplaceReason("");
+    setReplaceDone(false);
+    setReplaceOpen(true);
+  };
+
+  const submitReplace = async () => {
+    if (!userId || !replaceItem) return;
+    const reason = replaceReason.trim();
+    if (reason.length < 5) {
+      toast.error("يرجى كتابة سبب الاستبدال (5 أحرف على الأقل)");
+      return;
+    }
+    setReplaceSubmitting(true);
+    const { error } = await supabase.from("replacement_requests").insert({
+      user_id: userId,
+      order_id: order.id,
+      order_item_id: replaceItem.id,
+      product_id: replaceItem.product_id,
+      product_name_ar: replaceItem.name_ar,
+      reason,
+    });
+    setReplaceSubmitting(false);
+    if (error) {
+      toast.error("تعذّر إرسال طلب الاستبدال");
+      return;
+    }
+    setReplaceDone(true);
+  };
 
   useEffect(() => {
     const ch = supabase
@@ -178,7 +216,7 @@ function OrderDetail() {
                 {canReplace && (
                   <button
                     type="button"
-                    onClick={() => setReplaceOpen(true)}
+                    onClick={() => openReplace(it)}
                     className="mt-2 w-full h-9 rounded-xl border border-gold/50 text-navy text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-gold/10"
                   >
                     <RefreshCw className="size-3.5 text-gold" />
@@ -265,18 +303,48 @@ function OrderDetail() {
               <Headphones className="size-6 text-gold" />
             </div>
             <AlertDialogTitle className="text-base sm:text-lg">
-              طلب استبدال
+              {replaceDone ? "تم استلام طلب الاستبدال" : "طلب استبدال"}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-center leading-relaxed">
-              سوف يتواصل معك قسم متابعة الاستبدال لمعرفة أسباب الخلل خلال 72 ساعة.
-              <br />
-              نأسف على تأخر الرد بسبب الضغط.
+              {replaceDone
+                ? "سوف يتواصل معك قسم متابعة الاستبدال لمعرفة أسباب الخلل خلال 72 ساعة. نأسف على تأخر الرد بسبب الضغط."
+                : "اكتب سبب طلب الاستبدال أو الخلل في المنتج، وسيتواصل معك قسم المتابعة خلال 72 ساعة."}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {!replaceDone && replaceItem && (
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground text-center">
+                المنتج: <span className="font-bold text-navy">{replaceItem.name_ar}</span>
+              </div>
+              <textarea
+                value={replaceReason}
+                onChange={(e) => setReplaceReason(e.target.value)}
+                placeholder="اذكر سبب الاستبدال بالتفصيل..."
+                rows={4}
+                maxLength={500}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold/40 resize-none"
+                dir="rtl"
+              />
+            </div>
+          )}
           <AlertDialogFooter>
-            <AlertDialogAction className="w-full bg-gradient-gold text-navy hover:brightness-105">
-              حسناً
-            </AlertDialogAction>
+            {replaceDone ? (
+              <AlertDialogAction className="w-full bg-gradient-gold text-navy hover:brightness-105">
+                حسناً
+              </AlertDialogAction>
+            ) : (
+              <div className="flex flex-col-reverse gap-2 w-full">
+                <AlertDialogCancel className="w-full mt-0">إلغاء</AlertDialogCancel>
+                <button
+                  type="button"
+                  onClick={submitReplace}
+                  disabled={replaceSubmitting}
+                  className="w-full h-10 rounded-xl bg-gradient-gold text-navy font-bold shadow-gold hover:brightness-105 disabled:opacity-50"
+                >
+                  {replaceSubmitting ? "جاري الإرسال..." : "إرسال طلب الاستبدال"}
+                </button>
+              </div>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
