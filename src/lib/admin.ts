@@ -26,6 +26,35 @@ export function useIsAdmin() {
   return !!data;
 }
 
+export type StaffPermissions = {
+  can_orders: boolean;
+  can_products: boolean;
+  can_replacements: boolean;
+};
+
+export const staffPermissionsQuery = (userId: string | null) =>
+  queryOptions({
+    queryKey: ["staff_permissions", userId],
+    queryFn: async (): Promise<StaffPermissions | null> => {
+      if (!userId) return null;
+      const { data, error } = await supabase
+        .from("staff_permissions")
+        .select("can_orders, can_products, can_replacements")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (error || !data) return null;
+      return data as StaffPermissions;
+    },
+    enabled: !!userId,
+    staleTime: 60_000,
+  });
+
+export function useStaffPermissions() {
+  const { userId } = useAuth();
+  const { data } = useQuery(staffPermissionsQuery(userId));
+  return data ?? null;
+}
+
 export const settingsQuery = () =>
   queryOptions({
     queryKey: ["app_settings"],
