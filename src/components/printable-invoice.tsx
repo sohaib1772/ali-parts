@@ -1,9 +1,9 @@
 import type React from "react";
-import { formatIQD, formatArabicDate } from "@/lib/format";
+import { formatIQDEn, formatDateEn } from "@/lib/format";
 import { statusLabel } from "@/lib/order-status";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Printer, FileDown, X } from "lucide-react";
+import { Printer, FileDown, Image as ImageIcon, X } from "lucide-react";
 import { toast } from "sonner";
 import logoAsset from "@/assets/ali-chevrolet-logo.jpeg.asset.json";
 
@@ -20,15 +20,15 @@ export function PrintableInvoice({ order, items, domId, customer }: { order: any
 }
 
 const thStyle: React.CSSProperties = {
-  padding: "8px 10px",
+  padding: "6px 8px",
   textAlign: "center",
   fontSize: "10px",
   fontWeight: 800,
   letterSpacing: "0.1em",
 };
 const tdStyle: React.CSSProperties = {
-  padding: "8px 10px",
-  verticalAlign: "top",
+  padding: "6px 8px",
+  verticalAlign: "middle",
 };
 
 function TotalRow({ label, value }: { label: string; value: string }) {
