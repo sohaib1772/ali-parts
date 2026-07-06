@@ -663,6 +663,14 @@ export type Database = {
         Args: { p_blocked: boolean; p_reason?: string; p_user_id: string }
         Returns: undefined
       }
+      get_public_profiles: {
+        Args: { _ids: string[] }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
