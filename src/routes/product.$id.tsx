@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useRouter, useNavigate, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowRight, Heart, Minus, Plus, Share2, Shield, ShoppingCart, Truck, CheckCircle2, XCircle, Facebook, X as CloseIcon, Clock } from "lucide-react";
+import { ArrowRight, Heart, Minus, Plus, Share2, Shield, ShoppingCart, Truck, CheckCircle2, XCircle, Facebook, X as CloseIcon, Clock, RefreshCw } from "lucide-react";
 import { productByIdQuery, carModelsQuery, brandsQuery } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,6 +51,26 @@ function ProductPage() {
   const waNumber = useSetting("whatsapp_number");
   const { data: models = [] } = useQuery(carModelsQuery());
   const { data: brands = [] } = useQuery(brandsQuery());
+
+  // Show a "طلب استبدال" shortcut if this product was delivered in one of the user's orders
+  const { data: deliveredOrder } = useQuery({
+    queryKey: ["product-delivered-order", id, userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("order_items")
+        .select("order_id, orders!inner(id, user_id, status, order_number, created_at)")
+        .eq("product_id", id)
+        .eq("orders.user_id", userId!)
+        .eq("orders.status", "delivered")
+        .order("created_at", { ascending: false, referencedTable: "orders" as any })
+        .limit(1)
+        .maybeSingle();
+      if (error) return null;
+      return data as any;
+    },
+  });
+  const deliveredOrderId: string | null = deliveredOrder?.order_id ?? null;
 
   const img = product.images?.[activeImg];
   const stockQty = (product as any).stock_qty ?? 0;
@@ -315,6 +335,26 @@ function ProductPage() {
             </div>
           </div>
         </a>
+
+        {deliveredOrderId && (
+          <Link
+            to="/orders/$id"
+            params={{ id: deliveredOrderId }}
+            className="block bg-card rounded-2xl border border-gold/60 p-4 shadow-card hover:bg-gold/5 transition"
+          >
+            <div className="flex items-start gap-3">
+              <div className="size-11 rounded-xl bg-gold/15 text-gold grid place-items-center shrink-0">
+                <RefreshCw className="size-5" />
+              </div>
+              <div className="flex-1">
+                <div className="text-sm font-extrabold text-navy">هل استلمت هذا المنتج؟ اطلب استبدال</div>
+                <div className="text-[11px] text-foreground/70 mt-0.5 leading-relaxed">
+                  استلمت هذا المنتج ضمن طلب سابق. اضغط لفتح الطلب وتقديم طلب استبدال خلال 72 ساعة.
+                </div>
+              </div>
+            </div>
+          </Link>
+        )}
 
         <div className="flex items-center gap-3">
           <span className="text-sm font-bold">الكمية:</span>
