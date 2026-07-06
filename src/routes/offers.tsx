@@ -500,7 +500,12 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
       if (e.message === "auth") toast.error("سجّل الدخول لكتابة تعليق");
       else if (e.message === "profanity")
         toast.error("تعليقك يحتوي كلمات مسيئة. يرجى الالتزام بالاحترام.");
-      else if (e.message !== "empty") toast.error("تعذر الإرسال");
+      else if (e.message !== "empty") {
+        // Surface backend errors (blocked account, banner unavailable, ...)
+        // so the customer understands why the comment did not go through.
+        const msg = e.message?.trim();
+        toast.error(msg && msg.length < 200 ? msg : "تعذر الإرسال");
+      }
     },
   });
 
