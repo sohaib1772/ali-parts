@@ -17,6 +17,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
+function CommentsSkeleton({ count = 5 }: { count?: number }) {
+  return (
+    <div className="space-y-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="flex gap-2.5">
+          <Skeleton className="size-9 rounded-full shrink-0" />
+          <div className="flex-1 space-y-1.5">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-3/4" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/offers")({
   head: () => ({
     meta: [
