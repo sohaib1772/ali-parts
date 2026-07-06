@@ -42,12 +42,14 @@ export const adminOtpStatus = createServerFn({ method: "GET" })
       .eq("user_id", context.userId)
       .maybeSingle();
     const verified = !!v && new Date(v.expires_at).getTime() > Date.now();
-    const email = process.env.ADMIN_OTP_EMAIL ?? "";
+    const { data: actor } = await supabaseAdmin.auth.admin.getUserById(context.userId);
+    const email = actor?.user?.email ?? "";
     return {
       required: true,
       verified,
       expiresAt: v?.expires_at ?? null,
       email: email ? maskEmail(email) : null,
+      hasEmail: !!email,
     };
   });
 
@@ -57,12 +59,16 @@ export const requestAdminOtp = createServerFn({ method: "POST" })
     const { isAdmin, isStaff } = await isAdminOrStaff(context);
     if (!isAdmin && !isStaff) throw new Error("Forbidden");
 
-    const toEmail = process.env.ADMIN_OTP_EMAIL;
     const resendKey = process.env.RESEND_API_KEY;
-    if (!toEmail) throw new Error("لم يتم إعداد بريد الإدارة");
     if (!resendKey) throw new Error("لم يتم إعداد مفتاح البريد");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: actor } = await supabaseAdmin.auth.admin.getUserById(context.userId);
+    const toEmail = actor?.user?.email;
+    if (!toEmail) {
+      throw new Error("لا يوجد بريد إلكتروني مسجّل في حسابك. يرجى إضافة بريد من صفحة الحساب أولاً.");
+    }
 
     // Rate-limit: at most 1 unconsumed challenge per 30s per user
     const { data: recent } = await supabaseAdmin
@@ -97,8 +103,6 @@ export const requestAdminOtp = createServerFn({ method: "POST" })
       .insert({ user_id: context.userId, code_hash, expires_at });
     if (insErr) throw new Error(insErr.message);
 
-    // Load actor info for email context
-    const { data: actor } = await supabaseAdmin.auth.admin.getUserById(context.userId);
     const actorName =
       (actor?.user?.user_metadata as any)?.full_name ||
       actor?.user?.email ||
