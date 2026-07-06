@@ -33,6 +33,8 @@ import {
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote, Receipt, Search as SearchIcon, Ban, CheckCircle2, History, Users as UsersIcon, KeyRound, Loader2 } from "lucide-react";
 import { BellRing, MailCheck, MailX, Clock } from "lucide-react";
+import { Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw } from "lucide-react";
+import { runDiagnostics, type DiagnosticsReport, type CheckStatus } from "@/lib/diagnostics.functions";
 import { WhatsappIcon } from "@/components/icons";
 import { formatIQD, whatsappLink } from "@/lib/format";
 import { statusLabel, statusColor } from "@/lib/order-status";
@@ -270,6 +272,7 @@ function AdminPage() {
             <TabsTrigger value="users" className="flex-col gap-1 py-2 text-[10px]"><UsersIcon className="size-4" />مستخدمون</TabsTrigger>
             <TabsTrigger value="block-log" className="flex-col gap-1 py-2 text-[10px]"><History className="size-4" />سجل الحظر</TabsTrigger>
             <TabsTrigger value="settings" className="flex-col gap-1 py-2 text-[10px]"><SettingsIcon className="size-4" />إعدادات</TabsTrigger>
+            <TabsTrigger value="diagnostics" className="flex-col gap-1 py-2 text-[10px]"><Activity className="size-4" />تشخيص</TabsTrigger>
           </TabsList>
 
           <TabsContent value="products" className="mt-4"><ProductsAdmin /></TabsContent>
@@ -279,6 +282,7 @@ function AdminPage() {
           <TabsContent value="users" className="mt-4"><UsersAdmin /></TabsContent>
           <TabsContent value="block-log" className="mt-4"><BlockLogAdmin /></TabsContent>
           <TabsContent value="settings" className="mt-4"><SettingsAdmin /></TabsContent>
+          <TabsContent value="diagnostics" className="mt-4"><DiagnosticsAdmin /></TabsContent>
         </Tabs>
       </div>
     </PageShell>
