@@ -483,6 +483,201 @@ function UsersAdmin() {
   );
 }
 
+/* ---------------- Staff ---------------- */
+
+type StaffRow = {
+  user_id: string;
+  full_name: string;
+  email: string | null;
+  can_orders: boolean;
+  can_products: boolean;
+  can_replacements: boolean;
+  created_at: string | null;
+};
+
+function StaffAdmin() {
+  const list = useServerFn(listStaff);
+  const create = useServerFn(createStaff);
+  const update = useServerFn(updateStaff);
+  const del = useServerFn(deleteStaff);
+  const qc = useQueryClient();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["staff", "list"],
+    queryFn: () => list(),
+  });
+
+  const rows: StaffRow[] = (data as any)?.staff ?? [];
+
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<StaffRow | null>(null);
+  const [form, setForm] = useState({
+    full_name: "",
+    email: "",
+    password: "",
+    can_orders: false,
+    can_products: false,
+    can_replacements: false,
+  });
+  const [busy, setBusy] = useState(false);
+
+  const openNew = () => {
+    setEditing(null);
+    setForm({ full_name: "", email: "", password: "", can_orders: false, can_products: false, can_replacements: false });
+    setOpen(true);
+  };
+
+  const openEdit = (r: StaffRow) => {
+    setEditing(r);
+    setForm({
+      full_name: r.full_name,
+      email: r.email ?? "",
+      password: "",
+      can_orders: r.can_orders,
+      can_products: r.can_products,
+      can_replacements: r.can_replacements,
+    });
+    setOpen(true);
+  };
+
+  const save = async () => {
+    if (!form.full_name.trim()) { toast.error("الاسم مطلوب"); return; }
+    if (!editing) {
+      if (!form.email.trim()) { toast.error("الإيميل مطلوب"); return; }
+      if (form.password.length < 6) { toast.error("كلمة السر لا تقل عن 6 أحرف"); return; }
+    }
+    if (!form.can_orders && !form.can_products && !form.can_replacements) {
+      toast.error("اختر صلاحية واحدة على الأقل");
+      return;
+    }
+    setBusy(true);
+    try {
+      if (editing) {
+        await update({
+          data: {
+            user_id: editing.user_id,
+            full_name: form.full_name,
+            password: form.password || undefined,
+            can_orders: form.can_orders,
+            can_products: form.can_products,
+            can_replacements: form.can_replacements,
+          },
+        });
+        toast.success("تم تحديث الموظف");
+      } else {
+        await create({
+          data: {
+            email: form.email.trim(),
+            password: form.password,
+            full_name: form.full_name.trim(),
+            can_orders: form.can_orders,
+            can_products: form.can_products,
+            can_replacements: form.can_replacements,
+          },
+        });
+        toast.success("تم إضافة الموظف");
+      }
+      setOpen(false);
+      qc.invalidateQueries({ queryKey: ["staff", "list"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "فشلت العملية");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (r: StaffRow) => {
+    if (!window.confirm(`حذف الموظف "${r.full_name}"؟ سيُحذف حسابه نهائياً.`)) return;
+    try {
+      await del({ data: { user_id: r.user_id } });
+      toast.success("تم الحذف");
+      qc.invalidateQueries({ queryKey: ["staff", "list"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "فشل الحذف");
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-extrabold text-base">إدارة الموظفين</h2>
+          <p className="text-[11px] text-muted-foreground">أضف موظفاً وحدّد صلاحياته وأعطه إيميل وكلمة سر لتسجيل الدخول.</p>
+        </div>
+        <Button size="sm" onClick={openNew} className="gap-1"><UserPlus className="size-4" /> إضافة موظف</Button>
+      </div>
+
+      {isLoading ? (
+        <div className="text-center text-sm text-muted-foreground py-6">جاري التحميل…</div>
+      ) : rows.length === 0 ? (
+        <div className="text-center text-sm text-muted-foreground py-6">لا يوجد موظفون حتى الآن.</div>
+      ) : (
+        <div className="space-y-2">
+          {rows.map((r) => (
+            <div key={r.user_id} className="bg-card border border-border rounded-2xl p-3 flex items-center gap-3">
+              <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center">
+                <ShieldCheck className="size-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-sm truncate">{r.full_name}</div>
+                <div className="text-[11px] text-muted-foreground truncate">{r.email ?? "—"}</div>
+                <div className="flex gap-1 mt-1 flex-wrap">
+                  {r.can_orders && <span className="text-[10px] bg-blue-500/10 text-blue-600 rounded-full px-2 py-0.5">طلبات</span>}
+                  {r.can_products && <span className="text-[10px] bg-emerald-500/10 text-emerald-600 rounded-full px-2 py-0.5">منتجات</span>}
+                  {r.can_replacements && <span className="text-[10px] bg-amber-500/10 text-amber-600 rounded-full px-2 py-0.5">استبدال</span>}
+                </div>
+              </div>
+              <Button size="icon" variant="ghost" onClick={() => openEdit(r)}><Pencil className="size-4" /></Button>
+              <Button size="icon" variant="destructive" onClick={() => remove(r)}><Trash2 className="size-4" /></Button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editing ? "تعديل موظف" : "إضافة موظف"}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <Field label="الاسم الكامل">
+              <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="مثال: أحمد علي" />
+            </Field>
+            <Field label="الإيميل">
+              <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="staff@example.com" disabled={!!editing} />
+              {editing && <p className="text-[10px] text-muted-foreground mt-1">الإيميل غير قابل للتعديل.</p>}
+            </Field>
+            <Field label={editing ? "كلمة السر (اتركها فارغة لعدم التغيير)" : "كلمة السر"}>
+              <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="6 أحرف على الأقل" />
+            </Field>
+            <div>
+              <Label className="text-xs mb-2 block">الصلاحيات</Label>
+              <div className="space-y-2">
+                <PermRow label="إدارة الطلبات" desc="عرض وتعديل حالة الطلبات وطباعة الفواتير" checked={form.can_orders} onChange={(v) => setForm({ ...form, can_orders: v })} />
+                <PermRow label="إدارة المنتجات والمخزون" desc="إضافة/تعديل المنتجات وتحديث الكميات" checked={form.can_products} onChange={(v) => setForm({ ...form, can_products: v })} />
+                <PermRow label="إدارة طلبات الاستبدال والتعليقات" desc="الرد على المستخدمين ومعالجة الاستبدال" checked={form.can_replacements} onChange={(v) => setForm({ ...form, can_replacements: v })} />
+              </div>
+            </div>
+            <Button className="w-full" onClick={save} disabled={busy}>
+              {busy ? <Loader2 className="size-4 animate-spin" /> : (editing ? "حفظ التعديلات" : "إضافة الموظف")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function PermRow({ label, desc, checked, onChange }: { label: string; desc: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-start gap-3 p-3 rounded-xl border border-border hover:bg-muted/40 transition cursor-pointer">
+      <Switch checked={checked} onCheckedChange={onChange} />
+      <div className="flex-1 min-w-0">
+        <div className="font-bold text-sm">{label}</div>
+        <div className="text-[11px] text-muted-foreground">{desc}</div>
+      </div>
+    </label>
+  );
+}
+
 /* ---------------- Products ---------------- */
 
 function CompatibleModelsField({
