@@ -35,6 +35,8 @@ import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon,
 import { BellRing, MailCheck, MailX, Clock } from "lucide-react";
 import { Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw } from "lucide-react";
 import { runDiagnostics, type DiagnosticsReport, type CheckStatus } from "@/lib/diagnostics.functions";
+import { adminUpdateReplacementStatus } from "@/lib/replacement-admin.functions";
+import { useServerFn } from "@tanstack/react-start";
 import { WhatsappIcon } from "@/components/icons";
 import { formatIQD, whatsappLink } from "@/lib/format";
 import { statusLabel, statusColor } from "@/lib/order-status";
