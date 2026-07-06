@@ -240,7 +240,6 @@ export const ordersQuery = (userId: string | null) =>
         .from("orders")
         .select("*")
         .eq("user_id", userId)
-        .eq("hidden_by_user", false)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
