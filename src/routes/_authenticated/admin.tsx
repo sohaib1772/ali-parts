@@ -1599,6 +1599,9 @@ function OrdersAdmin() {
 }
 
 function OrderAdminCard({ order: o, onStatusChange, onDelete }: { order: any; onStatusChange: (id: string, status: string) => void; onDelete: (id: string) => void }) {
+  const isAdminHere = useIsAdmin();
+  const staffHere = useStaffPermissions();
+  const canBlockHere = isAdminHere || !!staffHere?.can_block;
   const addr = (o.address ?? {}) as { label?: string; full_name?: string; phone?: string; city?: string; area?: string; street?: string; notes?: string };
   const phoneDigits = String(addr.phone ?? "").replace(/\D/g, "");
   const copy = async (text: string, label: string) => {
@@ -1790,7 +1793,7 @@ function OrderAdminCard({ order: o, onStatusChange, onDelete }: { order: any; on
 
       <InvoiceActions order={o} items={items} customer={customer ?? null} />
 
-      {o.user_id && (
+      {o.user_id && canBlockHere && (
         <button
           onClick={toggleBlock}
           disabled={blockSaving}
