@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
-import { ArrowRight, Loader2, Phone, Lock, User as UserIcon, Sparkles } from "lucide-react";
+import { ArrowRight, Loader2, Phone, Lock, User as UserIcon, Sparkles, Eye, EyeOff } from "lucide-react";
 import { useSetting } from "@/lib/admin";
 import { whatsappLink } from "@/lib/format";
 
@@ -299,19 +299,32 @@ function AuthPage() {
 function LuxuryField({ icon, placeholder, type = "text", value, onChange, required }: {
   icon: React.ReactNode; placeholder: string; type?: string; value: string; onChange: (v: string) => void; required?: boolean;
 }) {
+  const [show, setShow] = useState(false);
+  const isPassword = type === "password";
+  const inputType = isPassword ? (show ? "text" : "password") : type;
   return (
     <div className="group relative">
       <div className="absolute inset-0 rounded-2xl bg-gold/5 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity" />
       <div className="relative flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0f172a]/50 px-4 py-3.5 focus-within:border-gold/50 focus-within:ring-1 focus-within:ring-gold/20 transition-all">
         <span className="text-gold/80 shrink-0">{icon}</span>
         <input
-          type={type}
+          type={inputType}
           placeholder={placeholder}
           required={required}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className="flex-1 bg-transparent outline-none text-sm text-white placeholder:text-white/30 font-body-lux"
         />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShow((s) => !s)}
+            className="text-white/50 hover:text-gold transition-colors shrink-0"
+            aria-label={show ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+          >
+            {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
+        )}
       </div>
     </div>
   );
