@@ -201,6 +201,7 @@ export type Database = {
       }
       banners: {
         Row: {
+          created_at: string
           expires_at: string | null
           id: string
           image_url: string
@@ -212,6 +213,7 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          created_at?: string
           expires_at?: string | null
           id?: string
           image_url: string
@@ -223,6 +225,7 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          created_at?: string
           expires_at?: string | null
           id?: string
           image_url?: string
