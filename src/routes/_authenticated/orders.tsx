@@ -41,7 +41,7 @@ function OrdersPage() {
     if (!confirm(`سيتم مسح ${selected.size} طلب من قائمتك. هل أنت متأكد؟`)) return;
     setDeleting(true);
     const ids = Array.from(selected);
-    const { error } = await supabase.from("orders").update({ hidden_by_user: true }).in("id", ids).eq("user_id", userId);
+    const { error } = await supabase.from("orders").delete().in("id", ids).eq("user_id", userId);
     setDeleting(false);
     if (error) {
       toast.error("تعذّر مسح الطلبات");
@@ -57,7 +57,7 @@ function OrdersPage() {
     if (!userId || orders.length === 0) return;
     if (!confirm("سيتم مسح جميع الطلبات من قائمتك. هل أنت متأكد؟")) return;
     setDeleting(true);
-    const { error } = await supabase.from("orders").update({ hidden_by_user: true }).eq("user_id", userId).eq("hidden_by_user", false);
+    const { error } = await supabase.from("orders").delete().eq("user_id", userId);
     setDeleting(false);
     if (error) {
       toast.error("تعذّر مسح الطلبات");
