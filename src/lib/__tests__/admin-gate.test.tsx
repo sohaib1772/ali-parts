@@ -12,9 +12,10 @@ vi.mock("@/lib/use-auth", () => ({
   useAuth: () => ({ ...authState, user: authState.userId ? { id: authState.userId } : null }),
 }));
 
+type QueryResult = { data: unknown; error: { message: string } | null };
 type Resolver<T> = (v: T) => void;
-let adminResolver: Resolver<{ data: unknown; error: null }> | null = null;
-let staffResolver: Resolver<{ data: unknown; error: null }> | null = null;
+let adminResolver: Resolver<QueryResult> | null = null;
+let staffResolver: Resolver<QueryResult> | null = null;
 
 function pending<T>(setResolver: (r: Resolver<T>) => void) {
   return new Promise<T>((resolve) => setResolver(resolve));
