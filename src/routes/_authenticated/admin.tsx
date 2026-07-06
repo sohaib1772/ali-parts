@@ -544,6 +544,10 @@ function StaffAdmin() {
     if (!form.full_name.trim()) { toast.error("الاسم مطلوب"); return; }
     if (!editing) {
       if (!form.email.trim()) { toast.error("الإيميل مطلوب"); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+        toast.error("صيغة الإيميل غير صحيحة");
+        return;
+      }
       if (form.password.length < 6) { toast.error("كلمة السر لا تقل عن 6 أحرف"); return; }
     }
     if (!form.can_orders && !form.can_products && !form.can_replacements) {
