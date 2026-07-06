@@ -505,6 +505,7 @@ export type Database = {
           sales_count: number
           shipping_iqd: number
           specs: Json | null
+          stock_qty: number
         }
         Insert: {
           brand_id?: string | null
@@ -527,6 +528,7 @@ export type Database = {
           sales_count?: number
           shipping_iqd?: number
           specs?: Json | null
+          stock_qty?: number
         }
         Update: {
           brand_id?: string | null
@@ -549,6 +551,7 @@ export type Database = {
           sales_count?: number
           shipping_iqd?: number
           specs?: Json | null
+          stock_qty?: number
         }
         Relationships: [
           {
