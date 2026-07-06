@@ -580,7 +580,7 @@ function ProductPage() {
         </div>
       )}
 
-      <AlertDialog open={replaceOpen} onOpenChange={setReplaceOpen}>
+      <AlertDialog open={replaceOpen} onOpenChange={(o) => { if (!submitting) setReplaceOpen(o); }}>
         <AlertDialogContent className="rounded-3xl max-w-md p-0 overflow-hidden">
           <div className="p-5 pb-2">
             <AlertDialogHeader>
