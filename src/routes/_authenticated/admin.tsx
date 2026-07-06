@@ -1129,6 +1129,10 @@ function OrdersAdmin() {
       return data ?? [];
     },
   });
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmMode, setConfirmMode] = useState<"single" | "all">("single");
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const updateStatus = async (id: string, status: string) => {
     const { error } = await supabase.from("orders").update({ status: status as never }).eq("id", id);
@@ -1137,23 +1141,37 @@ function OrdersAdmin() {
     qc.invalidateQueries({ queryKey: ["admin", "orders"] });
   };
 
-  const deleteOrder = async (id: string) => {
-    if (!confirm("سيتم حذف هذا الطلب نهائياً. متأكد؟")) return;
-    const { error } = await supabase.from("orders").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("تم حذف الطلب");
-    qc.invalidateQueries({ queryKey: ["admin", "orders"] });
+  const openDeleteSingle = (id: string) => {
+    setConfirmMode("single");
+    setConfirmId(id);
+    setConfirmOpen(true);
   };
 
-  const deleteAllOrders = async () => {
+  const openDeleteAll = () => {
     if (!orders.length) return;
-    if (!confirm(`سيتم حذف جميع الطلبات (${orders.length}) نهائياً. متأكد؟`)) return;
-    if (!confirm("تأكيد نهائي: لا يمكن التراجع عن هذا الإجراء.")) return;
-    const ids = orders.map((o: any) => o.id);
-    const { error } = await supabase.from("orders").delete().in("id", ids);
-    if (error) { toast.error(error.message); return; }
-    toast.success("تم حذف جميع الطلبات");
-    qc.invalidateQueries({ queryKey: ["admin", "orders"] });
+    setConfirmMode("all");
+    setConfirmId(null);
+    setConfirmOpen(true);
+  };
+
+  const executeDelete = async () => {
+    setDeleting(true);
+    setConfirmOpen(false);
+    if (confirmMode === "single" && confirmId) {
+      const { error } = await supabase.from("orders").delete().eq("id", confirmId);
+      setDeleting(false);
+      if (error) { toast.error(error.message); return; }
+      toast.success("تم حذف الطلب");
+      qc.invalidateQueries({ queryKey: ["admin", "orders"] });
+    } else {
+      const ids = orders.map((o: any) => o.id);
+      const { error } = await supabase.from("orders").delete().in("id", ids);
+      setDeleting(false);
+      if (error) { toast.error(error.message); return; }
+      toast.success("تم حذف جميع الطلبات");
+      qc.invalidateQueries({ queryKey: ["admin", "orders"] });
+    }
+    setConfirmId(null);
   };
 
   if (isLoading) return <div className="text-center text-sm text-muted-foreground py-8">جاري التحميل...</div>;
@@ -1164,15 +1182,45 @@ function OrdersAdmin() {
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-muted-foreground">{orders.length} طلب</span>
         <button
-          onClick={deleteAllOrders}
-          className="h-9 px-3 rounded-xl border border-destructive/40 text-destructive text-xs font-bold flex items-center gap-1.5 hover:bg-destructive/10"
+          onClick={openDeleteAll}
+          disabled={deleting}
+          className="h-9 px-3 rounded-xl border border-destructive/40 text-destructive text-xs font-bold flex items-center gap-1.5 hover:bg-destructive/10 disabled:opacity-50"
         >
           <Trash2 className="size-3.5" /> حذف جميع الطلبات
         </button>
       </div>
       {orders.map((o: any) => (
-        <OrderAdminCard key={o.id} order={o} onStatusChange={updateStatus} onDelete={deleteOrder} />
+        <OrderAdminCard key={o.id} order={o} onStatusChange={updateStatus} onDelete={openDeleteSingle} />
       ))}
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent dir="rtl" className="max-w-sm">
+          <AlertDialogHeader className="items-center sm:items-center">
+            <div className="size-12 rounded-full bg-destructive/10 grid place-items-center mb-2">
+              <AlertTriangle className="size-6 text-destructive" />
+            </div>
+            <AlertDialogTitle className="text-base sm:text-lg">
+              {confirmMode === "all" ? "حذف جميع الطلبات" : "حذف الطلب"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              {confirmMode === "all"
+                ? `سيتم حذف ${orders.length} طلب بشكل نهائي. لا يمكن التراجع عن هذا الإجراء.`
+                : "سيتم حذف هذا الطلب بشكل نهائي. لا يمكن التراجع عن هذا الإجراء."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col-reverse sm:flex-col-reverse gap-2">
+            <AlertDialogCancel className="w-full mt-0">
+              إلغاء
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={executeDelete}
+              disabled={deleting}
+            >
+              {deleting ? "جاري الحذف..." : "حذف نهائي"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
