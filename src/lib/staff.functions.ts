@@ -133,6 +133,15 @@ export const deleteStaff = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+function phoneFromEmail(email: string | null | undefined): string | null {
+  if (!email) return null;
+  const m = email.match(/^p(\d+)@aliparts\.(app|local)$/);
+  if (!m) return null;
+  const n = m[1];
+  if (n.length === 12 && n.startsWith("9647")) return n;
+  return null;
+}
+
 export const listStaff = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -148,12 +157,15 @@ export const listStaff = createServerFn({ method: "GET" })
     const rows = staff ?? [];
     if (rows.length === 0) return { staff: [] as any[] };
 
-    // Fetch emails from auth
-    const emailMap = new Map<string, string | null>();
+    // Fetch phone numbers from auth users (user_metadata or parsed email mapping)
+    const phoneMap = new Map<string, string | null>();
     for (let page = 1; page <= 20; page++) {
       const { data, error: e } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 200 });
       if (e) break;
-      for (const u of data?.users ?? []) emailMap.set(u.id, u.email ?? null);
+      for (const u of data?.users ?? []) {
+        const fromMeta = (u.user_metadata as { phone?: string } | undefined)?.phone?.replace(/^\+/, "");
+        phoneMap.set(u.id, fromMeta ?? phoneFromEmail(u.email) ?? null);
+      }
       if ((data?.users ?? []).length < 200) break;
     }
 
@@ -161,7 +173,7 @@ export const listStaff = createServerFn({ method: "GET" })
       staff: rows.map((r) => ({
         user_id: r.user_id,
         full_name: r.full_name,
-        email: emailMap.get(r.user_id) ?? null,
+        phone: phoneMap.get(r.user_id) ?? null,
         can_orders: r.can_orders,
         can_products: r.can_products,
         can_replacements: r.can_replacements,
