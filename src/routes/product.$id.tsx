@@ -52,6 +52,26 @@ function ProductPage() {
   const { data: models = [] } = useQuery(carModelsQuery());
   const { data: brands = [] } = useQuery(brandsQuery());
 
+  // Show a "طلب استبدال" shortcut if this product was delivered in one of the user's orders
+  const { data: deliveredOrder } = useQuery({
+    queryKey: ["product-delivered-order", id, userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("order_items")
+        .select("order_id, orders!inner(id, user_id, status, order_number, created_at)")
+        .eq("product_id", id)
+        .eq("orders.user_id", userId!)
+        .eq("orders.status", "delivered")
+        .order("created_at", { ascending: false, referencedTable: "orders" as any })
+        .limit(1)
+        .maybeSingle();
+      if (error) return null;
+      return data as any;
+    },
+  });
+  const deliveredOrderId: string | null = deliveredOrder?.order_id ?? null;
+
   const img = product.images?.[activeImg];
   const stockQty = (product as any).stock_qty ?? 0;
   const available = product.in_stock && stockQty > 0;
