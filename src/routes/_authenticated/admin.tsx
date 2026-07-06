@@ -33,6 +33,8 @@ import {
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote, Receipt, Search as SearchIcon, Ban, CheckCircle2, History, Users as UsersIcon, KeyRound, Loader2 } from "lucide-react";
 import { BellRing, MailCheck, MailX, Clock } from "lucide-react";
+import { Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw } from "lucide-react";
+import { runDiagnostics, type DiagnosticsReport, type CheckStatus } from "@/lib/diagnostics.functions";
 import { WhatsappIcon } from "@/components/icons";
 import { formatIQD, whatsappLink } from "@/lib/format";
 import { statusLabel, statusColor } from "@/lib/order-status";
@@ -44,6 +46,7 @@ const STATUSES = ["received", "preparing", "packed", "shipped", "out_for_deliver
 /* ---------------- Block Log ---------------- */
 
 function BlockLogAdmin() {
+  // placeholder anchor
   const qc = useQueryClient();
   const [unblockingId, setUnblockingId] = useState<string | null>(null);
 
@@ -262,7 +265,7 @@ function AdminPage() {
     <PageShell title="لوحة الإدارة">
       <div className="px-4 pt-3 pb-6">
         <Tabs defaultValue="products">
-          <TabsList className="w-full grid grid-cols-7 h-auto">
+          <TabsList className="w-full grid grid-cols-4 h-auto gap-1">
             <TabsTrigger value="products" className="flex-col gap-1 py-2 text-[10px]"><Package className="size-4" />منتجات</TabsTrigger>
             <TabsTrigger value="banners" className="flex-col gap-1 py-2 text-[10px]"><ImageIcon className="size-4" />عروض</TabsTrigger>
             <TabsTrigger value="taxonomy" className="flex-col gap-1 py-2 text-[10px]"><Tags className="size-4" />تصنيفات</TabsTrigger>
@@ -270,6 +273,7 @@ function AdminPage() {
             <TabsTrigger value="users" className="flex-col gap-1 py-2 text-[10px]"><UsersIcon className="size-4" />مستخدمون</TabsTrigger>
             <TabsTrigger value="block-log" className="flex-col gap-1 py-2 text-[10px]"><History className="size-4" />سجل الحظر</TabsTrigger>
             <TabsTrigger value="settings" className="flex-col gap-1 py-2 text-[10px]"><SettingsIcon className="size-4" />إعدادات</TabsTrigger>
+            <TabsTrigger value="diagnostics" className="flex-col gap-1 py-2 text-[10px]"><Activity className="size-4" />تشخيص</TabsTrigger>
           </TabsList>
 
           <TabsContent value="products" className="mt-4"><ProductsAdmin /></TabsContent>
@@ -279,6 +283,7 @@ function AdminPage() {
           <TabsContent value="users" className="mt-4"><UsersAdmin /></TabsContent>
           <TabsContent value="block-log" className="mt-4"><BlockLogAdmin /></TabsContent>
           <TabsContent value="settings" className="mt-4"><SettingsAdmin /></TabsContent>
+          <TabsContent value="diagnostics" className="mt-4"><DiagnosticsAdmin /></TabsContent>
         </Tabs>
       </div>
     </PageShell>
@@ -1633,6 +1638,111 @@ function ImageUploader({ images, onChange, max = 6, resizeTo }: { images: string
         )}
       </div>
       <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleFiles(e.target.files)} />
+    </div>
+  );
+}
+
+/* ---------------- Diagnostics ---------------- */
+
+function DiagnosticsAdmin() {
+  const [report, setReport] = useState<DiagnosticsReport | null>(null);
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const run = async () => {
+    if (running) return;
+    setRunning(true);
+    setError(null);
+    try {
+      const r = await runDiagnostics();
+      setReport(r);
+    } catch (e: any) {
+      setError(e?.message || "تعذّر تشغيل الفحص");
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  // Auto-run once on first open
+  const didRunRef = useRef(false);
+  if (!didRunRef.current && !running && !report && !error) {
+    didRunRef.current = true;
+    void run();
+  }
+
+  const statusMeta = (s: CheckStatus) =>
+    s === "ok"
+      ? { icon: <CheckCircle className="size-4" />, cls: "bg-success/10 text-success", label: "سليم" }
+      : s === "warn"
+      ? { icon: <AlertTriangle className="size-4" />, cls: "bg-amber-500/10 text-amber-600", label: "تحذير" }
+      : { icon: <XCircle className="size-4" />, cls: "bg-destructive/10 text-destructive", label: "فشل" };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-sm font-extrabold flex items-center gap-2">
+          <Activity className="size-4" /> تشخيص النظام
+        </div>
+        <Button size="sm" variant="secondary" onClick={run} disabled={running} className="gap-1">
+          {running ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
+          إعادة الفحص
+        </Button>
+      </div>
+
+      {report && (
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-2xl bg-success/10 text-success p-3 text-center">
+            <div className="text-xl font-extrabold">{report.summary.ok}</div>
+            <div className="text-[11px]">سليم</div>
+          </div>
+          <div className="rounded-2xl bg-amber-500/10 text-amber-600 p-3 text-center">
+            <div className="text-xl font-extrabold">{report.summary.warn}</div>
+            <div className="text-[11px]">تحذير</div>
+          </div>
+          <div className="rounded-2xl bg-destructive/10 text-destructive p-3 text-center">
+            <div className="text-xl font-extrabold">{report.summary.fail}</div>
+            <div className="text-[11px]">فشل</div>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-destructive/10 text-destructive rounded-2xl p-3 text-sm">{error}</div>
+      )}
+
+      {running && !report && (
+        <div className="text-center text-xs text-muted-foreground py-8 flex flex-col items-center gap-2">
+          <Loader2 className="size-6 animate-spin" />
+          جاري تنفيذ الفحص الشامل…
+        </div>
+      )}
+
+      {report?.sections.map((sec) => (
+        <div key={sec.title} className="space-y-2">
+          <div className="text-xs font-bold text-muted-foreground pt-2">{sec.title}</div>
+          {sec.checks.map((c) => {
+            const m = statusMeta(c.status);
+            return (
+              <div key={c.id} className="bg-card border border-border rounded-2xl p-3 flex items-start gap-3">
+                <div className={`size-9 rounded-full grid place-items-center shrink-0 ${m.cls}`}>{m.icon}</div>
+                <div className="flex-1 min-w-0 text-sm">
+                  <div className="font-bold flex items-center gap-2">
+                    {c.label}
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${m.cls}`}>{m.label}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{c.detail}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ))}
+
+      {report && (
+        <div className="text-[11px] text-muted-foreground text-center pt-2">
+          آخر فحص: {new Date(report.ranAt).toLocaleString("ar-IQ", { dateStyle: "medium", timeStyle: "short" })}
+        </div>
+      )}
     </div>
   );
 }
