@@ -1315,6 +1315,9 @@ function SettingsAdmin() {
   const taglineVal = tagline || settings.store_tagline || "";
   const logoVal = logo || settings.store_logo || "";
   const addressVal = address || settings.store_address || "";
+  const locationLinkVal = locationLink || settings.store_location_link || "";
+  const yearsVal = years || settings.store_years || "7";
+  const frontImageVal = frontImage || settings.store_front_image || "";
   const aboutVal = about || settings.store_about || "";
   const shipLocalNameVal = shipLocalName || settings.ship_local_name || "التوصيل المحلي";
   const shipLocalCostVal = shipLocalCost || settings.ship_local_cost || "5000";
