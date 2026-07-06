@@ -35,6 +35,8 @@ function OrdersPage() {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmMode, setConfirmMode] = useState<"selected" | "all">("selected");
 
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
@@ -47,36 +49,45 @@ function OrdersPage() {
   const selectAll = () => setSelected(new Set(orders.map((o: any) => o.id)));
   const clearSel = () => setSelected(new Set());
 
-  const deleteSelected = async () => {
+  const openDeleteSelected = () => {
     if (!userId || selected.size === 0) return;
-    if (!confirm(`سيتم مسح ${selected.size} طلب من قائمتك. هل أنت متأكد؟`)) return;
-    setDeleting(true);
-    const ids = Array.from(selected);
-    const { error } = await supabase.from("orders").delete().in("id", ids).eq("user_id", userId);
-    setDeleting(false);
-    if (error) {
-      toast.error("تعذّر مسح الطلبات");
-    } else {
-      toast.success("تم مسح الطلبات");
-      setSelected(new Set());
-      setSelectMode(false);
-      qc.invalidateQueries({ queryKey: ["orders", userId] });
-    }
+    setConfirmMode("selected");
+    setConfirmOpen(true);
   };
 
-  const deleteAll = async () => {
+  const openDeleteAll = () => {
     if (!userId || orders.length === 0) return;
-    if (!confirm("سيتم مسح جميع الطلبات من قائمتك. هل أنت متأكد؟")) return;
+    setConfirmMode("all");
+    setConfirmOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!userId) return;
     setDeleting(true);
-    const { error } = await supabase.from("orders").delete().eq("user_id", userId);
-    setDeleting(false);
-    if (error) {
-      toast.error("تعذّر مسح الطلبات");
+    setConfirmOpen(false);
+    if (confirmMode === "selected") {
+      const ids = Array.from(selected);
+      const { error } = await supabase.from("orders").delete().in("id", ids).eq("user_id", userId);
+      setDeleting(false);
+      if (error) {
+        toast.error("تعذّر مسح الطلبات");
+      } else {
+        toast.success("تم مسح الطلبات");
+        setSelected(new Set());
+        setSelectMode(false);
+        qc.invalidateQueries({ queryKey: ["orders", userId] });
+      }
     } else {
-      toast.success("تم مسح جميع الطلبات");
-      setSelected(new Set());
-      setSelectMode(false);
-      qc.invalidateQueries({ queryKey: ["orders", userId] });
+      const { error } = await supabase.from("orders").delete().eq("user_id", userId);
+      setDeleting(false);
+      if (error) {
+        toast.error("تعذّر مسح الطلبات");
+      } else {
+        toast.success("تم مسح جميع الطلبات");
+        setSelected(new Set());
+        setSelectMode(false);
+        qc.invalidateQueries({ queryKey: ["orders", userId] });
+      }
     }
   };
 
