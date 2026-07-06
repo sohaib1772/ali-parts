@@ -42,8 +42,7 @@ export const adminOtpStatus = createServerFn({ method: "GET" })
       .eq("user_id", context.userId)
       .maybeSingle();
     const verified = !!v && new Date(v.expires_at).getTime() > Date.now();
-    const { data: actor } = await supabaseAdmin.auth.admin.getUserById(context.userId);
-    const email = actor?.user?.email ?? "";
+    const email = process.env.ADMIN_OTP_EMAIL ?? "";
     return {
       required: true,
       verified,
