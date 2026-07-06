@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import { PageShell } from "@/components/page-shell";
 import { supabase } from "@/integrations/supabase/client";
-import { useIsAdmin, useStaffPermissions, useIsAdminStatus, useStaffPermissionsStatus, uploadProductImage, uploadMediaFile, settingsQuery } from "@/lib/admin";
+import { useIsAdmin, useStaffPermissions, useAdminAccessStatus, uploadProductImage, uploadMediaFile, settingsQuery } from "@/lib/admin";
 import {
   categoriesQuery,
   brandsQuery,
@@ -364,17 +364,10 @@ function PermissionsBadge({ isAdmin, canOrders, canProducts, canReplacements, ca
 }
 
 function AdminPageInner() {
-  const { isAdmin, isLoading: adminLoading, isError: adminError } = useIsAdminStatus();
-  const { staff, isLoading: staffLoading, isError: staffError } = useStaffPermissionsStatus();
+  const { isAdmin, canOrders, canProducts, canReplacements, canBlock, hasAnyAccess, isLoading, isError } = useAdminAccessStatus();
   const navigate = useNavigate();
 
-  const canOrders = isAdmin || !!staff?.can_orders;
-  const canProducts = isAdmin || !!staff?.can_products;
-  const canReplacements = isAdmin || !!staff?.can_replacements;
-  const canBlock = isAdmin || !!staff?.can_block;
-  const hasAnyAccess = isAdmin || canOrders || canProducts || canReplacements || canBlock;
-
-  if (adminLoading || staffLoading) {
+  if (isLoading) {
     return (
       <PageShell title="لوحة الإدارة">
         <div className="px-4 pt-16 flex flex-col items-center text-center gap-3">
@@ -385,7 +378,7 @@ function AdminPageInner() {
     );
   }
 
-  if (adminError || staffError) {
+  if (isError) {
     return (
       <PageShell title="لوحة الإدارة">
         <div className="px-4 pt-10 flex flex-col items-center text-center gap-3" role="alert">

@@ -80,6 +80,29 @@ export function useStaffPermissionsStatus() {
   };
 }
 
+export function useAdminAccessStatus() {
+  const admin = useIsAdminStatus();
+  const staffStatus = useStaffPermissionsStatus();
+  const staff = staffStatus.staff;
+  const canOrders = admin.isAdmin || !!staff?.can_orders;
+  const canProducts = admin.isAdmin || !!staff?.can_products;
+  const canReplacements = admin.isAdmin || !!staff?.can_replacements;
+  const canBlock = admin.isAdmin || !!staff?.can_block;
+
+  return {
+    isAdmin: admin.isAdmin,
+    staff,
+    canOrders,
+    canProducts,
+    canReplacements,
+    canBlock,
+    hasAnyAccess: admin.isAdmin || canOrders || canProducts || canReplacements || canBlock,
+    isLoading: admin.isLoading || staffStatus.isLoading,
+    isError: admin.isError || staffStatus.isError,
+    error: admin.error ?? staffStatus.error,
+  };
+}
+
 export const settingsQuery = () =>
   queryOptions({
     queryKey: ["app_settings"],
