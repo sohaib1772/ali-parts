@@ -458,9 +458,15 @@ function InvoiceBody({ order, items, customer }: { order: any; items: any[]; cus
               <tr key={it.id} style={{ borderBottom: "1px solid #eee" }}>
                 <td style={tdStyle}>{idx + 1}</td>
                 <td style={{ ...tdStyle, textAlign: "right" }}>
-                  <div style={{ fontWeight: 700 }}>{it.name_ar}</div>
-                  {it.oem_number && <div style={{ fontSize: "9px", color: "#5c6c8a", fontFamily: "ui-monospace, monospace" }}>OEM: {it.oem_number}</div>}
-                  {it.note && <div style={{ fontSize: "10px", color: "#8a6a1a", marginTop: "2px" }}>ملاحظة: {it.note}</div>}
+                  <div style={{ fontWeight: 800, lineHeight: 1.25, color: "#0a1a3a" }}>{it.name_ar}</div>
+                  {it.oem_number && (
+                    <div style={{ fontSize: "9px", color: "#5c6c8a", fontFamily: "ui-monospace, monospace", direction: "ltr", textAlign: "right", marginTop: "1px" }}>
+                      OEM: {it.oem_number}
+                    </div>
+                  )}
+                  {it.note && (
+                    <div style={{ fontSize: "10px", color: "#8a6a1a", marginTop: "1px", lineHeight: 1.3 }}>ملاحظة: {it.note}</div>
+                  )}
                 </td>
                 <td style={{ ...tdStyle, textAlign: "center", fontWeight: 700 }}>{it.side ?? "-"}</td>
                 <td style={{ ...tdStyle, textAlign: "center" }}>× {it.quantity}</td>
