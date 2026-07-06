@@ -454,6 +454,7 @@ type ProductForm = {
   brand_id: string;
   images: string[];
   in_stock: boolean;
+  stock_qty: string;
   is_featured: boolean;
   is_deal: boolean;
   compatible_models: string[];
@@ -464,7 +465,7 @@ const emptyProduct: ProductForm = {
   name_ar: "", name_en: "", description_ar: "", oem_number: "",
   price_iqd: "", compare_price_iqd: "", shipping_iqd: "", category_id: "", brand_id: "",
   images: [], in_stock: true, is_featured: false, is_deal: false,
-  compatible_models: [], deal_expires_at: "",
+  compatible_models: [], deal_expires_at: "", stock_qty: "0",
 };
 
 function ProductsAdmin() {
@@ -511,6 +512,7 @@ function ProductsAdmin() {
       brand_id: p.brand_id ?? "",
       images: p.images ?? [],
       in_stock: !!p.in_stock,
+      stock_qty: String(p.stock_qty ?? 0),
       is_featured: !!p.is_featured,
       is_deal: !!p.is_deal,
       compatible_models: p.compatible_models ?? [],
@@ -539,6 +541,7 @@ function ProductsAdmin() {
         brand_id: form.brand_id || null,
         images: form.images,
         in_stock: form.in_stock,
+        stock_qty: form.stock_qty ? Math.max(0, Math.floor(Number(form.stock_qty))) : 0,
         is_featured: form.is_featured,
         is_deal: form.is_deal,
         compatible_models: form.compatible_models.length > 0 ? form.compatible_models : null,
@@ -599,7 +602,9 @@ function ProductsAdmin() {
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-sm truncate">{p.name_ar}</div>
                 <div className="text-xs text-muted-foreground">{formatIQD(p.price_iqd)}</div>
-                <div className="text-[10px] text-muted-foreground">{p.in_stock ? "متوفر" : "غير متوفر"}</div>
+                <div className="text-[10px] text-muted-foreground">
+                  {p.in_stock && (p.stock_qty ?? 0) > 0 ? `متوفر · ${p.stock_qty ?? 0} قطعة` : "غير متوفر"}
+                </div>
               </div>
               <div className="flex flex-col gap-1">
                 <Button size="icon" variant="ghost" onClick={() => openEdit(p)}><Pencil className="size-4" /></Button>
@@ -666,6 +671,17 @@ function ProductsAdmin() {
               <Label>متوفر</Label>
               <Switch checked={form.in_stock} onCheckedChange={(v) => setForm({ ...form, in_stock: v })} />
             </div>
+            <Field label="عدد القطع المتوفرة">
+              <Input
+                type="number"
+                min={0}
+                inputMode="numeric"
+                dir="ltr"
+                value={form.stock_qty}
+                onChange={(e) => setForm({ ...form, stock_qty: e.target.value })}
+                placeholder="0"
+              />
+            </Field>
             <div className="flex items-center justify-between py-1">
               <Label>مميز</Label>
               <Switch checked={form.is_featured} onCheckedChange={(v) => setForm({ ...form, is_featured: v })} />
