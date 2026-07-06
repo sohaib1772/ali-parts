@@ -303,18 +303,48 @@ function OrderDetail() {
               <Headphones className="size-6 text-gold" />
             </div>
             <AlertDialogTitle className="text-base sm:text-lg">
-              طلب استبدال
+              {replaceDone ? "تم استلام طلب الاستبدال" : "طلب استبدال"}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-center leading-relaxed">
-              سوف يتواصل معك قسم متابعة الاستبدال لمعرفة أسباب الخلل خلال 72 ساعة.
-              <br />
-              نأسف على تأخر الرد بسبب الضغط.
+              {replaceDone
+                ? "سوف يتواصل معك قسم متابعة الاستبدال لمعرفة أسباب الخلل خلال 72 ساعة. نأسف على تأخر الرد بسبب الضغط."
+                : "اكتب سبب طلب الاستبدال أو الخلل في المنتج، وسيتواصل معك قسم المتابعة خلال 72 ساعة."}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {!replaceDone && replaceItem && (
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground text-center">
+                المنتج: <span className="font-bold text-navy">{replaceItem.name_ar}</span>
+              </div>
+              <textarea
+                value={replaceReason}
+                onChange={(e) => setReplaceReason(e.target.value)}
+                placeholder="اذكر سبب الاستبدال بالتفصيل..."
+                rows={4}
+                maxLength={500}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold/40 resize-none"
+                dir="rtl"
+              />
+            </div>
+          )}
           <AlertDialogFooter>
-            <AlertDialogAction className="w-full bg-gradient-gold text-navy hover:brightness-105">
-              حسناً
-            </AlertDialogAction>
+            {replaceDone ? (
+              <AlertDialogAction className="w-full bg-gradient-gold text-navy hover:brightness-105">
+                حسناً
+              </AlertDialogAction>
+            ) : (
+              <div className="flex flex-col-reverse gap-2 w-full">
+                <AlertDialogCancel className="w-full mt-0">إلغاء</AlertDialogCancel>
+                <button
+                  type="button"
+                  onClick={submitReplace}
+                  disabled={replaceSubmitting}
+                  className="w-full h-10 rounded-xl bg-gradient-gold text-navy font-bold shadow-gold hover:brightness-105 disabled:opacity-50"
+                >
+                  {replaceSubmitting ? "جاري الإرسال..." : "إرسال طلب الاستبدال"}
+                </button>
+              </div>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
