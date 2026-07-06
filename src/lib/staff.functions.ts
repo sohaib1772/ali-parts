@@ -83,7 +83,12 @@ export const updateStaff = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      full_name?: string;
+      can_orders?: boolean;
+      can_products?: boolean;
+      can_replacements?: boolean;
+    } = {};
     if (data.full_name !== undefined) patch.full_name = data.full_name;
     if (data.can_orders !== undefined) patch.can_orders = data.can_orders;
     if (data.can_products !== undefined) patch.can_products = data.can_products;
