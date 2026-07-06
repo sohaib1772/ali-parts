@@ -42,6 +42,7 @@ import { formatIQD, whatsappLink } from "@/lib/format";
 import { statusLabel, statusColor } from "@/lib/order-status";
 import { PrintableInvoice, InvoicePreviewDialog } from "@/components/printable-invoice";
 import { adminListUsers, adminSetUserBlocked, adminSetUserPassword } from "@/lib/admin.functions";
+import { adminOtpStatus, requestAdminOtp, verifyAdminOtp } from "@/lib/admin-otp.functions";
 import { createStaff, updateStaff, deleteStaff, listStaff } from "@/lib/staff.functions";
 import { normalizePhone } from "@/lib/phone-auth";
 
@@ -366,6 +367,14 @@ function PermissionsBadge({ isAdmin, canOrders, canProducts, canReplacements, ca
 function AdminPageInner() {
   const { isAdmin, canOrders, canProducts, canReplacements, canBlock, hasAnyAccess, isLoading, isError } = useAdminAccessStatus();
   const navigate = useNavigate();
+  const otpStatusFn = useServerFn(adminOtpStatus);
+  const { data: otp, isLoading: otpLoading, refetch: refetchOtp } = useQuery({
+    queryKey: ["admin-otp-status"],
+    queryFn: () => otpStatusFn(),
+    enabled: hasAnyAccess && !isLoading,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
 
   if (isLoading) {
     return (
@@ -406,6 +415,25 @@ function AdminPageInner() {
           <p className="text-sm text-muted-foreground">هذه اللوحة مخصصة للمدراء فقط.</p>
           <Button onClick={() => navigate({ to: "/" })}>العودة للرئيسية</Button>
         </div>
+      </PageShell>
+    );
+  }
+
+  if (otpLoading || !otp) {
+    return (
+      <PageShell title="لوحة الإدارة">
+        <div className="px-4 pt-16 flex flex-col items-center text-center gap-3">
+          <Loader2 className="size-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">جاري التحقق…</p>
+        </div>
+      </PageShell>
+    );
+  }
+
+  if (otp.required && !otp.verified) {
+    return (
+      <PageShell title="تحقق ثنائي">
+        <AdminOtpGate email={otp.email ?? ""} onVerified={() => refetchOtp()} />
       </PageShell>
     );
   }
