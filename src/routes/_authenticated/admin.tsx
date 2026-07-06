@@ -754,6 +754,27 @@ function ProductsAdmin() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteProduct} onOpenChange={(v) => !v && setDeleteProduct(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد حذف المنتج</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل أنت متأكد من حذف المنتج «{deleteProduct?.name ?? "—"}»؟ لا يمكن التراجع عن هذا الإجراء.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteProduct(null)}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteProduct && remove(deleteProduct.id)}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "جاري الحذف..." : "حذف"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
