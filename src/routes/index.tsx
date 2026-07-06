@@ -23,12 +23,15 @@ import { formatIQD } from "@/lib/format";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => {
-    context.queryClient.ensureQueryData(categoriesQuery());
-    context.queryClient.ensureQueryData(featuredProductsQuery());
-    context.queryClient.ensureQueryData(dealsQuery());
-    context.queryClient.ensureQueryData(bannersQuery());
-    context.queryClient.ensureQueryData(brandsQuery());
-    context.queryClient.ensureQueryData(bestSellersQuery());
+    // Kick off all fetches in parallel; do NOT await so navigation is instant
+    // and each section suspends independently as its data arrives.
+    void context.queryClient.prefetchQuery(categoriesQuery());
+    void context.queryClient.prefetchQuery(featuredProductsQuery());
+    void context.queryClient.prefetchQuery(dealsQuery());
+    void context.queryClient.prefetchQuery(bannersQuery());
+    void context.queryClient.prefetchQuery(brandsQuery());
+    void context.queryClient.prefetchQuery(bestSellersQuery());
+    void context.queryClient.prefetchInfiniteQuery(productsInfiniteQuery());
   },
   component: HomePage,
 });
