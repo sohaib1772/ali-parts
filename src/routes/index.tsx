@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, useInfiniteQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
 import { Search, ChevronLeft, Sparkles, CircleDot, Timer, Flame, Volume2, VolumeX } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
@@ -134,18 +135,38 @@ function HomePage() {
 }
 
 function AllProductsInfinite() {
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery(
-    productsInfiniteQuery(),
-  );
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    error,
+  } = useInfiniteQuery(productsInfiniteQuery());
   const sentinelRef = useRef<HTMLDivElement>(null);
   const products = data?.pages.flat() ?? [];
+
+  useEffect(() => {
+    if (isFetchNextPageError && error) {
+      console.error("[home:allProducts] فشل تحميل الدفعة التالية", error);
+      toast.error("تعذّر تحميل المزيد من المنتجات", {
+        description: "يرجى التحقق من الاتصال بالإنترنت والمحاولة مرة أخرى.",
+        action: { label: "إعادة المحاولة", onClick: () => fetchNextPage() },
+      });
+    }
+  }, [isFetchNextPageError, error, fetchNextPage]);
 
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+        if (
+          entries[0].isIntersecting &&
+          hasNextPage &&
+          !isFetchingNextPage &&
+          !isFetchNextPageError
+        ) {
           fetchNextPage();
         }
       },
@@ -153,7 +174,7 @@ function AllProductsInfinite() {
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, isFetchNextPageError]);
 
   if (products.length === 0) return null;
 
@@ -168,11 +189,20 @@ function AllProductsInfinite() {
         ref={sentinelRef}
         className="h-16 flex items-center justify-center text-xs text-muted-foreground"
       >
-        {isFetchingNextPage
-          ? "جاري تحميل المزيد..."
-          : hasNextPage
-          ? "مرر للأسفل لعرض المزيد"
-          : "وصلت إلى نهاية المنتجات"}
+        {isFetchingNextPage ? (
+          "جاري تحميل المزيد..."
+        ) : isFetchNextPageError ? (
+          <button
+            onClick={() => fetchNextPage()}
+            className="text-destructive font-bold underline underline-offset-4"
+          >
+            فشل التحميل — اضغط لإعادة المحاولة
+          </button>
+        ) : hasNextPage ? (
+          "مرر للأسفل لعرض المزيد"
+        ) : (
+          "وصلت إلى نهاية المنتجات"
+        )}
       </div>
     </Section>
   );
