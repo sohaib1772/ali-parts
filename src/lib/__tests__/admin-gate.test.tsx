@@ -145,4 +145,54 @@ describe("Admin permission gate", () => {
       expect(screen.getByTestId("state").textContent).toContain("ليس لديك صلاحية"),
     );
   });
+
+  it("shows professional error message (not 'no permission') when admin query fails", async () => {
+    authState = { userId: "u1", loading: false };
+    renderHarness();
+
+    // Skeleton visible while pending
+    expect(screen.getByTestId("state").textContent).toContain("جاري التحقق");
+
+    await waitFor(() => expect(adminResolver).toBeTruthy());
+    await waitFor(() => expect(staffResolver).toBeTruthy());
+    await act(async () => {
+      adminResolver!({ data: null, error: { message: "network down" } });
+      staffResolver!({ data: null, error: null });
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId("state").textContent).toContain("تعذر التحقق"),
+    );
+    // The false-permission screen must never appear on network errors
+    expect(screen.queryByText(/ليس لديك صلاحية/)).toBeNull();
+  });
+
+  it("shows professional error when staff permissions query fails", async () => {
+    authState = { userId: "u1", loading: false };
+    renderHarness();
+
+    await waitFor(() => expect(adminResolver).toBeTruthy());
+    await waitFor(() => expect(staffResolver).toBeTruthy());
+    await act(async () => {
+      adminResolver!({ data: null, error: null });
+      staffResolver!({ data: null, error: { message: "PGRST timeout" } });
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId("state").textContent).toContain("تعذر التحقق"),
+    );
+    expect(screen.queryByText(/ليس لديك صلاحية/)).toBeNull();
+  });
+
+  it("stays on skeleton when queries never resolve (timeout in-flight)", async () => {
+    authState = { userId: "u1", loading: false };
+    renderHarness();
+
+    // Wait long enough that if the gate were to bail out early, it would have
+    await new Promise((r) => setTimeout(r, 150));
+
+    expect(screen.getByTestId("state").textContent).toContain("جاري التحقق");
+    expect(screen.queryByText(/ليس لديك صلاحية/)).toBeNull();
+    expect(screen.queryByText(/تعذر التحقق/)).toBeNull();
+  });
 });
