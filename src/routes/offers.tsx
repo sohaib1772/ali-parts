@@ -12,6 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 import { useIsAdmin } from "@/lib/admin";
 import { adminSetUserBlocked } from "@/lib/admin.functions";
+import { addBannerComment } from "@/lib/comments.functions";
+import { useServerFn } from "@tanstack/react-start";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -384,6 +386,7 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
   const [asAdmin, setAsAdmin] = useState(false);
   const PAGE_SIZE = 10;
   const [limit, setLimit] = useState(PAGE_SIZE);
+  const addBannerCommentFn = useServerFn(addBannerComment);
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ["banner_comments", bannerId, limit],
@@ -445,12 +448,13 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
           .eq("id", vars.editingId);
         if (error) throw error;
       } else {
-        const { error } = await (supabase as any).rpc("add_banner_comment", {
-          p_banner_id: bannerId,
-          p_content: body,
-          p_is_admin_reply: isAdmin && vars.asAdmin,
+        await addBannerCommentFn({
+          data: {
+            bannerId,
+            content: body,
+            isAdminReply: isAdmin && vars.asAdmin,
+          },
         });
-        if (error) throw error;
       }
     },
     onMutate: async (vars) => {
