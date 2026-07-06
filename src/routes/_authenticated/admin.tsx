@@ -1445,9 +1445,27 @@ function BannersAdmin() {
 
   return (
     <div className="space-y-3">
-      <Button size="sm" onClick={() => { setForm({ title_ar: "", subtitle_ar: "", image_url: "", video_url: "", link: "" }); setOpen(true); }}>
-        <Plus className="size-4 me-1" /> إضافة عرض
-      </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button size="sm" onClick={() => { setForm({ title_ar: "", subtitle_ar: "", image_url: "", video_url: "", link: "" }); setOpen(true); }}>
+          <Plus className="size-4 me-1" /> إضافة عرض
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={async () => {
+            const t = toast.loading("جارٍ إرسال إشعار تجريبي...");
+            try {
+              const { sendTestNotification } = await import("@/lib/test-notification.functions");
+              const res: any = await sendTestNotification();
+              toast.success(`تم الإرسال — داخلي: ${res.internal ?? 0} · خارجي: ${res.sent ?? 0}`, { id: t });
+            } catch (err: any) {
+              toast.error(err?.message ?? "فشل الإرسال", { id: t });
+            }
+          }}
+        >
+          🔔 اختبار إشعار
+        </Button>
+      </div>
       {banners.map((b) => (
         <div key={b.id} className="bg-card border border-border rounded-2xl overflow-hidden">
           {(b as any).video_url ? (
