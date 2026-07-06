@@ -3,7 +3,7 @@ import { useSuspenseQuery, useQuery, useQueryClient, useMutation } from "@tansta
 import { useEffect, useRef, useState } from "react";
 import {
   Sparkles, Volume2, VolumeX, ChevronLeft, X, Heart, MessageCircle,
-  Send, Trash2, Pencil, Shield, Ban, Check,
+  Send, Trash2, Pencil, Shield, Ban, Check, Search as SearchIcon, Users as UsersIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageShell } from "@/components/page-shell";
@@ -11,7 +11,7 @@ import { bannersQuery, type Banner } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 import { useIsAdmin, useAdminAccessStatus } from "@/lib/admin";
-import { adminSetUserBlocked } from "@/lib/admin.functions";
+import { adminSetUserBlocked, moderatorListUsers } from "@/lib/admin.functions";
 import { addBannerComment } from "@/lib/comments.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -368,12 +368,241 @@ function CommentsSheet({ bannerId, onClose }: { bannerId: string | null; onClose
   return (
     <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <SheetContent side="bottom" className="h-[85dvh] p-0 rounded-t-3xl flex flex-col">
-        <SheetHeader className="px-4 pt-4 pb-2 border-b">
-          <SheetTitle className="text-base">التعليقات</SheetTitle>
-        </SheetHeader>
-        {bannerId && <CommentsBody bannerId={bannerId} />}
+        {bannerId && <CommentsSheetContent bannerId={bannerId} />}
       </SheetContent>
     </Sheet>
+  );
+}
+
+function CommentsSheetContent({ bannerId }: { bannerId: string }) {
+  const isAdmin = useIsAdmin();
+  const { canBlock } = useAdminAccessStatus();
+  const canModerate = isAdmin || canBlock;
+  const [tab, setTab] = useState<"comments" | "users">("comments");
+  return (
+    <>
+      <SheetHeader className="px-4 pt-4 pb-2 border-b">
+        <SheetTitle className="text-base flex items-center justify-between gap-2">
+          <span>{tab === "comments" ? "التعليقات" : "المستخدمون"}</span>
+          {canModerate && (
+            <div className="inline-flex rounded-lg border border-border overflow-hidden text-[11px] font-bold">
+              <button
+                type="button"
+                onClick={() => setTab("comments")}
+                className={`px-3 py-1.5 flex items-center gap-1 ${tab === "comments" ? "bg-gold text-navy" : "bg-transparent text-muted-foreground"}`}
+              >
+                <MessageCircle className="size-3.5" /> تعليقات
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab("users")}
+                className={`px-3 py-1.5 flex items-center gap-1 ${tab === "users" ? "bg-gold text-navy" : "bg-transparent text-muted-foreground"}`}
+              >
+                <UsersIcon className="size-3.5" /> مستخدمون
+              </button>
+            </div>
+          )}
+        </SheetTitle>
+      </SheetHeader>
+      {tab === "comments" ? <CommentsBody bannerId={bannerId} /> : <UsersPanel />}
+    </>
+  );
+}
+
+/* ---------- Users panel (moderation) ---------- */
+
+type ModUser = {
+  id: string;
+  email: string | null;
+  phone: string | null;
+  full_name: string | null;
+  profile_phone: string | null;
+  is_blocked: boolean;
+  is_active: boolean;
+  last_sign_in_at: string | null;
+  created_at: string | null;
+};
+
+function UsersPanel() {
+  const qc = useQueryClient();
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all" | "blocked" | "active">("all");
+  const [detail, setDetail] = useState<ModUser | null>(null);
+
+  const { data, isLoading, isFetching, refetch } = useQuery({
+    queryKey: ["moderator", "users"],
+    queryFn: () => moderatorListUsers(),
+    staleTime: 30_000,
+  });
+
+  const users = (data?.users ?? []) as ModUser[];
+  const filtered = (() => {
+    const s = search.trim().toLowerCase();
+    let out = users;
+    if (filter === "blocked") out = out.filter((u) => u.is_blocked);
+    else if (filter === "active") out = out.filter((u) => u.is_active);
+    if (!s) return out;
+    return out.filter((u) =>
+      [u.full_name, u.email, u.phone, u.profile_phone]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(s)),
+    );
+  })();
+
+  const block = useMutation({
+    mutationFn: async ({ uid, blocked }: { uid: string; blocked: boolean }) => {
+      await adminSetUserBlocked({
+        data: {
+          user_id: uid,
+          blocked,
+          reason: blocked
+            ? "تم حظرك بسبب مخالفة قوانين المجتمع. يرجى الالتزام بالكلام المحترم."
+            : "تم رفع الحظر عن حسابك، يمكنك الآن التعليق بشكل طبيعي.",
+        },
+      });
+    },
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ["moderator", "users"] });
+      qc.invalidateQueries({ queryKey: ["banner_comments"] });
+      setDetail((prev) => (prev ? { ...prev, is_blocked: vars.blocked } : prev));
+      toast.success(vars.blocked ? "تم حظر المستخدم" : "تم رفع الحظر");
+    },
+    onError: (e: Error) => toast.error(e.message || "تعذر التنفيذ"),
+  });
+
+  const fmt = (iso: string | null) => {
+    if (!iso) return "—";
+    try { return new Date(iso).toLocaleString("ar-IQ", { dateStyle: "short", timeStyle: "short" }); }
+    catch { return iso; }
+  };
+
+  const chip = (v: "all" | "blocked" | "active", label: string, count?: number) => (
+    <button
+      type="button"
+      onClick={() => setFilter(v)}
+      className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition ${filter === v ? "bg-gold text-navy border-gold" : "bg-card text-muted-foreground border-border"}`}
+    >
+      {label}{typeof count === "number" ? ` (${count})` : ""}
+    </button>
+  );
+
+  const blockedCount = users.filter((u) => u.is_blocked).length;
+  const activeCount = users.filter((u) => u.is_active).length;
+
+  return (
+    <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+      <label className="flex items-center gap-2 bg-card border border-border rounded-xl px-3 py-2 focus-within:border-gold">
+        <SearchIcon className="size-4 text-muted-foreground" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="ابحث بالاسم أو الهاتف أو الإيميل…"
+          className="flex-1 bg-transparent outline-none text-sm"
+        />
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="text-xs text-gold font-bold px-2 disabled:opacity-50"
+          disabled={isFetching}
+        >
+          {isFetching ? "…" : "تحديث"}
+        </button>
+      </label>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        {chip("all", "الكل", users.length)}
+        {chip("active", "متصلون", activeCount)}
+        {chip("blocked", "محظورون", blockedCount)}
+      </div>
+
+      {isLoading ? (
+        <div className="text-center text-sm text-muted-foreground py-8">جاري التحميل…</div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center text-sm text-muted-foreground py-8">لا يوجد مستخدمون مطابقون</div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((u) => {
+            const displayPhone = u.profile_phone || u.phone;
+            const label = u.full_name || (displayPhone ? `+${String(displayPhone).replace(/\D/g, "")}` : (u.email ?? "بلا اسم"));
+            return (
+              <button
+                key={u.id}
+                type="button"
+                onClick={() => setDetail(u)}
+                className="w-full text-start bg-card border border-border rounded-2xl p-3 flex items-center gap-3 hover:border-gold/50 transition"
+              >
+                <div className={`size-11 rounded-full grid place-items-center font-black text-lg shrink-0 ${u.is_blocked ? "bg-destructive/15 text-destructive" : u.is_active ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
+                  {(label[0] ?? "?").toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0 text-sm">
+                  <div className="font-bold truncate flex items-center gap-1.5">
+                    {label}
+                    {u.is_blocked && <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full"><Ban className="size-2.5" /> محظور</span>}
+                    {u.is_active && !u.is_blocked && <span className="text-[9px] font-black text-success bg-success/10 px-1.5 py-0.5 rounded-full">متصل</span>}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">آخر دخول: {fmt(u.last_sign_in_at)}</div>
+                </div>
+                <div className="text-[11px] text-gold font-bold">تفاصيل</div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <Sheet open={!!detail} onOpenChange={(v) => { if (!v) setDetail(null); }}>
+        <SheetContent side="bottom" className="rounded-t-3xl">
+          <SheetHeader>
+            <SheetTitle className="text-base">تفاصيل المستخدم</SheetTitle>
+          </SheetHeader>
+          {detail && (
+            <div className="mt-3 space-y-3 text-sm">
+              <div className="flex items-center gap-3">
+                <div className={`size-14 rounded-full grid place-items-center font-black text-xl ${detail.is_blocked ? "bg-destructive/15 text-destructive" : "bg-muted"}`}>
+                  {((detail.full_name || detail.email || "?")[0] ?? "?").toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-black truncate">{detail.full_name || "بلا اسم"}</div>
+                  <div className="text-[11px] text-muted-foreground truncate" dir="ltr">
+                    {(detail.profile_phone || detail.phone) ? `+${String(detail.profile_phone || detail.phone).replace(/\D/g, "")}` : (detail.email ?? "—")}
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-[12px]">
+                <div className="bg-card border border-border rounded-xl p-2">
+                  <div className="text-[10px] text-muted-foreground">الحالة</div>
+                  <div className="font-bold">
+                    {detail.is_blocked ? <span className="text-destructive">محظور</span> : detail.is_active ? <span className="text-success">متصل الآن</span> : <span className="text-muted-foreground">غير متصل</span>}
+                  </div>
+                </div>
+                <div className="bg-card border border-border rounded-xl p-2">
+                  <div className="text-[10px] text-muted-foreground">تاريخ الإنشاء</div>
+                  <div className="font-bold">{fmt(detail.created_at)}</div>
+                </div>
+                <div className="bg-card border border-border rounded-xl p-2 col-span-2">
+                  <div className="text-[10px] text-muted-foreground">آخر دخول</div>
+                  <div className="font-bold">{fmt(detail.last_sign_in_at)}</div>
+                </div>
+                {detail.email && (
+                  <div className="bg-card border border-border rounded-xl p-2 col-span-2">
+                    <div className="text-[10px] text-muted-foreground">البريد</div>
+                    <div className="font-bold truncate" dir="ltr">{detail.email}</div>
+                  </div>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant={detail.is_blocked ? "outline" : "destructive"}
+                className="w-full"
+                disabled={block.isPending}
+                onClick={() => block.mutate({ uid: detail.id, blocked: !detail.is_blocked })}
+              >
+                {detail.is_blocked ? (<><Check className="size-4 me-1" /> رفع الحظر</>) : (<><Ban className="size-4 me-1" /> حظر المستخدم</>)}
+              </Button>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+    </div>
   );
 }
 
