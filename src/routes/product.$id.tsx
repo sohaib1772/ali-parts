@@ -552,6 +552,129 @@ function ProductPage() {
           </div>
         </div>
       )}
+
+      <AlertDialog open={replaceOpen} onOpenChange={setReplaceOpen}>
+        <AlertDialogContent className="rounded-3xl max-w-md p-0 overflow-hidden">
+          <div className="p-5 pb-2">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-navy">
+                {submittedId ? "تم إرسال طلب الاستبدال" : "طلب استبدال سريع"}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {submittedId
+                  ? "سيتواصل معك قسم متابعة الاستبدال خلال 72 ساعة."
+                  : product.name_ar}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+          </div>
+
+          {!submittedId ? (
+            <div className="px-5 pb-4 space-y-4">
+              <div>
+                <div className="text-xs font-bold text-navy mb-2">1) سبب الاستبدال</div>
+                <div className="space-y-1.5">
+                  {[...REASON_PRESETS, "أخرى"].map((r) => (
+                    <label
+                      key={r}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer text-xs font-bold ${reasonChoice === r ? "bg-navy/5 border-navy" : "border-border hover:bg-muted"}`}
+                    >
+                      <input
+                        type="radio"
+                        name="reason"
+                        value={r}
+                        checked={reasonChoice === r}
+                        onChange={() => setReasonChoice(r)}
+                        className="accent-navy"
+                      />
+                      <span>{r}</span>
+                    </label>
+                  ))}
+                </div>
+                <textarea
+                  value={reasonText}
+                  onChange={(e) => setReasonText(e.target.value.slice(0, 500))}
+                  placeholder={reasonChoice === "أخرى" ? "اكتب السبب بالتفصيل..." : "تفاصيل إضافية (اختياري)"}
+                  className="mt-2 w-full min-h-[64px] rounded-xl border border-border bg-background p-2 text-xs"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs font-bold text-navy">2) مرفقات (اختياري)</div>
+                  <span className="text-[10px] text-muted-foreground">
+                    {pickedFiles.length}/{MAX_FILES} · حتى {MAX_FILE_MB}MB
+                  </span>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt"
+                  className="hidden"
+                  onChange={(e) => onPickFiles(e.target.files)}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={pickedFiles.length >= MAX_FILES}
+                  className="w-full h-10 rounded-xl border border-dashed border-gold/60 text-navy text-xs font-bold flex items-center justify-center gap-2 hover:bg-gold/5 disabled:opacity-50"
+                >
+                  <Paperclip className="size-4 text-gold" />
+                  إضافة صور أو مستندات
+                </button>
+                {pickedFiles.length > 0 && (
+                  <ul className="mt-2 space-y-1">
+                    {pickedFiles.map((f, idx) => (
+                      <li key={idx} className="flex items-center gap-2 text-[11px] bg-muted rounded-lg px-2 py-1.5">
+                        <span className="flex-1 truncate">{f.name}</span>
+                        <span className="text-muted-foreground">{(f.size / 1024 / 1024).toFixed(2)}MB</span>
+                        <button
+                          type="button"
+                          onClick={() => setPickedFiles((prev) => prev.filter((_, i) => i !== idx))}
+                          className="size-6 rounded-md grid place-items-center hover:bg-background"
+                        >
+                          <Trash2 className="size-3.5 text-rose-600" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="px-5 pb-2 text-xs text-muted-foreground">
+              يمكنك متابعة حالة الطلب من صفحة الاستبدال.
+            </div>
+          )}
+
+          <AlertDialogFooter className="p-4 pt-2 gap-2">
+            {submittedId ? (
+              <>
+                <AlertDialogCancel className="rounded-xl">إغلاق</AlertDialogCancel>
+                <Link
+                  to="/replacements/$id"
+                  params={{ id: submittedId }}
+                  className="inline-flex items-center justify-center h-10 px-4 rounded-xl bg-navy text-primary-foreground text-xs font-bold hover:bg-navy/90"
+                >
+                  عرض تفاصيل الطلب
+                </Link>
+              </>
+            ) : (
+              <>
+                <AlertDialogCancel disabled={submitting} className="rounded-xl">إلغاء</AlertDialogCancel>
+                <button
+                  type="button"
+                  onClick={submitQuickReplace}
+                  disabled={submitting}
+                  className="inline-flex items-center justify-center h-10 px-4 rounded-xl bg-navy text-primary-foreground text-xs font-bold hover:bg-navy/90 disabled:opacity-60"
+                >
+                  {submitting ? <Loader2 className="size-4 animate-spin" /> : "إرسال الطلب"}
+                </button>
+              </>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
