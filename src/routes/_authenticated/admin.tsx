@@ -841,6 +841,7 @@ function BannersAdmin() {
     title_ar: "", subtitle_ar: "", image_url: "", video_url: "", link: "", expires_at: "",
   });
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
   const save = async () => {
@@ -932,7 +933,16 @@ function BannersAdmin() {
                   disabled={uploadingVideo}
                   className="w-full h-24 rounded-xl border-2 border-dashed border-border grid place-items-center text-muted-foreground hover:bg-muted transition text-xs gap-1"
                 >
-                  {uploadingVideo ? "جاري الرفع..." : (<><Upload className="size-5" /> رفع فيديو</>)}
+                  {uploadingVideo ? (
+                    <div className="w-full px-4">
+                      <div className="text-[11px] font-bold mb-1">جاري الرفع… {Math.round(videoProgress * 100)}%</div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full bg-gold transition-all" style={{ width: `${videoProgress * 100}%` }} />
+                      </div>
+                    </div>
+                  ) : (
+                    <><Upload className="size-5" /> رفع فيديو</>
+                  )}
                 </button>
               )}
               <input
@@ -944,14 +954,16 @@ function BannersAdmin() {
                   const f = e.target.files?.[0];
                   if (!f) return;
                   setUploadingVideo(true);
+                  setVideoProgress(0);
                   try {
-                    const url = await uploadMediaFile(f);
+                    const url = await uploadMediaFile(f, setVideoProgress);
                     setForm((prev) => ({ ...prev, video_url: url }));
                     toast.success("تم رفع الفيديو");
                   } catch (err: any) {
                     toast.error(err?.message ?? "فشل رفع الفيديو");
                   } finally {
                     setUploadingVideo(false);
+                    setVideoProgress(0);
                     if (videoInputRef.current) videoInputRef.current.value = "";
                   }
                 }}
