@@ -31,7 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote, Receipt, Search as SearchIcon, Ban, CheckCircle2, History, Users as UsersIcon, KeyRound, Loader2, Repeat } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote, Receipt, Search as SearchIcon, Ban, CheckCircle2, History, Users as UsersIcon, KeyRound, Loader2, Repeat, Boxes, ArrowUp, ArrowDown } from "lucide-react";
 import { BellRing, MailCheck, MailX, Clock } from "lucide-react";
 import { Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw } from "lucide-react";
 import { runDiagnostics, type DiagnosticsReport, type CheckStatus } from "@/lib/diagnostics.functions";
@@ -275,6 +275,7 @@ function AdminPage() {
             <TabsTrigger value="replacements" className="flex-col gap-1 py-2 text-[10px]"><Repeat className="size-4" />استبدال</TabsTrigger>
             <TabsTrigger value="users" className="flex-col gap-1 py-2 text-[10px]"><UsersIcon className="size-4" />مستخدمون</TabsTrigger>
             <TabsTrigger value="block-log" className="flex-col gap-1 py-2 text-[10px]"><History className="size-4" />سجل الحظر</TabsTrigger>
+            <TabsTrigger value="stock" className="flex-col gap-1 py-2 text-[10px]"><Boxes className="size-4" />سجل المخزون</TabsTrigger>
             <TabsTrigger value="settings" className="flex-col gap-1 py-2 text-[10px]"><SettingsIcon className="size-4" />إعدادات</TabsTrigger>
             <TabsTrigger value="diagnostics" className="flex-col gap-1 py-2 text-[10px]"><Activity className="size-4" />تشخيص</TabsTrigger>
           </TabsList>
@@ -286,6 +287,7 @@ function AdminPage() {
           <TabsContent value="replacements" className="mt-4"><ReplacementsAdmin /></TabsContent>
           <TabsContent value="users" className="mt-4"><UsersAdmin /></TabsContent>
           <TabsContent value="block-log" className="mt-4"><BlockLogAdmin /></TabsContent>
+          <TabsContent value="stock" className="mt-4"><StockMovementsAdmin /></TabsContent>
           <TabsContent value="settings" className="mt-4"><SettingsAdmin /></TabsContent>
           <TabsContent value="diagnostics" className="mt-4"><DiagnosticsAdmin /></TabsContent>
         </Tabs>
