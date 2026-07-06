@@ -53,6 +53,8 @@ function ProductPage() {
   const { data: brands = [] } = useQuery(brandsQuery());
 
   const img = product.images?.[activeImg];
+  const stockQty = (product as any).stock_qty ?? 0;
+  const available = product.in_stock && stockQty > 0;
 
   const requireAuth = () => {
     if (!userId) {
@@ -175,9 +177,9 @@ function ProductPage() {
             <div className="text-3xl font-black text-navy">{formatIQD(product.price_iqd)}</div>
           </div>
           <div className="ms-auto">
-            {product.in_stock ? (
+            {available ? (
               <span className="inline-flex items-center gap-1 text-success text-xs font-bold bg-success/10 border border-success/30 px-2.5 py-1 rounded-full">
-                <CheckCircle2 className="size-3.5" /> متوفر
+                <CheckCircle2 className="size-3.5" /> متوفر · {stockQty} قطعة
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 text-destructive text-xs font-bold bg-destructive/10 border border-destructive/30 px-2.5 py-1 rounded-full">
@@ -284,9 +286,9 @@ function ProductPage() {
       <div className="fixed bottom-0 inset-x-0 z-30 bg-card border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="mx-auto max-w-md flex items-center gap-2">
           <div className="flex-shrink-0">
-            {product.in_stock ? (
+            {available ? (
               <span className="inline-flex items-center gap-1 text-success text-xs font-bold bg-success/10 border border-success/30 px-2 py-1 rounded-full">
-                <CheckCircle2 className="size-3.5" /> متوفر
+                <CheckCircle2 className="size-3.5" /> {stockQty} قطعة
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 text-destructive text-xs font-bold bg-destructive/10 border border-destructive/30 px-2 py-1 rounded-full">
@@ -296,14 +298,14 @@ function ProductPage() {
           </div>
           <button
             onClick={addToCart}
-            disabled={!product.in_stock}
+            disabled={!available}
             className="flex-1 h-12 rounded-2xl border-2 border-navy text-navy font-bold flex items-center justify-center gap-2 disabled:opacity-40 transition hover:bg-navy hover:text-primary-foreground"
           >
             <ShoppingCart className="size-4" /> أضف للسلة
           </button>
           <button
             onClick={buyNow}
-            disabled={!product.in_stock}
+            disabled={!available}
             className="flex-1 h-12 rounded-2xl bg-gradient-gold text-navy font-black shadow-gold disabled:opacity-40 hover:brightness-105 transition"
           >
             اشترِ الآن
