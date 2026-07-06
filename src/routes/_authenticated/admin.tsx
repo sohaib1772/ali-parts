@@ -247,9 +247,15 @@ export const Route = createFileRoute("/_authenticated/admin")({
 
 function AdminPage() {
   const isAdmin = useIsAdmin();
+  const staff = useStaffPermissions();
   const navigate = useNavigate();
 
-  if (!isAdmin) {
+  const canOrders = isAdmin || !!staff?.can_orders;
+  const canProducts = isAdmin || !!staff?.can_products;
+  const canReplacements = isAdmin || !!staff?.can_replacements;
+  const hasAnyAccess = isAdmin || canOrders || canProducts || canReplacements;
+
+  if (!hasAnyAccess) {
     return (
       <PageShell title="لوحة الإدارة">
         <div className="px-4 pt-10 flex flex-col items-center text-center gap-3">
@@ -264,33 +270,65 @@ function AdminPage() {
     );
   }
 
+  const defaultTab = isAdmin
+    ? "products"
+    : canOrders
+      ? "orders"
+      : canProducts
+        ? "products"
+        : "replacements";
+
   return (
     <PageShell title="لوحة الإدارة">
       <div className="px-4 pt-3 pb-6">
-        <Tabs defaultValue="products">
+        <Tabs defaultValue={defaultTab}>
           <TabsList className="w-full grid grid-cols-4 h-auto gap-1">
-            <TabsTrigger value="products" className="flex-col gap-1 py-2 text-[10px]"><Package className="size-4" />منتجات</TabsTrigger>
-            <TabsTrigger value="banners" className="flex-col gap-1 py-2 text-[10px]"><ImageIcon className="size-4" />عروض</TabsTrigger>
-            <TabsTrigger value="taxonomy" className="flex-col gap-1 py-2 text-[10px]"><Tags className="size-4" />تصنيفات</TabsTrigger>
-            <TabsTrigger value="orders" className="flex-col gap-1 py-2 text-[10px]"><ClipboardList className="size-4" />طلبات</TabsTrigger>
-            <TabsTrigger value="replacements" className="flex-col gap-1 py-2 text-[10px]"><Repeat className="size-4" />استبدال</TabsTrigger>
-            <TabsTrigger value="users" className="flex-col gap-1 py-2 text-[10px]"><UsersIcon className="size-4" />مستخدمون</TabsTrigger>
-            <TabsTrigger value="block-log" className="flex-col gap-1 py-2 text-[10px]"><History className="size-4" />سجل الحظر</TabsTrigger>
-            <TabsTrigger value="stock" className="flex-col gap-1 py-2 text-[10px]"><Boxes className="size-4" />سجل المخزون</TabsTrigger>
-            <TabsTrigger value="settings" className="flex-col gap-1 py-2 text-[10px]"><SettingsIcon className="size-4" />إعدادات</TabsTrigger>
-            <TabsTrigger value="diagnostics" className="flex-col gap-1 py-2 text-[10px]"><Activity className="size-4" />تشخيص</TabsTrigger>
+            {canProducts && (
+              <TabsTrigger value="products" className="flex-col gap-1 py-2 text-[10px]"><Package className="size-4" />منتجات</TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="banners" className="flex-col gap-1 py-2 text-[10px]"><ImageIcon className="size-4" />عروض</TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="taxonomy" className="flex-col gap-1 py-2 text-[10px]"><Tags className="size-4" />تصنيفات</TabsTrigger>
+            )}
+            {canOrders && (
+              <TabsTrigger value="orders" className="flex-col gap-1 py-2 text-[10px]"><ClipboardList className="size-4" />طلبات</TabsTrigger>
+            )}
+            {canReplacements && (
+              <TabsTrigger value="replacements" className="flex-col gap-1 py-2 text-[10px]"><Repeat className="size-4" />استبدال</TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="users" className="flex-col gap-1 py-2 text-[10px]"><UsersIcon className="size-4" />مستخدمون</TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="staff" className="flex-col gap-1 py-2 text-[10px]"><ShieldCheck className="size-4" />موظفون</TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="block-log" className="flex-col gap-1 py-2 text-[10px]"><History className="size-4" />سجل الحظر</TabsTrigger>
+            )}
+            {canProducts && (
+              <TabsTrigger value="stock" className="flex-col gap-1 py-2 text-[10px]"><Boxes className="size-4" />سجل المخزون</TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="settings" className="flex-col gap-1 py-2 text-[10px]"><SettingsIcon className="size-4" />إعدادات</TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="diagnostics" className="flex-col gap-1 py-2 text-[10px]"><Activity className="size-4" />تشخيص</TabsTrigger>
+            )}
           </TabsList>
 
-          <TabsContent value="products" className="mt-4"><ProductsAdmin /></TabsContent>
-          <TabsContent value="banners" className="mt-4"><BannersAdmin /></TabsContent>
-          <TabsContent value="taxonomy" className="mt-4"><TaxonomyAdmin /></TabsContent>
-          <TabsContent value="orders" className="mt-4"><OrdersAdmin /></TabsContent>
-          <TabsContent value="replacements" className="mt-4"><ReplacementsAdmin /></TabsContent>
-          <TabsContent value="users" className="mt-4"><UsersAdmin /></TabsContent>
-          <TabsContent value="block-log" className="mt-4"><BlockLogAdmin /></TabsContent>
-          <TabsContent value="stock" className="mt-4"><StockMovementsAdmin /></TabsContent>
-          <TabsContent value="settings" className="mt-4"><SettingsAdmin /></TabsContent>
-          <TabsContent value="diagnostics" className="mt-4"><DiagnosticsAdmin /></TabsContent>
+          {canProducts && <TabsContent value="products" className="mt-4"><ProductsAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="banners" className="mt-4"><BannersAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="taxonomy" className="mt-4"><TaxonomyAdmin /></TabsContent>}
+          {canOrders && <TabsContent value="orders" className="mt-4"><OrdersAdmin /></TabsContent>}
+          {canReplacements && <TabsContent value="replacements" className="mt-4"><ReplacementsAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="users" className="mt-4"><UsersAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="staff" className="mt-4"><StaffAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="block-log" className="mt-4"><BlockLogAdmin /></TabsContent>}
+          {canProducts && <TabsContent value="stock" className="mt-4"><StockMovementsAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="settings" className="mt-4"><SettingsAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="diagnostics" className="mt-4"><DiagnosticsAdmin /></TabsContent>}
         </Tabs>
       </div>
     </PageShell>
