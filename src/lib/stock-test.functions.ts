@@ -12,8 +12,8 @@ async function assertAdmin(ctx: { supabase: any; userId: string }) {
 type Check = {
   name: string;
   pass: boolean;
-  expected: unknown;
-  actual: unknown;
+  expected: string;
+  actual: string;
   detail?: string;
 };
 
