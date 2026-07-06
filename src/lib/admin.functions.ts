@@ -84,6 +84,17 @@ export const adminListUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context);
+    return await listUsersImpl(context);
+  });
+
+export const moderatorListUsers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertModerator(context);
+    return await listUsersImpl(context);
+  });
+
+async function listUsersImpl(context: { supabase: any; userId: string }) {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const perPage = 200;
@@ -151,4 +162,4 @@ export const adminListUsers = createServerFn({ method: "GET" })
       active: activeCount,
       users: enriched,
     };
-  });
+}
