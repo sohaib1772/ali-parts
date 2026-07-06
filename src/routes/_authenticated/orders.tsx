@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, ChevronLeft, X, Trash2, CheckSquare, Square } from "lucide-react";
+import { Package, ChevronLeft, X, Trash2, CheckSquare, Square, AlertTriangle } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { ordersQuery } from "@/lib/queries";
 import { useAuth } from "@/lib/use-auth";
@@ -10,6 +10,17 @@ import { formatIQD, formatArabicDate } from "@/lib/format";
 import { statusLabel, statusColor } from "@/lib/order-status";
 import { isOrderUnseen, useOrderSeenMap } from "@/lib/order-updates";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/orders")({
   component: OrdersPage,
