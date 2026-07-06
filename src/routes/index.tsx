@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Search, ChevronLeft, Sparkles, CircleDot, Timer, Flame, Volume2, VolumeX } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
@@ -15,6 +15,7 @@ import {
   dealsQuery,
   featuredProductsQuery,
   bestSellersQuery,
+  productsInfiniteQuery,
 } from "@/lib/queries";
 import type { Banner, Product } from "@/lib/queries";
 import { formatIQD } from "@/lib/format";
@@ -122,10 +123,58 @@ function HomePage() {
         </Section>
       )}
 
+      {/* All products — infinite scroll */}
+      <AllProductsInfinite />
+
       <div className="h-6" />
       <FloatingWhatsapp />
       <VehiclePicker open={pickerOpen} onOpenChange={setPickerOpen} mandatory={!vehicle} />
     </PageShell>
+  );
+}
+
+function AllProductsInfinite() {
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery(
+    productsInfiniteQuery(),
+  );
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const products = data?.pages.flat() ?? [];
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: "400px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  if (products.length === 0) return null;
+
+  return (
+    <Section title="جميع المنتجات" icon={<Sparkles className="size-4 text-gold" />}>
+      <div className="grid grid-cols-2 gap-3 px-4">
+        {products.map((p) => (
+          <ProductCard key={p.id} product={p} />
+        ))}
+      </div>
+      <div
+        ref={sentinelRef}
+        className="h-16 flex items-center justify-center text-xs text-muted-foreground"
+      >
+        {isFetchingNextPage
+          ? "جاري تحميل المزيد..."
+          : hasNextPage
+          ? "مرر للأسفل لعرض المزيد"
+          : "وصلت إلى نهاية المنتجات"}
+      </div>
+    </Section>
   );
 }
 
