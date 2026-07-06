@@ -5,6 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Clock, Search, ThumbsUp, ThumbsDown, CheckCircle2, PackageX, Repeat, FileText, StickyNote, Paperclip, ImageIcon, FileIcon, Upload, X, Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/use-auth";
+import { uploadWithProgress } from "@/lib/upload-with-progress";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_authenticated/replacements/$id")({
   component: ReplacementDetail,
@@ -233,6 +236,9 @@ function AttachmentsSection({ request }: { request: any }) {
   const [uploading, setUploading] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
   const [urls, setUrls] = useState<Record<string, string>>({});
+  const [uploadQueue, setUploadQueue] = useState<
+    { name: string; size: number; progress: number; status: "uploading" | "done" | "error" }[]
+  >([]);
 
   const paths: string[] = Array.isArray(request.attachments) ? request.attachments : [];
   const isOwner = userId === request.user_id;
@@ -263,7 +269,7 @@ function AttachmentsSection({ request }: { request: any }) {
   const handlePick = () => inputRef.current?.click();
 
   const handleFiles = async (files: FileList | null) => {
-    if (!files || files.length === 0 || !userId) return;
+    if (!files || files.length === 0 || !userId || uploading) return;
     const slots = MAX_ATTACHMENTS - paths.length;
     const list = Array.from(files).slice(0, slots);
     if (list.length === 0) {
@@ -271,23 +277,37 @@ function AttachmentsSection({ request }: { request: any }) {
       return;
     }
     setUploading(true);
+    const initialQueue = list.map((f) => ({
+      name: f.name,
+      size: f.size,
+      progress: 0,
+      status: "uploading" as const,
+    }));
+    setUploadQueue(initialQueue);
     const uploaded: string[] = [];
-    for (const file of list) {
+    for (let i = 0; i < list.length; i++) {
+      const file = list[i];
       if (file.size > MAX_FILE_MB * 1024 * 1024) {
         toast.error(`${file.name}: يتجاوز ${MAX_FILE_MB} ميغابايت`);
+        setUploadQueue((q) => q.map((it, idx) => (idx === i ? { ...it, status: "error" } : it)));
         continue;
       }
       const ext = fileExt(file.name) || "bin";
       const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(0, 80);
       const key = `${userId}/${request.id}/${Date.now()}-${crypto.randomUUID().slice(0, 6)}-${safeName || "file." + ext}`;
-      const { error } = await supabase.storage
-        .from("replacement-attachments")
-        .upload(key, file, { contentType: file.type || undefined, upsert: false });
-      if (error) {
+      try {
+        await uploadWithProgress("replacement-attachments", key, file, (pct) => {
+          setUploadQueue((q) =>
+            q.map((it, idx) => (idx === i ? { ...it, progress: Math.round(pct * 100) } : it)),
+          );
+        });
+        setUploadQueue((q) => q.map((it, idx) => (idx === i ? { ...it, progress: 100, status: "done" } : it)));
+        uploaded.push(key);
+      } catch {
         toast.error(`تعذّر رفع ${file.name}`);
+        setUploadQueue((q) => q.map((it, idx) => (idx === i ? { ...it, status: "error" } : it)));
         continue;
       }
-      uploaded.push(key);
     }
     if (uploaded.length > 0) {
       const next = [...paths, ...uploaded];
@@ -303,6 +323,8 @@ function AttachmentsSection({ request }: { request: any }) {
       }
     }
     setUploading(false);
+    // Clear queue after short delay so user sees final state
+    setTimeout(() => setUploadQueue([]), 1200);
     if (inputRef.current) inputRef.current.value = "";
   };
 
@@ -390,6 +412,7 @@ function AttachmentsSection({ request }: { request: any }) {
             multiple
             className="hidden"
             onChange={(e) => handleFiles(e.target.files)}
+            disabled={uploading}
           />
           <button
             type="button"
@@ -409,6 +432,34 @@ function AttachmentsSection({ request }: { request: any }) {
               </>
             )}
           </button>
+          {uploadQueue.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {uploadQueue.map((it, idx) => (
+                <div key={idx} className="rounded-xl border border-border bg-muted/40 p-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <FileIcon className="size-3.5 text-gold shrink-0" />
+                    <span className="flex-1 truncate text-[11px] font-bold text-navy">{it.name}</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {it.status === "error"
+                        ? "فشل"
+                        : it.status === "done"
+                        ? "تم ✓"
+                        : `${it.progress}%`}
+                    </span>
+                  </div>
+                  <Progress
+                    value={it.status === "error" ? 0 : it.progress}
+                    className={`h-1.5 ${it.status === "error" ? "bg-rose-100" : ""}`}
+                  />
+                </div>
+              ))}
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                {uploadQueue.filter((it) => it.status === "uploading").map((_, idx) => (
+                  <Skeleton key={idx} className="aspect-square rounded-xl" />
+                ))}
+              </div>
+            </div>
+          )}
           <div className="text-[10px] text-muted-foreground text-center mt-1.5">
             صور، PDF، Word، Excel — حتى {MAX_FILE_MB} ميغابايت لكل ملف
           </div>
