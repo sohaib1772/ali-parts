@@ -430,23 +430,23 @@ function ProductPage() {
         </a>
 
         {deliveredOrderId && (
-          <Link
-            to="/orders/$id"
-            params={{ id: deliveredOrderId }}
-            className="block bg-card rounded-2xl border border-gold/60 p-4 shadow-card hover:bg-gold/5 transition"
+          <button
+            type="button"
+            onClick={openReplaceQuick}
+            className="w-full text-start block bg-card rounded-2xl border border-gold/60 p-4 shadow-card hover:bg-gold/5 transition"
           >
             <div className="flex items-start gap-3">
               <div className="size-11 rounded-xl bg-gold/15 text-gold grid place-items-center shrink-0">
                 <RefreshCw className="size-5" />
               </div>
               <div className="flex-1">
-                <div className="text-sm font-extrabold text-navy">هل استلمت هذا المنتج؟ اطلب استبدال</div>
+                <div className="text-sm font-extrabold text-navy">استبدل هذا المنتج بخطوات سريعة</div>
                 <div className="text-[11px] text-foreground/70 mt-0.5 leading-relaxed">
-                  استلمت هذا المنتج ضمن طلب سابق. اضغط لفتح الطلب وتقديم طلب استبدال خلال 72 ساعة.
+                  اختر السبب وأرفق صورة أو مستند، ونرسل الطلب مباشرة — بدون التنقل بين الصفحات.
                 </div>
               </div>
             </div>
-          </Link>
+          </button>
         )}
 
         <div className="flex items-center gap-3">
