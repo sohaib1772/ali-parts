@@ -128,7 +128,7 @@ export const runStockTests = createServerFn({ method: "POST" })
         checks.push({
           name: "بعد إنشاء الطلب: المخزون 97",
           pass: s1.stock_qty === 97,
-          expected: 97,
+          expected: "97",
           actual: s1.stock_qty,
         });
         const m1 = await getMovements(orderId);
@@ -145,15 +145,15 @@ export const runStockTests = createServerFn({ method: "POST" })
         checks.push({
           name: "بعد الإلغاء: المخزون 100",
           pass: s2.stock_qty === 100,
-          expected: 100,
+          expected: "100",
           actual: s2.stock_qty,
         });
         const m2 = await getMovements(orderId);
         checks.push({
           name: "حركة إلغاء واحدة (order_cancelled = +3)",
           pass: countByReason(m2, "order_cancelled") === 1,
-          expected: 1,
-          actual: countByReason(m2, "order_cancelled"),
+          expected: "1",
+          actual: String(countByReason(m2, "order_cancelled")),
           detail: JSON.stringify(m2),
         });
 
@@ -164,13 +164,13 @@ export const runStockTests = createServerFn({ method: "POST" })
           name: "حفظ بنفس الحالة → لا تكرار",
           pass: countByReason(m3, "order_cancelled") === 1 && m3.length === m2.length,
           expected: m2.length,
-          actual: m3.length,
+          actual: String(m3.length),
         });
         const s3 = await getStock(productId);
         checks.push({
           name: "المخزون لم يتغير بعد الحفظ الفارغ",
           pass: s3.stock_qty === 100,
-          expected: 100,
+          expected: "100",
           actual: s3.stock_qty,
         });
 
@@ -180,15 +180,15 @@ export const runStockTests = createServerFn({ method: "POST" })
         checks.push({
           name: "بعد إعادة التفعيل: المخزون 97",
           pass: s4.stock_qty === 97,
-          expected: 97,
+          expected: "97",
           actual: s4.stock_qty,
         });
         const m4 = await getMovements(orderId);
         checks.push({
           name: "حركة uncancelled واحدة (-3)",
           pass: countByReason(m4, "order_uncancelled") === 1,
-          expected: 1,
-          actual: countByReason(m4, "order_uncancelled"),
+          expected: "1",
+          actual: String(countByReason(m4, "order_uncancelled")),
           detail: JSON.stringify(m4),
         });
 
@@ -210,8 +210,8 @@ export const runStockTests = createServerFn({ method: "POST" })
         checks.push({
           name: "بعد الإنشاء: المخزون 46",
           pass: (await getStock(productId)).stock_qty === 46,
-          expected: 46,
-          actual: (await getStock(productId)).stock_qty,
+          expected: "46",
+          actual: String((await getStock(productId)).stock_qty),
         });
 
         // Snapshot movements BEFORE delete (order_id will be gone after cascade)
@@ -226,7 +226,7 @@ export const runStockTests = createServerFn({ method: "POST" })
         checks.push({
           name: "بعد الحذف: المخزون 50",
           pass: s.stock_qty === 50,
-          expected: 50,
+          expected: "50",
           actual: s.stock_qty,
         });
 
@@ -260,7 +260,7 @@ export const runStockTests = createServerFn({ method: "POST" })
         checks.push({
           name: "بعد الإلغاء: المخزون 20",
           pass: sAfterCancel.stock_qty === 20,
-          expected: 20,
+          expected: "20",
           actual: sAfterCancel.stock_qty,
         });
         const mBefore = await getMovements(orderId);
@@ -273,7 +273,7 @@ export const runStockTests = createServerFn({ method: "POST" })
         checks.push({
           name: "بعد حذف طلب ملغى: المخزون 20 (لا استرداد مزدوج)",
           pass: sAfterDel.stock_qty === 20,
-          expected: 20,
+          expected: "20",
           actual: sAfterDel.stock_qty,
         });
 
@@ -281,8 +281,8 @@ export const runStockTests = createServerFn({ method: "POST" })
         checks.push({
           name: "لا حركة order_deleted لطلب ملغى",
           pass: countByReason(mAfter, "order_deleted") === 0,
-          expected: 0,
-          actual: countByReason(mAfter, "order_deleted"),
+          expected: "0",
+          actual: String(countByReason(mAfter, "order_deleted")),
           detail: `before=${mBefore.length} after=${mAfter.length}`,
         });
 
@@ -309,7 +309,7 @@ export const runStockTests = createServerFn({ method: "POST" })
         checks.push({
           name: "بعد سلسلة تغييرات (تجهيز→تسليم): المخزون 28",
           pass: s.stock_qty === 28,
-          expected: 28,
+          expected: "28",
           actual: s.stock_qty,
         });
 
@@ -317,7 +317,7 @@ export const runStockTests = createServerFn({ method: "POST" })
         checks.push({
           name: "حركة واحدة فقط (order_placed)",
           pass: m.length === 1 && m[0].reason === "order_placed",
-          expected: 1,
+          expected: "1",
           actual: m.length,
           detail: JSON.stringify(m),
         });
