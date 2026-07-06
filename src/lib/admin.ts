@@ -22,8 +22,8 @@ export const isAdminQuery = (userId: string | null) =>
 
 export function useIsAdmin() {
   const { userId } = useAuth();
-  const { data } = useQuery(isAdminQuery(userId));
-  return !!data;
+  const { data, isLoading, isFetching } = useQuery(isAdminQuery(userId));
+  return { isAdmin: !!data, isLoading: !!userId && (isLoading || isFetching && data === undefined) } as const;
 }
 
 export type StaffPermissions = {
@@ -52,8 +52,8 @@ export const staffPermissionsQuery = (userId: string | null) =>
 
 export function useStaffPermissions() {
   const { userId } = useAuth();
-  const { data } = useQuery(staffPermissionsQuery(userId));
-  return data ?? null;
+  const { data, isLoading, isFetching } = useQuery(staffPermissionsQuery(userId));
+  return { staff: data ?? null, isLoading: !!userId && (isLoading || isFetching && data === undefined) } as const;
 }
 
 export const settingsQuery = () =>
