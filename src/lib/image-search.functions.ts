@@ -17,10 +17,11 @@ export const analyzeProductImage = createServerFn({ method: "POST" })
       { auth: { persistSession: false, autoRefreshToken: false } },
     );
     const [{ data: products }, { data: cats }] = await Promise.all([
-      sb.from("products").select("id, name_ar, name_en, oem_number, category_id").limit(500),
+      sb.from("products").select("id, name_ar, name_en, oem_number, category_id").limit(1000),
       sb.from("categories").select("id, name_ar"),
     ]);
     const catMap = new Map((cats ?? []).map((c) => [c.id, c.name_ar]));
+    const catList = (cats ?? []).map((c) => ({ id: c.id, name: c.name_ar }));
     const catalog = (products ?? []).map((p, i) => {
       const parts = [p.name_ar];
       if (p.name_en) parts.push(`/ ${p.name_en}`);
@@ -30,6 +31,7 @@ export const analyzeProductImage = createServerFn({ method: "POST" })
       return { idx: i, id: p.id, label: parts.join(" ") };
     });
     const catalogText = catalog.map((c) => `${c.idx}. ${c.label}`).join("\n");
+    const catText = catList.map((c) => `- ${c.name}`).join("\n");
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -38,17 +40,17 @@ export const analyzeProductImage = createServerFn({ method: "POST" })
         "Lovable-API-Key": key,
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-pro",
         messages: [
           {
             role: "system",
             content:
-              "أنت خبير قطع غيار سيارات. حدد نوع القطعة في الصورة، ثم أعد منتجات من قائمة المتجر مرتبة من الأقرب للأبعد.\n\nالقواعد:\n1. حدد نوع/فئة القطعة (فلتر، مساعد، دسك، رديتر، شمعة، حساس…).\n2. أعد نتيجتين:\n   - exact: منتجات من نفس النوع تماماً (الأولوية القصوى).\n   - similar: منتجات قريبة/مشابهة أو من نفس الفئة أو مكمّلة للقطعة (حتى لو ليست نفس النوع بالضبط)، مرتبة بالأهم.\n3. مجموع النتائج حتى 12 منتج. لا تكرّر idx بين القائمتين.\n4. إذا ما توفر أي منتج من نفس النوع، اترك exact فارغة واملأ similar بأقرب البدائل من نفس الفئة.\n5. لا تخترع idx خارج القائمة.\n\nأعد JSON فقط: {\"name_ar\":\"اسم القطعة\",\"exact\":[<idx>,...],\"similar\":[<idx>,...]}",
+              "أنت خبير قطع غيار سيارات دقيق جداً. مهمتك تحديد القطعة في الصورة بدقة عالية وإرجاع منتجات مطابقة فقط من قائمة المتجر.\n\nقواعد صارمة:\n1. حدد أولاً اسم القطعة بالعربي (name_ar) واسم الفئة الرئيسية (category_ar) من القائمة المعطاة فقط. إذا لم تكن الصورة قطعة غيار واضحة، اترك الحقول فارغة وأرجع قوائم فارغة.\n2. exact: فقط المنتجات التي هي نفس نوع/وظيفة القطعة في الصورة تماماً (مثال: صورة فلتر زيت → فقط فلاتر زيت، ليس فلاتر هواء ولا فلاتر بنزين). يجب أن تكون من نفس الفئة (category_ar).\n3. similar: منتجات من نفس الفئة العامة فقط أو مكمّلة مباشرة للقطعة (مثال: مع فلتر زيت → زيت محرك). لا تضع قطعاً من فئات غير ذات صلة.\n4. الدقة أهم من العدد. أرجع فقط ما أنت واثق منه بنسبة عالية. إذا لم تجد مطابقات دقيقة، أرجع قوائم فارغة بدل إضافة نتائج ضعيفة.\n5. الحد الأقصى: 6 في exact و6 في similar. لا تكرر idx.\n6. لا تخترع idx خارج القائمة. لا تعتمد على تشابه الاسم فقط — يجب أن تطابق الوظيفة.\n\nأعد JSON فقط: {\"name_ar\":\"...\",\"category_ar\":\"...\",\"exact\":[<idx>,...],\"similar\":[<idx>,...]}",
           },
           {
             role: "user",
             content: [
-              { type: "text", text: `قائمة منتجات المتجر (idx. الاسم [الفئة] OEM):\n${catalogText}\n\nحلل الصورة وأعد exact + similar. JSON فقط.` },
+              { type: "text", text: `الفئات المتاحة في المتجر:\n${catText}\n\nقائمة المنتجات (idx. الاسم [الفئة] OEM):\n${catalogText}\n\nحلل الصورة بدقة. اذكر الفئة أولاً ثم اختر منتجات من نفس الفئة فقط. JSON فقط.` },
               { type: "image_url", image_url: { url: data.imageDataUrl } },
             ],
           },
@@ -63,12 +65,35 @@ export const analyzeProductImage = createServerFn({ method: "POST" })
 
     const json = await res.json();
     const content: string = json.choices?.[0]?.message?.content ?? "{}";
-    let parsed: { matches?: number[]; exact?: number[]; similar?: number[]; name_ar?: string } = {};
+    let parsed: { matches?: number[]; exact?: number[]; similar?: number[]; name_ar?: string; category_ar?: string } = {};
     try { parsed = JSON.parse(content); } catch { parsed = {}; }
+
+    // Resolve detected category id (if any) to enforce server-side filtering.
+    const detectedCatName = (parsed.category_ar ?? "").trim();
+    const detectedCat = detectedCatName
+      ? catList.find((c) => c.name && (c.name === detectedCatName || c.name.includes(detectedCatName) || detectedCatName.includes(c.name)))
+      : null;
+    const productById = new Map((products ?? []).map((p) => [p.id, p]));
+
     const toIds = (arr?: number[]) =>
-      (arr ?? []).map((i) => catalog[i]?.id).filter((v): v is string => !!v);
-    const exactIds = toIds(parsed.exact ?? parsed.matches);
-    const similarIds = toIds(parsed.similar).filter((id) => !exactIds.includes(id));
+      (arr ?? [])
+        .map((i) => catalog[i]?.id)
+        .filter((v): v is string => !!v);
+
+    let exactIds = toIds(parsed.exact ?? parsed.matches);
+    let similarIds = toIds(parsed.similar).filter((id) => !exactIds.includes(id));
+
+    // Strict category filter: keep only products in the detected category.
+    if (detectedCat) {
+      const inCat = (id: string) => productById.get(id)?.category_id === detectedCat.id;
+      exactIds = exactIds.filter(inCat);
+      similarIds = similarIds.filter(inCat);
+    }
+
+    // Cap results to keep them focused.
+    exactIds = exactIds.slice(0, 6);
+    similarIds = similarIds.slice(0, 6);
+
     const productIds = [...exactIds, ...similarIds];
-    return { productIds, exactIds, similarIds, name_ar: parsed.name_ar ?? "" };
+    return { productIds, exactIds, similarIds, name_ar: parsed.name_ar ?? "", category_ar: detectedCat?.name ?? parsed.category_ar ?? "" };
   });
