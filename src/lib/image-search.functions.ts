@@ -83,16 +83,20 @@ export const analyzeProductImage = createServerFn({ method: "POST" })
     let exactIds = toIds(parsed.exact ?? parsed.matches);
     let similarIds = toIds(parsed.similar).filter((id) => !exactIds.includes(id));
 
-    // Strict category filter: keep only products in the detected category.
+    // Category filter: only apply to `exact` (must match detected category),
+    // and only when we resolved a real category. `similar` stays broader so
+    // matching parts aren't hidden when the model picks an adjacent label.
     if (detectedCat) {
       const inCat = (id: string) => productById.get(id)?.category_id === detectedCat.id;
-      exactIds = exactIds.filter(inCat);
-      similarIds = similarIds.filter(inCat);
+      const filteredExact = exactIds.filter(inCat);
+      // If filtering wiped exact entirely, keep the model's picks — better to
+      // show something relevant than nothing.
+      if (filteredExact.length > 0) exactIds = filteredExact;
     }
 
     // Cap results to keep them focused.
-    exactIds = exactIds.slice(0, 6);
-    similarIds = similarIds.slice(0, 6);
+    exactIds = exactIds.slice(0, 8);
+    similarIds = similarIds.slice(0, 8);
 
     const productIds = [...exactIds, ...similarIds];
     return { productIds, exactIds, similarIds, name_ar: parsed.name_ar ?? "", category_ar: detectedCat?.name ?? parsed.category_ar ?? "" };
