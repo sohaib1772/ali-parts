@@ -366,6 +366,13 @@ function AdminPage() {
   return (
     <PageShell title="لوحة الإدارة">
       <div className="px-4 pt-3 pb-6">
+        <PermissionsBadge
+          isAdmin={isAdmin}
+          canOrders={canOrders}
+          canProducts={canProducts}
+          canReplacements={canReplacements}
+          canBlock={canBlock}
+        />
         <Tabs defaultValue={defaultTab}>
           <TabsList className="w-full grid grid-cols-4 h-auto gap-1">
             {canProducts && (
