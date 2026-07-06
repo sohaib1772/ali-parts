@@ -455,8 +455,9 @@ function Countdown({ to }: { to: string }) {
 
 function MiniCountdown({ to }: { to: string }) {
   const target = new Date(to).getTime();
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(() => target);
   useEffect(() => {
+    setNow(Date.now());
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
