@@ -137,18 +137,50 @@ function SearchPage() {
       </div>
 
       <div className="mt-5 px-4">
-        {!q.trim() && !usingImage ? (
-          <div className="text-center text-muted-foreground text-sm py-16">
-            ابدأ بكتابة اسم القطعة أو رقمها للبحث
-          </div>
-        ) : isFetching ? (
-          <div className="grid grid-cols-2 gap-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="skeleton rounded-2xl aspect-[3/4]" />
-            ))}
-          </div>
-        ) : filtered.length > 0 ? (
-          usingImage ? (
+        {(() => {
+          const SkeletonGrid = ({ n }: { n: number }) => (
+            <div className="grid grid-cols-2 gap-3">
+              {Array.from({ length: n }).map((_, i) => (
+                <div key={i} className="skeleton rounded-2xl aspect-[3/4]" />
+              ))}
+            </div>
+          );
+          // Image search: analyzing (before IDs) or fetching products for the returned IDs
+          if (analyzing || (usingImage && isFetching)) {
+            return (
+              <div className="space-y-6">
+                <section>
+                  <h2 className="text-sm font-bold mb-3 flex items-center gap-2">
+                    <span className="inline-block w-1 h-4 bg-gold rounded" />
+                    نتائج مطابقة
+                    <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+                  </h2>
+                  <SkeletonGrid n={2} />
+                </section>
+                <section>
+                  <h2 className="text-sm font-bold mb-3 flex items-center gap-2">
+                    <span className="inline-block w-1 h-4 bg-muted-foreground/60 rounded" />
+                    منتجات مشابهة
+                    <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+                  </h2>
+                  <SkeletonGrid n={4} />
+                </section>
+              </div>
+            );
+          }
+          if (!q.trim() && !usingImage) {
+            return (
+              <div className="text-center text-muted-foreground text-sm py-16">
+                ابدأ بكتابة اسم القطعة أو رقمها للبحث
+              </div>
+            );
+          }
+          if (isFetching) {
+            return <SkeletonGrid n={4} />;
+          }
+          if (filtered.length > 0) {
+            if (usingImage) {
+              return (
             (() => {
               const exact = filtered.filter((p) => exactIds.includes(p.id));
               const similar = filtered.filter((p) => similarIds.includes(p.id) && !exactIds.includes(p.id));
@@ -179,21 +211,25 @@ function SearchPage() {
                 </div>
               );
             })()
-          ) : (
-            <>
-              <div className="text-xs text-muted-foreground mb-3">
-                {vehicle ? `${filtered.length} نتيجة متوافقة مع ${vehicle.brandName} ${vehicle.modelName}` : `${filtered.length} نتيجة`}
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {filtered.map((p) => <ProductCard key={p.id} product={p} />)}
-              </div>
-            </>
-          )
-        ) : (
-          <div className="text-center text-muted-foreground text-sm py-16">
-            لا توجد نتائج مطابقة. {vehicle && `جرّب تغيير المركبة أو تواصل معنا عبر واتساب.`}
-          </div>
-        )}
+              );
+            }
+            return (
+              <>
+                <div className="text-xs text-muted-foreground mb-3">
+                  {vehicle ? `${filtered.length} نتيجة متوافقة مع ${vehicle.brandName} ${vehicle.modelName}` : `${filtered.length} نتيجة`}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {filtered.map((p) => <ProductCard key={p.id} product={p} />)}
+                </div>
+              </>
+            );
+          }
+          return (
+            <div className="text-center text-muted-foreground text-sm py-16">
+              لا توجد نتائج مطابقة. {vehicle && `جرّب تغيير المركبة أو تواصل معنا عبر واتساب.`}
+            </div>
+          );
+        })()}
       </div>
     </PageShell>
   );
