@@ -12,11 +12,11 @@ async function resolvePostLoginPath(userId: string): Promise<"/admin" | "/accoun
   try {
     const [roleRes, staffRes] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle(),
-      supabase.from("staff_permissions").select("can_orders,can_products,can_replacements").eq("user_id", userId).maybeSingle(),
+      supabase.from("staff_permissions").select("can_orders,can_products,can_replacements,can_block").eq("user_id", userId).maybeSingle(),
     ]);
     if (roleRes.data) return "/admin";
-    const s = staffRes.data as { can_orders?: boolean; can_products?: boolean; can_replacements?: boolean } | null;
-    if (s && (s.can_orders || s.can_products || s.can_replacements)) return "/admin";
+    const s = staffRes.data as { can_orders?: boolean; can_products?: boolean; can_replacements?: boolean; can_block?: boolean } | null;
+    if (s && (s.can_orders || s.can_products || s.can_replacements || s.can_block)) return "/admin";
   } catch { /* fall through */ }
   return "/";
 }

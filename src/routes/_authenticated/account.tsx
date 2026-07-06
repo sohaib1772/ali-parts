@@ -7,7 +7,7 @@ import { VehicleBar, VehiclePicker } from "@/components/vehicle-picker";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 import { profileQuery } from "@/lib/queries";
-import { useIsAdmin } from "@/lib/admin";
+import { useAdminAccessStatus } from "@/lib/admin";
 import { uploadAvatar } from "@/lib/avatar";
 import { toast } from "sonner";
 
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/account")({
 function AccountPage() {
   const { user, userId } = useAuth();
   const { data: profile } = useQuery(profileQuery(userId));
-  const isAdmin = useIsAdmin();
+  const { hasAnyAccess, isLoading: adminAccessLoading } = useAdminAccessStatus();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -80,7 +80,7 @@ function AccountPage() {
   };
 
   const links = [
-    ...(isAdmin ? [{ to: "/admin" as const, label: "لوحة الإدارة", icon: ShieldCheck }] : []),
+    ...(hasAnyAccess ? [{ to: "/admin" as const, label: "لوحة الإدارة", icon: ShieldCheck }] : []),
     { to: "/orders", label: "طلباتي السابقة", icon: Package },
     { to: "/favorites", label: "المفضلة", icon: Heart },
     { to: "/addresses", label: "العناوين", icon: MapPin },
@@ -185,6 +185,14 @@ function AccountPage() {
         </div>
 
         <div className="mt-4 bg-card rounded-2xl border border-border shadow-card overflow-hidden">
+          {adminAccessLoading && (
+            <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border text-muted-foreground">
+              <div className="size-9 rounded-xl bg-gold/10 text-gold grid place-items-center">
+                <Loader2 className="size-4 animate-spin" />
+              </div>
+              <span className="text-sm font-semibold flex-1">جاري التحقق من صلاحيات الإدارة…</span>
+            </div>
+          )}
           {links.map((l, i) => {
             const Icon = l.icon;
             return (
