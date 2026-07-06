@@ -278,7 +278,9 @@ function AdminPage() {
       ? "orders"
       : canProducts
         ? "products"
-        : "replacements";
+        : canReplacements
+          ? "replacements"
+          : "block-log";
 
   return (
     <PageShell title="لوحة الإدارة">
