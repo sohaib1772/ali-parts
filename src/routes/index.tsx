@@ -96,10 +96,10 @@ function HomePage() {
 
       {/* Featured */}
       <Section title="منتجات مميزة" icon={<Sparkles className="size-4 text-gold" />}>
-        {vehicle && (
+        {effectiveVehicle && (
           <div className="px-4 mb-2">
             <div className="text-xs text-gold font-semibold">
-              مُفلتر حسب: {vehicle.brandName} {vehicle.modelName} ({vehicle.year})
+              مُفلتر حسب: {effectiveVehicle.brandName} {effectiveVehicle.modelName} ({effectiveVehicle.year})
             </div>
           </div>
         )}
