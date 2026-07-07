@@ -79,7 +79,18 @@ export function ProductCard({ product }: { product: Product }) {
     >
       <div className="relative aspect-square bg-muted overflow-hidden">
         {img ? (
-          <img src={img} alt={product.name_ar} loading="lazy" className="size-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <img
+            src={img}
+            alt={product.name_ar}
+            loading="lazy"
+            decoding="async"
+            // @ts-expect-error - fetchpriority is a valid HTML attribute
+            fetchpriority="low"
+            width={400}
+            height={400}
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
+            className="size-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
         ) : (
           <div className="size-full bg-gradient-to-br from-muted to-secondary grid place-items-center">
             <span className="text-4xl opacity-30">⚙️</span>
