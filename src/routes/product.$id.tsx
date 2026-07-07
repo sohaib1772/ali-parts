@@ -23,6 +23,9 @@ export const Route = createFileRoute("/product/$id")({
     meta: [{ title: `المنتج · Ali Parts` }, { name: "description", content: `تفاصيل المنتج ${params.id}` }],
   }),
   component: ProductPage,
+  pendingMs: 0,
+  pendingMinMs: 200,
+  pendingComponent: ProductPending,
   errorComponent: ({ reset }) => {
     const router = useRouter();
     return (
@@ -34,6 +37,32 @@ export const Route = createFileRoute("/product/$id")({
   },
   notFoundComponent: () => <div className="p-8 text-center">المنتج غير موجود</div>,
 });
+
+function ProductPending() {
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="px-4 pt-4">
+        <Skeleton className="w-full aspect-square rounded-3xl" />
+        <div className="flex gap-2 mt-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="size-16 rounded-xl" />
+          ))}
+        </div>
+        <div className="mt-5 space-y-3">
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-8 w-1/3" />
+          <div className="pt-4 space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-4 w-4/6" />
+          </div>
+          <Skeleton className="h-12 w-full rounded-2xl mt-4" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function ProductPage() {
   const { id } = Route.useParams();

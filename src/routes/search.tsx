@@ -19,7 +19,25 @@ export const Route = createFileRoute("/search")({
   validateSearch: searchSchema,
   head: () => ({ meta: [{ title: "البحث — Ali Parts" }] }),
   component: SearchPage,
+  pendingMs: 0,
+  pendingMinMs: 200,
+  pendingComponent: SearchPending,
 });
+
+function SearchPending() {
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="px-4 pt-4">
+        <div className="h-12 rounded-2xl bg-muted animate-pulse" />
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="rounded-2xl aspect-[3/4] bg-muted animate-pulse" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function SearchPage() {
   const { q: initialQ, mode } = Route.useSearch();
