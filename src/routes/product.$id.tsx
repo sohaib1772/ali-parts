@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useRouter, useNavigate, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useRef } from "react";
+import { useState, useRef, Suspense } from "react";
 import { ArrowRight, Heart, Minus, Plus, Share2, Shield, ShoppingCart, Truck, CheckCircle2, XCircle, Facebook, X as CloseIcon, Clock, RefreshCw, Loader2, Paperclip, Trash2 } from "lucide-react";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from "@/components/ui/alert-dialog";
-import { productByIdQuery, carModelsQuery, brandsQuery } from "@/lib/queries";
+import { productByIdQuery, carModelsQuery, brandsQuery, productsByCategoryQuery } from "@/lib/queries";
+import type { Product } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatIQD, whatsappLink } from "@/lib/format";
@@ -82,11 +83,9 @@ function ProductPage() {
     }
   };
   const waNumber = useSetting("whatsapp_number");
-  const { data: models = [] } = useQuery(carModelsQuery());
-  const { data: brands = [] } = useQuery(brandsQuery());
 
   // Show a "طلب استبدال" shortcut if this product was delivered in one of the user's orders
-  const { data: deliveredOrder } = useQuery({
+  const { data: deliveredOrder, isPending: deliveredPending } = useQuery({
     queryKey: ["product-delivered-order", id, userId],
     enabled: !!userId,
     queryFn: async () => {
@@ -424,21 +423,9 @@ function ProductPage() {
         </div>
 
         {product.compatible_models && product.compatible_models.length > 0 && (
-          <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
-            <div className="text-xs font-bold text-gold mb-2">السيارات المتوافقة</div>
-            <div className="flex flex-wrap gap-2">
-              {product.compatible_models.map((mid) => {
-                const model = models.find((x) => x.id === mid);
-                const brand = model ? brands.find((b) => b.id === model.brand_id) : null;
-                const label = model
-                  ? `${brand ? (brand.name_ar || brand.name_en) + " " : ""}${model.name_ar || model.name_en}`
-                  : mid;
-                return (
-                  <span key={mid} className="text-xs px-2.5 py-1 rounded-full bg-navy text-primary-foreground">{label}</span>
-                );
-              })}
-            </div>
-          </div>
+          <Suspense fallback={<CompatibleModelsSkeleton count={product.compatible_models.length} />}>
+            <CompatibleModels modelIds={product.compatible_models} />
+          </Suspense>
         )}
 
         <div className="grid grid-cols-2 gap-3">
@@ -485,6 +472,18 @@ function ProductPage() {
           </div>
         </a>
 
+        {userId && deliveredPending && (
+          <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
+            <div className="flex items-start gap-3">
+              <Skeleton className="size-11 rounded-xl shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-5/6" />
+              </div>
+            </div>
+          </div>
+        )}
         {deliveredOrderId && (
           <button
             type="button"
@@ -524,6 +523,18 @@ function ProductPage() {
           عد للرئيسية
         </Link>
       </div>
+
+      {product.category_id && (
+        <div className="mx-auto max-w-md px-4 pt-2 pb-4">
+          <h2 className="text-sm font-extrabold mb-3 flex items-center gap-2">
+            <span className="inline-block w-1 h-4 bg-gold rounded" />
+            منتجات مشابهة
+          </h2>
+          <Suspense fallback={<RelatedProductsSkeleton />}>
+            <RelatedProducts categoryId={product.category_id} excludeId={product.id} />
+          </Suspense>
+        </div>
+      )}
 
       <div className="fixed bottom-0 inset-x-0 z-30 bg-card border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="mx-auto max-w-md flex items-center gap-2">
@@ -765,6 +776,101 @@ function ProductPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+// ─── Sub-sections with independent Suspense/skeleton loading ────────────
+
+function CompatibleModelsSkeleton({ count }: { count: number }) {
+  return (
+    <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
+      <div className="text-xs font-bold text-gold mb-2">السيارات المتوافقة</div>
+      <div className="flex flex-wrap gap-2">
+        {Array.from({ length: Math.min(count, 6) }).map((_, i) => (
+          <Skeleton key={i} className="h-6 w-20 rounded-full" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CompatibleModels({ modelIds }: { modelIds: string[] }) {
+  const { data: models } = useSuspenseQuery(carModelsQuery());
+  const { data: brands } = useSuspenseQuery(brandsQuery());
+  return (
+    <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
+      <div className="text-xs font-bold text-gold mb-2">السيارات المتوافقة</div>
+      <div className="flex flex-wrap gap-2">
+        {modelIds.map((mid) => {
+          const model = models.find((x) => x.id === mid);
+          const brand = model ? brands.find((b) => b.id === model.brand_id) : null;
+          const label = model
+            ? `${brand ? (brand.name_ar || brand.name_en) + " " : ""}${model.name_ar || model.name_en}`
+            : mid;
+          return (
+            <span key={mid} className="text-xs px-2.5 py-1 rounded-full bg-navy text-primary-foreground">{label}</span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function RelatedProductsSkeleton() {
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="rounded-2xl border border-border overflow-hidden bg-card">
+          <Skeleton className="w-full aspect-square" />
+          <div className="p-3 space-y-2">
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-2/3" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RelatedProducts({ categoryId, excludeId }: { categoryId: string; excludeId: string }) {
+  const { data: products } = useSuspenseQuery(productsByCategoryQuery(categoryId));
+  const related = (products as Product[]).filter((p) => p.id !== excludeId).slice(0, 4);
+  if (related.length === 0) {
+    return <div className="text-xs text-muted-foreground text-center py-4">لا توجد منتجات مشابهة</div>;
+  }
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      {related.map((p) => (
+        <Link
+          key={p.id}
+          to="/product/$id"
+          params={{ id: p.id }}
+          className="rounded-2xl border border-border overflow-hidden bg-card hover:shadow-luxe transition"
+        >
+          <div className="aspect-square bg-muted overflow-hidden">
+            {p.images?.[0] ? (
+              <img
+                src={p.images[0]}
+                alt={p.name_ar}
+                loading="lazy"
+                decoding="async"
+                width={200}
+                height={200}
+                sizes="50vw"
+                className="size-full object-cover"
+              />
+            ) : (
+              <div className="size-full grid place-items-center text-3xl opacity-30">⚙️</div>
+            )}
+          </div>
+          <div className="p-2.5">
+            <div className="text-xs font-semibold line-clamp-2 leading-tight min-h-[2.2rem]">{p.name_ar}</div>
+            <div className="text-sm font-extrabold text-navy mt-1">{formatIQD(p.price_iqd)}</div>
+          </div>
+        </Link>
+      ))}
     </div>
   );
 }
