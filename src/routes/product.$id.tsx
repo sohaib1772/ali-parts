@@ -83,11 +83,9 @@ function ProductPage() {
     }
   };
   const waNumber = useSetting("whatsapp_number");
-  const { data: models = [] } = useQuery(carModelsQuery());
-  const { data: brands = [] } = useQuery(brandsQuery());
 
   // Show a "طلب استبدال" shortcut if this product was delivered in one of the user's orders
-  const { data: deliveredOrder } = useQuery({
+  const { data: deliveredOrder, isPending: deliveredPending } = useQuery({
     queryKey: ["product-delivered-order", id, userId],
     enabled: !!userId,
     queryFn: async () => {
@@ -425,21 +423,9 @@ function ProductPage() {
         </div>
 
         {product.compatible_models && product.compatible_models.length > 0 && (
-          <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
-            <div className="text-xs font-bold text-gold mb-2">السيارات المتوافقة</div>
-            <div className="flex flex-wrap gap-2">
-              {product.compatible_models.map((mid) => {
-                const model = models.find((x) => x.id === mid);
-                const brand = model ? brands.find((b) => b.id === model.brand_id) : null;
-                const label = model
-                  ? `${brand ? (brand.name_ar || brand.name_en) + " " : ""}${model.name_ar || model.name_en}`
-                  : mid;
-                return (
-                  <span key={mid} className="text-xs px-2.5 py-1 rounded-full bg-navy text-primary-foreground">{label}</span>
-                );
-              })}
-            </div>
-          </div>
+          <Suspense fallback={<CompatibleModelsSkeleton count={product.compatible_models.length} />}>
+            <CompatibleModels modelIds={product.compatible_models} />
+          </Suspense>
         )}
 
         <div className="grid grid-cols-2 gap-3">
