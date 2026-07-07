@@ -21,11 +21,11 @@ export function SplashScreen() {
       setVisible(false);
       return;
     }
-    const fadeAt = setTimeout(() => setFading(true), 900);
+    const fadeAt = setTimeout(() => setFading(true), 350);
     const hideAt = setTimeout(() => {
       setVisible(false);
       try { window.sessionStorage.setItem(SESSION_KEY, "1"); } catch {}
-    }, 1300);
+    }, 650);
     return () => {
       clearTimeout(fadeAt);
       clearTimeout(hideAt);
@@ -36,7 +36,7 @@ export function SplashScreen() {
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-b from-[#0a1226] via-[#0f172a] to-[#020617] transition-opacity duration-500 ${fading ? "opacity-0" : "opacity-100"}`}
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-b from-[#0a1226] via-[#0f172a] to-[#020617] transition-opacity duration-300 ${fading ? "opacity-0" : "opacity-100"}`}
       dir="rtl"
       aria-hidden={fading}
     >
