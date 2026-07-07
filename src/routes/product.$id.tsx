@@ -472,6 +472,18 @@ function ProductPage() {
           </div>
         </a>
 
+        {userId && deliveredPending && (
+          <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
+            <div className="flex items-start gap-3">
+              <Skeleton className="size-11 rounded-xl shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-5/6" />
+              </div>
+            </div>
+          </div>
+        )}
         {deliveredOrderId && (
           <button
             type="button"
@@ -511,6 +523,18 @@ function ProductPage() {
           عد للرئيسية
         </Link>
       </div>
+
+      {product.category_id && (
+        <div className="mx-auto max-w-md px-4 pt-2 pb-4">
+          <h2 className="text-sm font-extrabold mb-3 flex items-center gap-2">
+            <span className="inline-block w-1 h-4 bg-gold rounded" />
+            منتجات مشابهة
+          </h2>
+          <Suspense fallback={<RelatedProductsSkeleton />}>
+            <RelatedProducts categoryId={product.category_id} excludeId={product.id} />
+          </Suspense>
+        </div>
+      )}
 
       <div className="fixed bottom-0 inset-x-0 z-30 bg-card border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="mx-auto max-w-md flex items-center gap-2">
