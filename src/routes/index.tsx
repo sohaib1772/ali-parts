@@ -51,12 +51,15 @@ function HomePage() {
     if (mountedVehicle && !vehicle) setPickerOpen(true);
   }, [mountedVehicle, vehicle]);
 
-  const filteredDeals = filterProductsByVehicle(deals, vehicle);
+  // Avoid SSR/client hydration mismatch: only apply the vehicle filter
+  // after mount (vehicle is read from localStorage).
+  const effectiveVehicle = mountedVehicle ? vehicle : null;
+  const filteredDeals = filterProductsByVehicle(deals, effectiveVehicle);
   const dealIds = new Set(filteredDeals.slice(0, 4).map((p) => p.id));
-  const filteredFeatured = filterProductsByVehicle(featured, vehicle).filter(
+  const filteredFeatured = filterProductsByVehicle(featured, effectiveVehicle).filter(
     (p) => !dealIds.has(p.id),
   );
-  const filteredBestSellers = filterProductsByVehicle(bestSellers, vehicle);
+  const filteredBestSellers = filterProductsByVehicle(bestSellers, effectiveVehicle);
 
   return (
     <PageShell>
