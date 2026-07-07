@@ -152,22 +152,6 @@ function AuthPage() {
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:32px_32px] opacity-[0.02]" />
 
       <div className="relative w-full max-w-[420px]">
-        {loading && (
-          <div className="absolute inset-0 z-30 flex items-center justify-center rounded-[2.5rem] bg-[#0f172a]/70 backdrop-blur-sm">
-            <div className="flex flex-col items-center gap-4 rounded-2xl border border-gold/30 bg-[#111827]/90 px-8 py-6 shadow-[0_0_30px_rgba(201,162,39,0.25)]">
-              <div className="relative">
-                <Loader2 className="size-10 animate-spin text-gold" />
-                <div className="absolute inset-0 rounded-full bg-gold/20 blur-xl" />
-              </div>
-              <p className="font-body-lux text-sm text-white/90 text-center min-w-[180px]">
-                {progress ?? "جاري المعالجة…"}
-              </p>
-              <div className="h-1 w-40 overflow-hidden rounded-full bg-white/10">
-                <div className="h-full w-1/2 animate-[progress_1.2s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-gold to-transparent" />
-              </div>
-            </div>
-          </div>
-        )}
         <Link
           to="/"
           className="absolute -top-14 right-0 inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-gold transition-colors"
