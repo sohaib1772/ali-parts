@@ -300,6 +300,7 @@ function CategoryIcon({ category, index }: { category: { id: string; name_ar: st
 function HeroCarousel({ banners }: { banners: Banner[] }) {
   const [muted, setMuted] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [inView, setInView] = useState(false);
   // Show only the latest uploaded VIDEO as a fixed hero — no rotation.
   // Hide the whole section when no video has been uploaded.
   const current = banners.find((b) => !!(b as any).video_url) ?? null;
@@ -317,9 +318,11 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
         for (const e of entries) {
           const el = videoRef.current;
           if (!e.isIntersecting || e.intersectionRatio < 0.5) {
+            setInView(false);
             setMuted(true);
             if (el) { el.muted = true; el.pause(); }
           } else {
+            setInView(true);
             if (userWantsSoundRef.current) setMuted(false);
             if (el) {
               el.muted = !userWantsSoundRef.current;
@@ -354,7 +357,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
           className="absolute inset-0 w-full h-full object-cover"
         />
       )}
-      {mounted && (
+      {mounted && inView && (
         <video
           ref={videoRef}
           src={(current as any).video_url}
@@ -363,7 +366,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
           muted={muted}
           loop
           playsInline
-          preload="metadata"
+          preload="none"
           className="absolute inset-0 w-full h-full object-cover cursor-pointer"
           onVolumeChange={(e) => {
             const el = e.currentTarget;
