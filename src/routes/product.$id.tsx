@@ -779,3 +779,98 @@ function ProductPage() {
     </div>
   );
 }
+
+// ─── Sub-sections with independent Suspense/skeleton loading ────────────
+
+function CompatibleModelsSkeleton({ count }: { count: number }) {
+  return (
+    <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
+      <div className="text-xs font-bold text-gold mb-2">السيارات المتوافقة</div>
+      <div className="flex flex-wrap gap-2">
+        {Array.from({ length: Math.min(count, 6) }).map((_, i) => (
+          <Skeleton key={i} className="h-6 w-20 rounded-full" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CompatibleModels({ modelIds }: { modelIds: string[] }) {
+  const { data: models } = useSuspenseQuery(carModelsQuery());
+  const { data: brands } = useSuspenseQuery(brandsQuery());
+  return (
+    <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
+      <div className="text-xs font-bold text-gold mb-2">السيارات المتوافقة</div>
+      <div className="flex flex-wrap gap-2">
+        {modelIds.map((mid) => {
+          const model = models.find((x) => x.id === mid);
+          const brand = model ? brands.find((b) => b.id === model.brand_id) : null;
+          const label = model
+            ? `${brand ? (brand.name_ar || brand.name_en) + " " : ""}${model.name_ar || model.name_en}`
+            : mid;
+          return (
+            <span key={mid} className="text-xs px-2.5 py-1 rounded-full bg-navy text-primary-foreground">{label}</span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function RelatedProductsSkeleton() {
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="rounded-2xl border border-border overflow-hidden bg-card">
+          <Skeleton className="w-full aspect-square" />
+          <div className="p-3 space-y-2">
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-2/3" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RelatedProducts({ categoryId, excludeId }: { categoryId: string; excludeId: string }) {
+  const { data: products } = useSuspenseQuery(productsByCategoryQuery(categoryId));
+  const related = (products as Product[]).filter((p) => p.id !== excludeId).slice(0, 4);
+  if (related.length === 0) {
+    return <div className="text-xs text-muted-foreground text-center py-4">لا توجد منتجات مشابهة</div>;
+  }
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      {related.map((p) => (
+        <Link
+          key={p.id}
+          to="/product/$id"
+          params={{ id: p.id }}
+          className="rounded-2xl border border-border overflow-hidden bg-card hover:shadow-luxe transition"
+        >
+          <div className="aspect-square bg-muted overflow-hidden">
+            {p.images?.[0] ? (
+              <img
+                src={p.images[0]}
+                alt={p.name_ar}
+                loading="lazy"
+                decoding="async"
+                width={200}
+                height={200}
+                sizes="50vw"
+                className="size-full object-cover"
+              />
+            ) : (
+              <div className="size-full grid place-items-center text-3xl opacity-30">⚙️</div>
+            )}
+          </div>
+          <div className="p-2.5">
+            <div className="text-xs font-semibold line-clamp-2 leading-tight min-h-[2.2rem]">{p.name_ar}</div>
+            <div className="text-sm font-extrabold text-navy mt-1">{formatIQD(p.price_iqd)}</div>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
