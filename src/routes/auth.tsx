@@ -8,7 +8,9 @@ import { useSetting } from "@/lib/admin";
 import { whatsappLink } from "@/lib/format";
 import { normalizePhone, phoneToEmail, phoneToEmailLegacy } from "@/lib/phone-auth";
 
-async function resolvePostLoginPath(userId: string): Promise<"/admin" | "/account" | "/"> {
+// Fast admin-redirect check. Fails soft: if the check errors or the user
+// isn't an admin/staff, we send them straight to "/" without waiting.
+async function resolvePostLoginPath(userId: string): Promise<"/admin" | "/"> {
   try {
     const [roleRes, staffRes] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle(),
@@ -20,14 +22,6 @@ async function resolvePostLoginPath(userId: string): Promise<"/admin" | "/accoun
   } catch { /* fall through */ }
   return "/";
 }
-
-async function navigateAfterLogin(navigate: (opts: { to: string }) => void) {
-  const { data } = await supabase.auth.getUser();
-  const uid = data.user?.id;
-  const to = uid ? await resolvePostLoginPath(uid) : "/";
-  navigate({ to });
-}
-
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -50,7 +44,6 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState<string | null>(null);
 
   const arabicAuthError = (err: unknown): string => {
     const msg = err instanceof Error ? err.message : String(err ?? "");
@@ -72,31 +65,31 @@ function AuthPage() {
     return "تعذر إتمام العملية، يرجى المحاولة مرة أخرى";
   };
 
+  // If already signed in, bounce out immediately — no toast, no intermediate UI.
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
-      if (data.session?.user) {
-        const to = await resolvePostLoginPath(data.session.user.id);
-        navigate({ to });
-      }
+      const uid = data.session?.user?.id;
+      if (!uid) return;
+      const to = await resolvePostLoginPath(uid);
+      navigate({ to, replace: true });
     });
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Admin backdoor: allow "aliskoda" username login by legacy admin email
+    if (loading) return;
     const raw = phone.trim();
+    // Admin backdoor: username login (no phone normalization)
     if (mode === "login" && raw.toLowerCase() === "aliskoda") {
       setLoading(true);
-      setProgress("جاري التحقق من بيانات الدخول…");
       try {
         const { error } = await supabase.auth.signInWithPassword({ email: "aliskoda@admin.local", password });
         if (error) throw error;
-        setProgress("تم — جاري تحويلك…");
-        toast.success("مرحباً بك");
-        navigate({ to: "/admin" });
+        navigate({ to: "/admin", replace: true });
       } catch (err) {
         toast.error(arabicAuthError(err));
-      } finally { setLoading(false); setProgress(null); }
+        setLoading(false);
+      }
       return;
     }
     const normalized = normalizePhone(raw);
@@ -106,49 +99,49 @@ function AuthPage() {
     }
     const loginEmail = phoneToEmail(normalized);
     setLoading(true);
-    setProgress(mode === "signup" ? "جاري إنشاء حسابك…" : "جاري التحقق من بيانات الدخول…");
     try {
       if (mode === "signup") {
         if (password.length < 6) {
           throw new Error("password should be at least 6");
         }
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: loginEmail,
           password,
           options: { emailRedirectTo: window.location.origin, data: { full_name: fullName, phone: "+" + normalized } },
         });
         if (error) throw error;
-        setProgress("تم إنشاء الحساب — جاري تحويلك…");
-        toast.success("تم إنشاء الحساب بنجاح");
-        navigate({ to: "/" });
+        // Go straight to the app; the root's onAuthStateChange refreshes state.
+        const to = data.user?.id ? await resolvePostLoginPath(data.user.id) : "/";
+        navigate({ to, replace: true });
       } else {
-        let { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
-        if (error) {
+        let res = await supabase.auth.signInWithPassword({ email: loginEmail, password });
+        if (res.error) {
           // Legacy accounts created with the old domain
           const legacy = await supabase.auth.signInWithPassword({ email: phoneToEmailLegacy(normalized), password });
-          if (legacy.error) throw error;
+          if (legacy.error) throw res.error;
+          res = legacy;
         }
-        setProgress("تم — جاري تحويلك…");
-        toast.success("مرحباً بعودتك");
-        await navigateAfterLogin(navigate);
+        const uid = res.data.user?.id;
+        const to = uid ? await resolvePostLoginPath(uid) : "/";
+        navigate({ to, replace: true });
       }
     } catch (err) {
       toast.error(arabicAuthError(err));
-    } finally {
       setLoading(false);
-      setProgress(null);
     }
   };
 
   const handleGoogle = async () => {
+    if (loading) return;
     setLoading(true);
-    setProgress("جاري فتح Google…");
     const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (result.error) { toast.error("تعذّر تسجيل الدخول"); setLoading(false); setProgress(null); return; }
+    if (result.error) { toast.error("تعذّر تسجيل الدخول"); setLoading(false); return; }
     if (result.redirected) return;
-    setProgress("تم — جاري تحويلك…");
-    toast.success("مرحباً بك");
-    navigate({ to: "/" });
+    // Session is already set by the helper; resolve destination and go.
+    const { data } = await supabase.auth.getSession();
+    const uid = data.session?.user?.id;
+    const to = uid ? await resolvePostLoginPath(uid) : "/";
+    navigate({ to, replace: true });
   };
 
   return (
