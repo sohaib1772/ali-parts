@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useRef, useState, useDeferredValue, useEffect } from "react";
 import { Search as SearchIcon, Hash, Camera, Loader2, ImageIcon, Sparkles, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -24,6 +24,13 @@ export const Route = createFileRoute("/search")({
 function SearchPage() {
   const { q: initialQ, mode } = Route.useSearch();
   const [q, setQ] = useState(initialQ ?? "");
+  // Debounce the query so we don't fire a request on every keystroke.
+  const [debouncedQ, setDebouncedQ] = useState(q);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(q), 300);
+    return () => clearTimeout(t);
+  }, [q]);
+  const deferredQ = useDeferredValue(debouncedQ);
   const [analyzing, setAnalyzing] = useState(false);
   const [stage, setStage] = useState<"idle" | "compress" | "upload" | "analyze" | "done">("idle");
   const [progress, setProgress] = useState(0);
@@ -34,7 +41,7 @@ function SearchPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const reqIdRef = useRef(0);
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const { data: textResults, isFetching: textFetching } = useQuery(searchProductsQuery(q));
+  const { data: textResults, isFetching: textFetching } = useQuery(searchProductsQuery(deferredQ));
   const { data: imageResults, isFetching: imageFetching } = useQuery(productsByIdsQuery(imageMatchIds));
   const usingImage = imageMatchIds.length > 0;
   const results = usingImage ? imageResults : textResults;

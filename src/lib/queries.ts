@@ -169,7 +169,13 @@ export const productsByCategoryQuery = (categoryId: string) =>
     queryKey: ["products", "category", categoryId],
     staleTime: 2 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("*").eq("category_id", categoryId);
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("category_id", categoryId)
+        .order("in_stock", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(100);
       if (error) throw error;
       return (data ?? []) as Product[];
     },
@@ -178,6 +184,7 @@ export const productsByCategoryQuery = (categoryId: string) =>
 export const searchProductsQuery = (q: string) =>
   queryOptions({
     queryKey: ["products", "search", q],
+    staleTime: 60_000,
     queryFn: async () => {
       if (!q.trim()) return [] as Product[];
       const pattern = `%${q}%`;
@@ -185,6 +192,8 @@ export const searchProductsQuery = (q: string) =>
         .from("products")
         .select("*")
         .or(`name_ar.ilike.${pattern},oem_number.ilike.${pattern},name_en.ilike.${pattern}`)
+        .order("in_stock", { ascending: false })
+        .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
       return (data ?? []) as Product[];
