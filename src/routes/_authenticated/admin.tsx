@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { PageShell } from "@/components/page-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin, useStaffPermissions, useAdminAccessStatus, uploadProductImage, uploadMediaFile, settingsQuery, useSetting } from "@/lib/admin";
@@ -35,7 +35,6 @@ import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon,
 import { BellRing, MailCheck, MailX, Clock } from "lucide-react";
 import { Film, Trash } from "lucide-react";
 import { clearVideoCache, getVideoCacheSize } from "@/lib/use-cached-video";
-import { useEffect } from "react";
 import { Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw } from "lucide-react";
 import { runDiagnostics, type DiagnosticsReport, type CheckStatus } from "@/lib/diagnostics.functions";
 import { adminUpdateReplacementStatus } from "@/lib/replacement-admin.functions";
