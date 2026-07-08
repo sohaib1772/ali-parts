@@ -1111,8 +1111,13 @@ function ProductsAdmin() {
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["admin", "products"],
+    staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(1000);
       if (error) throw error;
       return data ?? [];
     },
