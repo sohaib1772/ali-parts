@@ -153,7 +153,6 @@ function ReelItem({
 
   // pause/play when in view
   useEffect(() => {
-    const el = videoRef.current;
     const box = containerRef.current;
     if (!box) return;
     const io = new IntersectionObserver(
@@ -161,6 +160,7 @@ function ReelItem({
         for (const e of entries) {
           if (e.isIntersecting && e.intersectionRatio > 0.6) {
             onActive(index);
+            const el = videoRef.current;
             if (!el) return;
             // Try to play with sound. If the browser blocks unmuted
             // autoplay, fall back to muted so the video still plays.
@@ -174,7 +174,7 @@ function ReelItem({
               });
             }
           } else {
-            el?.pause();
+            videoRef.current?.pause();
           }
         }
       },
@@ -182,7 +182,7 @@ function ReelItem({
     );
     io.observe(box);
     return () => io.disconnect();
-  }, [video, muted, index, onActive]);
+  }, [video, muted, shouldLoad, index, onActive]);
 
   const likes = useLikes(banner.id, userId, shouldLoad);
   const commentsCount = useCommentsCount(banner.id, shouldLoad);
