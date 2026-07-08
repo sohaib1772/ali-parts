@@ -21,6 +21,7 @@ import {
 import type { Banner, Product } from "@/lib/queries";
 import { formatIQD } from "@/lib/format";
 import { useAdjustedPrice } from "@/lib/admin";
+import { useCachedVideo } from "@/lib/use-cached-video";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => {
@@ -313,6 +314,8 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   // Show only the latest uploaded VIDEO as a fixed hero — no rotation.
   // Hide the whole section when no video has been uploaded.
   const current = banners.find((b) => !!(b as any).video_url) ?? null;
+  const videoUrl = (current as any)?.video_url as string | undefined;
+  const cachedVideoUrl = useCachedVideo(videoUrl);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const heroRef = useRef<HTMLDivElement | null>(null);
   const userWantsSoundRef = useRef(false);
@@ -369,13 +372,14 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
       {mounted && (
         <video
           ref={videoRef}
-          src={(current as any).video_url}
+          src={cachedVideoUrl ?? videoUrl}
           poster={current.image_url || undefined}
           autoPlay
           muted={muted}
           loop
           playsInline
           preload="auto"
+          disableRemotePlayback
           className="absolute inset-0 w-full h-full object-cover cursor-pointer"
           onCanPlay={() => setVideoReady(true)}
           onPlaying={() => setVideoReady(true)}
