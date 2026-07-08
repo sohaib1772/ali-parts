@@ -15,6 +15,7 @@ import { Toaster } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { SplashScreen } from "@/components/splash-screen";
 import { NotificationPopup } from "@/components/notification-popup";
+import { usePriceSyncListener } from "@/lib/price-sync";
 
 function NotFoundComponent() {
   return (
@@ -145,11 +146,17 @@ function RootComponent() {
       <Outlet />
       <Toaster position="top-center" richColors closeButton />
       <AuthListener />
+      <PriceSync />
       <SplashScreen />
       <NotificationPermissionGate />
       <NotificationPopup />
     </QueryClientProvider>
   );
+}
+
+function PriceSync() {
+  usePriceSyncListener();
+  return null;
 }
 
 function AuthListener() {
