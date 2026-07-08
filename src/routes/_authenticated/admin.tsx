@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { PageShell } from "@/components/page-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin, useStaffPermissions, useAdminAccessStatus, uploadProductImage, uploadMediaFile, settingsQuery, useSetting } from "@/lib/admin";
@@ -33,6 +33,8 @@ import {
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote, Receipt, Search as SearchIcon, Ban, CheckCircle2, History, Users as UsersIcon, KeyRound, Loader2, Repeat, Boxes, ArrowUp, ArrowDown, UserPlus, ShieldCheck } from "lucide-react";
 import { BellRing, MailCheck, MailX, Clock } from "lucide-react";
+import { Film, Trash } from "lucide-react";
+import { clearVideoCache, getVideoCacheSize } from "@/lib/use-cached-video";
 import { Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw } from "lucide-react";
 import { runDiagnostics, type DiagnosticsReport, type CheckStatus } from "@/lib/diagnostics.functions";
 import { adminUpdateReplacementStatus } from "@/lib/replacement-admin.functions";
@@ -2249,6 +2251,7 @@ function SettingsAdmin() {
         </p>
       </div>
       <ExchangeRateSettings />
+      <VideoCacheSettings />
       <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-3">
         <div className="text-sm font-bold text-gold flex items-center gap-2">
           <Package className="size-4" /> إعدادات شركات التوصيل
@@ -3047,6 +3050,54 @@ function StockMovementsAdmin() {
           })}
         </ul>
       )}
+    </div>
+  );
+}
+
+function VideoCacheSettings() {
+  const [size, setSize] = useState<number>(0);
+  const [clearing, setClearing] = useState(false);
+
+  const refresh = () => {
+    getVideoCacheSize().then(setSize).catch(() => setSize(0));
+  };
+
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  const handleClear = async () => {
+    setClearing(true);
+    try {
+      const removed = await clearVideoCache();
+      toast.success(removed > 0 ? `تم مسح ${removed} فيديو من التخزين المؤقت` : "لا يوجد فيديو مخزّن");
+      refresh();
+    } catch {
+      toast.error("تعذّر مسح كاش الفيديوهات");
+    } finally {
+      setClearing(false);
+    }
+  };
+
+  return (
+    <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-3">
+      <div className="text-sm font-bold text-gold flex items-center gap-2">
+        <Film className="size-4" /> كاش الفيديوهات
+      </div>
+      <p className="text-xs text-muted-foreground">
+        يتم تخزين الفيديوهات محلياً في المتصفح لتشغيلها بسرعة عند تكرار الفتح. امسح الكاش لتحرير المساحة أو لإجبار
+        التطبيق على جلب أحدث نسخة من الفيديو.
+      </p>
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-xs">
+          <span className="text-muted-foreground">عدد الفيديوهات المخزّنة: </span>
+          <span className="font-bold">{size}</span>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleClear} disabled={clearing}>
+          <Trash className="size-4 ms-1" />
+          {clearing ? "جاري المسح..." : "مسح الكاش"}
+        </Button>
+      </div>
     </div>
   );
 }
