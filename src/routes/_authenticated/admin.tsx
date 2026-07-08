@@ -3053,3 +3053,51 @@ function StockMovementsAdmin() {
     </div>
   );
 }
+
+function VideoCacheSettings() {
+  const [size, setSize] = useState<number>(0);
+  const [clearing, setClearing] = useState(false);
+
+  const refresh = () => {
+    getVideoCacheSize().then(setSize).catch(() => setSize(0));
+  };
+
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  const handleClear = async () => {
+    setClearing(true);
+    try {
+      const removed = await clearVideoCache();
+      toast.success(removed > 0 ? `تم مسح ${removed} فيديو من التخزين المؤقت` : "لا يوجد فيديو مخزّن");
+      refresh();
+    } catch {
+      toast.error("تعذّر مسح كاش الفيديوهات");
+    } finally {
+      setClearing(false);
+    }
+  };
+
+  return (
+    <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-3">
+      <div className="text-sm font-bold text-gold flex items-center gap-2">
+        <Film className="size-4" /> كاش الفيديوهات
+      </div>
+      <p className="text-xs text-muted-foreground">
+        يتم تخزين الفيديوهات محلياً في المتصفح لتشغيلها بسرعة عند تكرار الفتح. امسح الكاش لتحرير المساحة أو لإجبار
+        التطبيق على جلب أحدث نسخة من الفيديو.
+      </p>
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-xs">
+          <span className="text-muted-foreground">عدد الفيديوهات المخزّنة: </span>
+          <span className="font-bold">{size}</span>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleClear} disabled={clearing}>
+          <Trash className="size-4 ms-1" />
+          {clearing ? "جاري المسح..." : "مسح الكاش"}
+        </Button>
+      </div>
+    </div>
+  );
+}
