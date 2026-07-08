@@ -2313,6 +2313,8 @@ function BulkUsdPriceUpdate() {
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [restoreOpen, setRestoreOpen] = useState(false);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
 
   const { data: backups = [], refetch: refetchBackups } = useQuery({
     queryKey: ["price_backups"],
@@ -2384,13 +2386,17 @@ function BulkUsdPriceUpdate() {
   };
 
   const doRestore = async (id: string) => {
-    if (!confirm("استعادة الأسعار من هذه النسخة الاحتياطية؟")) return;
+    setRestoringId(id);
     try {
       const res = await restoreFn({ data: { backup_id: id } });
       toast.success(`تم استعادة ${res.restored} منتج`);
       await invalidateAllPriceCaches(qc);
+      await refetchBackups();
     } catch (e: any) {
       toast.error(e.message ?? "فشل الاستعادة");
+    } finally {
+      setRestoringId(null);
+      setRestoreOpen(false);
     }
   };
 
@@ -2406,10 +2412,26 @@ function BulkUsdPriceUpdate() {
 
   const changedCount = preview?.items.filter((i) => !i.excluded && i.diff !== 0).length ?? 0;
 
+  const latestBackup = backups[0] ?? null;
+
   return (
     <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-3">
-      <div className="text-sm font-bold text-gold flex items-center gap-2">
-        💵 تحديث جماعي للأسعار حسب سعر الدولار
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-sm font-bold text-gold flex items-center gap-2">
+          💵 تحديث جماعي للأسعار حسب سعر الدولار
+        </div>
+        {latestBackup && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-destructive border-destructive/30 hover:bg-destructive/10"
+            onClick={() => setRestoreOpen(true)}
+            disabled={restoringId !== null}
+          >
+            <RefreshCw className="size-3.5 ml-1" />
+            تراجع عن آخر تحديث
+          </Button>
+        )}
       </div>
       <div className="grid grid-cols-2 gap-2">
         <Field label="سعر الدولار القديم">
@@ -2500,7 +2522,14 @@ function BulkUsdPriceUpdate() {
                   <div className="text-muted-foreground">{new Date(b.created_at).toLocaleString("ar-IQ")}</div>
                   {b.note && <div className="text-muted-foreground">{b.note}</div>}
                 </div>
-                <Button size="sm" variant="outline" onClick={() => doRestore(b.id)}>استعادة</Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={restoringId !== null}
+                  onClick={() => { setRestoringId(b.id); setRestoreOpen(true); }}
+                >
+                  استعادة
+                </Button>
               </div>
             ))}
           </div>
@@ -2519,6 +2548,28 @@ function BulkUsdPriceUpdate() {
             <AlertDialogCancel disabled={applying}>إلغاء</AlertDialogCancel>
             <AlertDialogAction onClick={doApply} disabled={applying}>
               {applying ? "جاري..." : "تأكيد"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={restoreOpen} onOpenChange={(open) => { if (!restoringId) setRestoreOpen(open); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>تراجع عن تحديث الأسعار</AlertDialogTitle>
+            <AlertDialogDescription>
+              سيتم إرجاع أسعار {latestBackup?.count ?? 0} منتج إلى قيمتها قبل آخر تحديث سعر صرف ({latestBackup?.old_rate} → {latestBackup?.new_rate}).
+              لا يمكن التراجع عن هذه العملية.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={restoringId !== null}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => doRestore(restoringId ?? latestBackup?.id ?? "")}
+              disabled={restoringId !== null || (!restoringId && !latestBackup)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {restoringId ? "جاري الاستعادة..." : "استعادة الأسعار"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
