@@ -2197,6 +2197,22 @@ function SettingsAdmin() {
       <Field label="نبذة عن المتجر (يظهر في من نحن)">
         <Textarea value={aboutVal} onChange={(e) => setAbout(e.target.value)} rows={4} placeholder="متجر متخصص في بيع قطع غيار..." />
       </Field>
+      <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-2">
+        <div className="text-sm font-bold text-gold">تعديل السعر العام (د.ع)</div>
+        <Input
+          type="number"
+          value={priceAdjustVal}
+          onChange={(e) => setPriceAdjust(e.target.value)}
+          inputMode="numeric"
+          dir="ltr"
+          placeholder="0"
+        />
+        <p className="text-xs text-muted-foreground">
+          يُضاف هذا المبلغ (أو يُطرح إذا كان سالباً) إلى سعر كل منتج عند عرضه للزبائن.
+          مثال: 1000 يعني رفع كل الأسعار 1000 د.ع، و -1000 يعني خصم 1000 د.ع. لا يغيّر
+          الأسعار الأصلية المحفوظة في قاعدة البيانات.
+        </p>
+      </div>
       <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-3">
         <div className="text-sm font-bold text-gold flex items-center gap-2">
           <Package className="size-4" /> إعدادات شركات التوصيل
