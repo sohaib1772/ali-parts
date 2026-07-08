@@ -988,6 +988,10 @@ export type Database = {
         Args: { p_blocked: boolean; p_reason?: string; p_user_id: string }
         Returns: undefined
       }
+      compute_iqd_from_usd: {
+        Args: { _rate: number; _rounding: number; _usd: number }
+        Returns: number
+      }
       get_public_profiles: {
         Args: { _ids: string[] }
         Returns: {
@@ -1013,6 +1017,7 @@ export type Database = {
         }
         Returns: string
       }
+      recalc_all_products_iqd: { Args: never; Returns: number }
       staff_can: { Args: { _perm: string; _uid: string }; Returns: boolean }
     }
     Enums: {

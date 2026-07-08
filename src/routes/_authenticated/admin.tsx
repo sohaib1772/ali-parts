@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import { PageShell } from "@/components/page-shell";
 import { supabase } from "@/integrations/supabase/client";
-import { useIsAdmin, useStaffPermissions, useAdminAccessStatus, uploadProductImage, uploadMediaFile, settingsQuery } from "@/lib/admin";
+import { useIsAdmin, useStaffPermissions, useAdminAccessStatus, uploadProductImage, uploadMediaFile, settingsQuery, useSetting } from "@/lib/admin";
 import {
   categoriesQuery,
   brandsQuery,
@@ -44,12 +44,6 @@ import { PrintableInvoice, InvoicePreviewDialog } from "@/components/printable-i
 import { adminListUsers, adminSetUserBlocked, adminSetUserPassword } from "@/lib/admin.functions";
 import { adminOtpStatus, requestAdminOtp, verifyAdminOtp } from "@/lib/admin-otp.functions";
 import { createStaff, updateStaff, deleteStaff, listStaff } from "@/lib/staff.functions";
-import {
-  previewBulkPriceUpdate,
-  applyBulkPriceUpdate,
-  listPriceBackups,
-  restorePriceBackup,
-} from "@/lib/bulk-price.functions";
 import { broadcastPricesChanged } from "@/lib/price-sync";
 import { normalizePhone } from "@/lib/phone-auth";
 
@@ -1073,7 +1067,7 @@ type ProductForm = {
   name_en: string;
   description_ar: string;
   oem_number: string;
-  price_iqd: string;
+  price_usd: string;
   compare_price_iqd: string;
   shipping_iqd: string;
   category_id: string;
@@ -1090,7 +1084,7 @@ type ProductForm = {
 
 const emptyProduct: ProductForm = {
   name_ar: "", name_en: "", description_ar: "", oem_number: "",
-  price_iqd: "", compare_price_iqd: "", shipping_iqd: "", category_id: "", brand_id: "",
+  price_usd: "", compare_price_iqd: "", shipping_iqd: "", category_id: "", brand_id: "",
   images: [], in_stock: true, is_featured: false, is_deal: false,
   compatible_models: [], deal_expires_at: "", stock_qty: "0",
   condition: "new",
@@ -1104,6 +1098,14 @@ function ProductsAdmin() {
   const [search, setSearch] = useState("");
   const [deleteProduct, setDeleteProduct] = useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const usdRate = Number(useSetting("usd_exchange_rate", "1500")) || 1500;
+  const usdRounding = Number(useSetting("usd_rounding", "500")) || 0;
+  const previewIqd = (() => {
+    const u = Number(form.price_usd);
+    if (!Number.isFinite(u) || u <= 0) return 0;
+    const raw = u * usdRate;
+    return usdRounding > 0 ? Math.round(raw / usdRounding) * usdRounding : Math.round(raw);
+  })();
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["admin", "products"],
@@ -1135,7 +1137,7 @@ function ProductsAdmin() {
       name_en: p.name_en ?? "",
       description_ar: p.description_ar ?? "",
       oem_number: p.oem_number ?? "",
-      price_iqd: String(p.price_iqd ?? ""),
+      price_usd: p.price_usd ? String(p.price_usd) : "",
       compare_price_iqd: String(p.compare_price_iqd ?? ""),
       shipping_iqd: String(p.shipping_iqd ?? ""),
       category_id: p.category_id ?? "",
@@ -1153,8 +1155,8 @@ function ProductsAdmin() {
   };
 
   const save = async () => {
-    if (!form.name_ar.trim() || !form.price_iqd) {
-      toast.error("الاسم والسعر مطلوبان");
+    if (!form.name_ar.trim() || !form.price_usd) {
+      toast.error("الاسم والسعر بالدولار مطلوبان");
       return;
     }
     setSaving(true);
@@ -1164,8 +1166,8 @@ function ProductsAdmin() {
         name_en: form.name_en || null,
         description_ar: form.description_ar || null,
         oem_number: form.oem_number || null,
-        price_iqd: Number(form.price_iqd),
-        price_usd: Number(form.price_iqd) / 1310,
+        // price_iqd is auto-computed by DB trigger from price_usd × usd_exchange_rate
+        price_usd: Number(form.price_usd),
         compare_price_iqd: form.compare_price_iqd ? Number(form.compare_price_iqd) : null,
         shipping_iqd: form.shipping_iqd ? Number(form.shipping_iqd) : 0,
         category_id: form.category_id || null,
@@ -1248,7 +1250,10 @@ function ProductsAdmin() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-sm truncate">{p.name_ar}</div>
-                <div className="text-xs text-muted-foreground">{formatIQD(p.price_iqd)}</div>
+                <div className="text-xs flex items-center gap-2" dir="ltr">
+                  <span className="font-bold text-gold">${Number(p.price_usd ?? 0).toFixed(2)}</span>
+                  <span className="text-muted-foreground">≈ {formatIQD(p.price_iqd)}</span>
+                </div>
                 <div className="text-[10px] text-muted-foreground">
                   {p.in_stock && (p.stock_qty ?? 0) > 0 ? `متوفر · ${p.stock_qty ?? 0} قطعة` : "غير متوفر"}
                 </div>
@@ -1279,14 +1284,26 @@ function ProductsAdmin() {
             <Field label="رقم القطعة (OEM)">
               <Input value={form.oem_number} onChange={(e) => setForm({ ...form, oem_number: e.target.value })} />
             </Field>
-            <div className="grid grid-cols-2 gap-2">
-              <Field label="السعر (د.ع) *">
-                <Input type="number" value={form.price_iqd} onChange={(e) => setForm({ ...form, price_iqd: e.target.value })} />
-              </Field>
-              <Field label="السعر قبل الخصم">
-                <Input type="number" value={form.compare_price_iqd} onChange={(e) => setForm({ ...form, compare_price_iqd: e.target.value })} />
-              </Field>
-            </div>
+            <Field label="السعر بالدولار *">
+              <Input
+                type="number"
+                step="0.01"
+                value={form.price_usd}
+                onChange={(e) => setForm({ ...form, price_usd: e.target.value })}
+                inputMode="decimal"
+                dir="ltr"
+                placeholder="مثال: 12.50"
+              />
+              <div className="text-[11px] text-muted-foreground mt-1 flex items-center justify-between" dir="ltr">
+                <span>× {usdRate} IQD</span>
+                <span className="text-gold font-bold">
+                  ≈ {previewIqd > 0 ? formatIQD(previewIqd) : "—"}
+                </span>
+              </div>
+            </Field>
+            <Field label="السعر قبل الخصم (د.ع، اختياري)">
+              <Input type="number" value={form.compare_price_iqd} onChange={(e) => setForm({ ...form, compare_price_iqd: e.target.value })} inputMode="numeric" dir="ltr" />
+            </Field>
             <Field label="كلفة التوصيل لهذا المنتج (د.ع)">
               <Input type="number" value={form.shipping_iqd} onChange={(e) => setForm({ ...form, shipping_iqd: e.target.value })} inputMode="numeric" dir="ltr" placeholder="0" />
             </Field>
@@ -2231,7 +2248,7 @@ function SettingsAdmin() {
           الأسعار الأصلية المحفوظة في قاعدة البيانات.
         </p>
       </div>
-      <BulkUsdPriceUpdate />
+      <ExchangeRateSettings />
       <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-3">
         <div className="text-sm font-bold text-gold flex items-center gap-2">
           <Package className="size-4" /> إعدادات شركات التوصيل
@@ -2290,164 +2307,68 @@ async function invalidateAllPriceCaches(qc: ReturnType<typeof useQueryClient>) {
   broadcastPricesChanged().catch(() => {});
 }
 
-function BulkUsdPriceUpdate() {
+function ExchangeRateSettings() {
   const qc = useQueryClient();
   const { data: settings = {} } = useQuery(settingsQuery());
-  const previewFn = useServerFn(previewBulkPriceUpdate);
-  const applyFn = useServerFn(applyBulkPriceUpdate);
-  const listFn = useServerFn(listPriceBackups);
-  const restoreFn = useServerFn(restorePriceBackup);
-
-  const [oldRate, setOldRate] = useState<string | null>(null);
-  const [newRate, setNewRate] = useState<string | null>(null);
+  const [rate, setRate] = useState<string | null>(null);
   const [rounding, setRounding] = useState<string | null>(null);
-  const oldRateVal = oldRate ?? String(settings.usd_rate_old ?? "1500");
-  const newRateVal = newRate ?? String(settings.usd_rate_new ?? settings.usd_rate_old ?? "1500");
-  const roundingVal = rounding ?? String(settings.usd_rate_rounding ?? "500");
-  const [excluded, setExcluded] = useState<Set<string>>(new Set());
-  const [note, setNote] = useState("");
-  const [preview, setPreview] = useState<null | {
-    items: Array<{ id: string; name_ar: string; old_price: number; new_price: number; diff: number; excluded: boolean }>;
-    count: number;
-  }>(null);
-  const [loading, setLoading] = useState(false);
-  const [applying, setApplying] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [restoreOpen, setRestoreOpen] = useState(false);
-  const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const { data: backups = [], refetch: refetchBackups } = useQuery({
-    queryKey: ["price_backups"],
-    queryFn: () => listFn(),
-  });
+  const rateVal = rate ?? String(settings.usd_exchange_rate ?? "1500");
+  const roundingVal = rounding ?? String(settings.usd_rounding ?? "500");
 
-  const doPreview = async () => {
-    const oldN = Number(oldRateVal);
-    const newN = Number(newRateVal);
-    if (!(oldN > 0) || !(newN > 0)) {
-      toast.error("أدخل سعر دولار صحيح");
+  const save = async () => {
+    const r = Number(rateVal);
+    if (!(r > 0)) {
+      toast.error("أدخل سعر صرف صحيح");
       return;
     }
-    setLoading(true);
+    setSaving(true);
     try {
-      const res = await previewFn({
-        data: {
-          old_rate: oldN,
-          new_rate: newN,
-          rounding: Number(roundingVal) || 0,
-          excluded_ids: Array.from(excluded),
-        },
-      });
-      setPreview(res);
-    } catch (e: any) {
-      toast.error(e.message ?? "خطأ في المعاينة");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const doApply = async () => {
-    setApplying(true);
-    try {
-      const oldN = Number(oldRateVal);
-      const newN = Number(newRateVal);
-      const roundN = Number(roundingVal) || 0;
-      const res = await applyFn({
-        data: {
-          old_rate: oldN,
-          new_rate: newN,
-          rounding: roundN,
-          excluded_ids: Array.from(excluded),
-          note: note || undefined,
-        },
-      });
-      // Persist the rates so they load across sessions. After a successful
-      // apply, keep whatever values the admin typed so they can freely edit
-      // the old rate later (don't auto-overwrite it with the new rate).
-      await supabase.from("app_settings").upsert([
-        { key: "usd_rate_old", value: String(oldN), updated_at: new Date().toISOString() },
-        { key: "usd_rate_new", value: String(newN), updated_at: new Date().toISOString() },
-        { key: "usd_rate_rounding", value: String(roundN), updated_at: new Date().toISOString() },
+      const now = new Date().toISOString();
+      const { error } = await supabase.from("app_settings").upsert([
+        { key: "usd_exchange_rate", value: String(r), updated_at: now },
+        { key: "usd_rounding", value: String(Number(roundingVal) || 0), updated_at: now },
       ]);
+      if (error) throw error;
       qc.invalidateQueries({ queryKey: ["app_settings"] });
-      setOldRate(null);
-      setNewRate(null);
+      toast.success("تم حفظ سعر الصرف، وتم تحديث جميع أسعار المنتجات تلقائياً");
+      setRate(null);
       setRounding(null);
-      toast.success(`تم تحديث ${res.updated} منتج`);
-      setConfirmOpen(false);
-      setPreview(null);
       await invalidateAllPriceCaches(qc);
-      refetchBackups();
     } catch (e: any) {
-      toast.error(e.message ?? "فشل التحديث");
+      toast.error(e.message ?? "فشل الحفظ");
     } finally {
-      setApplying(false);
+      setSaving(false);
     }
   };
-
-  const doRestore = async (id: string) => {
-    setRestoringId(id);
-    try {
-      const res = await restoreFn({ data: { backup_id: id } });
-      toast.success(`تم استعادة ${res.restored} منتج`);
-      await invalidateAllPriceCaches(qc);
-      await refetchBackups();
-    } catch (e: any) {
-      toast.error(e.message ?? "فشل الاستعادة");
-    } finally {
-      setRestoringId(null);
-      setRestoreOpen(false);
-    }
-  };
-
-  const toggleExclude = (id: string) => {
-    setExcluded((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-    setPreview(null);
-  };
-
-  const changedCount = preview?.items.filter((i) => !i.excluded && i.diff !== 0).length ?? 0;
-
-  const latestBackup = backups[0] ?? null;
 
   return (
     <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <div className="text-sm font-bold text-gold flex items-center gap-2">
-          💵 تحديث جماعي للأسعار حسب سعر الدولار
-        </div>
-        {latestBackup && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="text-destructive border-destructive/30 hover:bg-destructive/10"
-            onClick={() => setRestoreOpen(true)}
-            disabled={restoringId !== null}
-          >
-            <RefreshCw className="size-3.5 ml-1" />
-            تراجع عن آخر تحديث
-          </Button>
-        )}
+      <div className="text-sm font-bold text-gold flex items-center gap-2">
+        💵 سعر صرف الدولار
       </div>
-      <Field label="سعر صرف الدولار">
+      <p className="text-xs text-muted-foreground">
+        كل الأسعار محفوظة بالدولار. عند تغيير سعر الصرف هنا، تُحسب أسعار جميع
+        المنتجات بالدينار تلقائياً وتظهر مباشرة للزبائن.
+      </p>
+
+      <Field label="سعر صرف الدولار (د.ع لكل 1$)">
         <Input
           type="number"
-          value={newRateVal}
-          onChange={(e) => { setNewRate(e.target.value); setPreview(null); }}
+          value={rateVal}
+          onChange={(e) => setRate(e.target.value)}
           inputMode="numeric"
           dir="ltr"
-          placeholder="1600"
+          placeholder="1500"
         />
         <div className="text-[11px] text-muted-foreground mt-1" dir="ltr">
-          1 USD = {Number(newRateVal) || 0} IQD
+          1 USD = {Number(rateVal) || 0} IQD
         </div>
       </Field>
+
       <Field label="التقريب">
-        <Select value={roundingVal} onValueChange={(v) => { setRounding(v); setPreview(null); }}>
+        <Select value={roundingVal} onValueChange={(v) => setRounding(v)}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="0">بدون تقريب</SelectItem>
@@ -2457,113 +2378,10 @@ function BulkUsdPriceUpdate() {
           </SelectContent>
         </Select>
       </Field>
-      <Field label="ملاحظة (اختياري)">
-        <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="مثال: تحديث بعد رفع الدولار" />
-      </Field>
 
-      <Button className="w-full" onClick={doPreview} disabled={loading} variant="secondary">
-        {loading ? "جاري التحضير..." : "معاينة التغييرات"}
+      <Button className="w-full" onClick={save} disabled={saving}>
+        {saving ? "جاري الحفظ..." : "حفظ سعر الصرف وتحديث كل الأسعار"}
       </Button>
-
-      {preview && (
-        <div className="space-y-2">
-          <div className="text-xs text-muted-foreground">
-            سيتم تحديث <span className="text-gold font-bold">{changedCount}</span> من أصل {preview.count} منتج. اضغط على المنتج لاستثنائه.
-          </div>
-          <div className="max-h-72 overflow-y-auto border border-border rounded-lg divide-y divide-border">
-            {preview.items.map((it) => (
-              <button
-                key={it.id}
-                type="button"
-                onClick={() => toggleExclude(it.id)}
-                className={`w-full text-right px-2 py-1.5 flex items-center justify-between gap-2 hover:bg-muted/50 ${it.excluded ? "opacity-50 line-through" : ""}`}
-              >
-                <div className="text-xs truncate flex-1 text-right">{it.name_ar}</div>
-                <div className="text-xs flex items-center gap-1 flex-shrink-0" dir="ltr">
-                  <span className="text-muted-foreground">
-                    ${(it.old_price / (Number(oldRateVal) || 1)).toFixed(2)}
-                  </span>
-                  <span>→</span>
-                  <span className="text-gold font-bold">
-                    ${(it.new_price / (Number(newRateVal) || 1)).toFixed(2)}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
-          <Button
-            className="w-full"
-            onClick={() => setConfirmOpen(true)}
-            disabled={changedCount === 0}
-          >
-            تطبيق التحديث على {changedCount} منتج
-          </Button>
-        </div>
-      )}
-
-      {backups.length > 0 && (
-        <div className="pt-2 border-t border-border space-y-1">
-          <div className="text-xs font-bold text-muted-foreground">النسخ الاحتياطية</div>
-          <div className="max-h-40 overflow-y-auto space-y-1">
-            {backups.map((b) => (
-              <div key={b.id} className="flex items-center justify-between text-xs bg-background rounded px-2 py-1">
-                <div>
-                  <div dir="ltr">{b.old_rate} → {b.new_rate} ({b.count} منتج)</div>
-                  <div className="text-muted-foreground">{new Date(b.created_at).toLocaleString("ar-IQ")}</div>
-                  {b.note && <div className="text-muted-foreground">{b.note}</div>}
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={restoringId !== null}
-                  onClick={() => { setRestoringId(b.id); setRestoreOpen(true); }}
-                >
-                  استعادة
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>تأكيد التحديث الجماعي</AlertDialogTitle>
-            <AlertDialogDescription>
-              سيتم تحديث أسعار {changedCount} منتج نهائياً في قاعدة البيانات، مع حفظ نسخة احتياطية للأسعار القديمة.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={applying}>إلغاء</AlertDialogCancel>
-            <AlertDialogAction onClick={doApply} disabled={applying}>
-              {applying ? "جاري..." : "تأكيد"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={restoreOpen} onOpenChange={(open) => { if (!restoringId) setRestoreOpen(open); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>تراجع عن تحديث الأسعار</AlertDialogTitle>
-            <AlertDialogDescription>
-              سيتم إرجاع أسعار {latestBackup?.count ?? 0} منتج إلى قيمتها قبل آخر تحديث سعر صرف ({latestBackup?.old_rate} → {latestBackup?.new_rate}).
-              لا يمكن التراجع عن هذه العملية.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={restoringId !== null}>إلغاء</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => doRestore(restoringId ?? latestBackup?.id ?? "")}
-              disabled={restoringId !== null || (!restoringId && !latestBackup)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {restoringId ? "جاري الاستعادة..." : "استعادة الأسعار"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
