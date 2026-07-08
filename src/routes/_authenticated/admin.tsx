@@ -2232,7 +2232,6 @@ function SettingsAdmin() {
         </p>
       </div>
       <BulkUsdPriceUpdate />
-      <UsdFormulaChecker />
       <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-3">
         <div className="text-sm font-bold text-gold flex items-center gap-2">
           <Package className="size-4" /> إعدادات شركات التوصيل
@@ -2543,124 +2542,6 @@ function _FieldPlaceholder({ label, children }: { label: string; children: React
   );
 }
 
-/* ---------------- USD Formula Checker (quick verification) ---------------- */
-
-function computeExpected(current: number, oldRate: number, newRate: number, rounding: number): number {
-  const raw = (current * newRate) / oldRate;
-  if (rounding && rounding > 0) return Math.max(0, Math.round(raw / rounding) * rounding);
-  return Math.max(0, Math.round(raw));
-}
-
-type CheckerRow = {
-  id: string;
-  price: string;
-  oldRate: string;
-  newRate: string;
-  rounding: string;
-  expected: string;
-};
-
-function UsdFormulaChecker() {
-  const [rows, setRows] = useState<CheckerRow[]>([
-    { id: "r1", price: "150000", oldRate: "1500", newRate: "1600", rounding: "0", expected: "160000" },
-    { id: "r2", price: "12500", oldRate: "1500", newRate: "1600", rounding: "500", expected: "13500" },
-    { id: "r3", price: "7250", oldRate: "1500", newRate: "1450", rounding: "250", expected: "7000" },
-  ]);
-
-  const updateRow = (id: string, key: keyof CheckerRow, val: string) => {
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, [key]: val } : r)));
-  };
-  const addRow = () => {
-    setRows((prev) => [
-      ...prev,
-      { id: `r${Date.now()}`, price: "", oldRate: "1500", newRate: "1600", rounding: "0", expected: "" },
-    ]);
-  };
-  const removeRow = (id: string) => setRows((prev) => prev.filter((r) => r.id !== id));
-
-  const results = rows.map((r) => {
-    const p = Number(r.price);
-    const o = Number(r.oldRate);
-    const n = Number(r.newRate);
-    const rd = Number(r.rounding) || 0;
-    const valid = p >= 0 && o > 0 && n > 0;
-    const actual = valid ? computeExpected(p, o, n, rd) : NaN;
-    const exp = r.expected.trim() === "" ? null : Number(r.expected);
-    const match = exp === null ? null : Number.isFinite(actual) && actual === exp;
-    return { ...r, valid, actual, exp, match };
-  });
-
-  const total = results.filter((r) => r.match !== null).length;
-  const passed = results.filter((r) => r.match === true).length;
-
-  return (
-    <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-3 mt-3">
-      <div className="text-sm font-bold text-gold flex items-center gap-2">
-        🧪 أداة التحقق من معادلة سعر الصرف
-      </div>
-      <div className="text-xs text-muted-foreground">
-        الصيغة: <span dir="ltr" className="font-mono">new = round((price × newRate) / oldRate, rounding)</span>
-      </div>
-
-      <div className="space-y-2">
-        {results.map((r) => (
-          <div key={r.id} className="rounded-lg border border-border p-2 space-y-2 bg-background/50">
-            <div className="grid grid-cols-2 gap-2">
-              <Field label="السعر القديم (د.ع)">
-                <Input type="number" dir="ltr" value={r.price} onChange={(e) => updateRow(r.id, "price", e.target.value)} />
-              </Field>
-              <Field label="المتوقّع (اختياري)">
-                <Input type="number" dir="ltr" value={r.expected} onChange={(e) => updateRow(r.id, "expected", e.target.value)} placeholder="—" />
-              </Field>
-              <Field label="دولار قديم">
-                <Input type="number" dir="ltr" value={r.oldRate} onChange={(e) => updateRow(r.id, "oldRate", e.target.value)} />
-              </Field>
-              <Field label="دولار جديد">
-                <Input type="number" dir="ltr" value={r.newRate} onChange={(e) => updateRow(r.id, "newRate", e.target.value)} />
-              </Field>
-            </div>
-            <Field label="التقريب">
-              <Select value={r.rounding} onValueChange={(v) => updateRow(r.id, "rounding", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">بدون تقريب</SelectItem>
-                  <SelectItem value="250">أقرب 250</SelectItem>
-                  <SelectItem value="500">أقرب 500</SelectItem>
-                  <SelectItem value="1000">أقرب 1000</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-            <div className="flex items-center justify-between gap-2 text-xs" dir="ltr">
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">نتيجة:</span>
-                <span className="font-mono font-bold text-gold">
-                  {r.valid ? formatIQD(r.actual) : "—"}
-                </span>
-                {r.match === true && <span className="text-green-500">✓ مطابق</span>}
-                {r.match === false && (
-                  <span className="text-red-500">✗ متوقّع {formatIQD(r.exp!)}</span>
-                )}
-              </div>
-              <Button size="sm" variant="ghost" onClick={() => removeRow(r.id)} className="text-red-500 h-7">حذف</Button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex items-center justify-between gap-2">
-        <Button size="sm" variant="secondary" onClick={addRow}>+ إضافة حالة</Button>
-        {total > 0 && (
-          <div className="text-xs">
-            <span className={passed === total ? "text-green-500 font-bold" : "text-amber-500 font-bold"}>
-              {passed} / {total}
-            </span>
-            <span className="text-muted-foreground"> مطابقة</span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 async function resizeImageFile(file: File, size: number): Promise<File> {
   try {
