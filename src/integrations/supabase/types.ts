@@ -125,6 +125,36 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json
+        }
+        Relationships: []
+      }
       banner_comments: {
         Row: {
           banner_id: string
@@ -1008,6 +1038,15 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _uid: string }; Returns: boolean }
+      log_admin_action: {
+        Args: {
+          p_action: string
+          p_entity_id?: string
+          p_entity_type: string
+          p_metadata?: Json
+        }
+        Returns: string
+      }
       place_order: {
         Args: {
           p_address: Json
