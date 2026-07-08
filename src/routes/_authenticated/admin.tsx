@@ -2522,7 +2522,14 @@ function BulkUsdPriceUpdate() {
                   <div className="text-muted-foreground">{new Date(b.created_at).toLocaleString("ar-IQ")}</div>
                   {b.note && <div className="text-muted-foreground">{b.note}</div>}
                 </div>
-                <Button size="sm" variant="outline" onClick={() => doRestore(b.id)}>استعادة</Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={restoringId !== null}
+                  onClick={() => { setRestoringId(b.id); setRestoreOpen(true); }}
+                >
+                  استعادة
+                </Button>
               </div>
             ))}
           </div>
@@ -2541,6 +2548,28 @@ function BulkUsdPriceUpdate() {
             <AlertDialogCancel disabled={applying}>إلغاء</AlertDialogCancel>
             <AlertDialogAction onClick={doApply} disabled={applying}>
               {applying ? "جاري..." : "تأكيد"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={restoreOpen} onOpenChange={(open) => { if (!restoringId) setRestoreOpen(open); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>تراجع عن تحديث الأسعار</AlertDialogTitle>
+            <AlertDialogDescription>
+              سيتم إرجاع أسعار {latestBackup?.count ?? 0} منتج إلى قيمتها قبل آخر تحديث سعر صرف ({latestBackup?.old_rate} → {latestBackup?.new_rate}).
+              لا يمكن التراجع عن هذه العملية.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={restoringId !== null}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => doRestore(restoringId ?? latestBackup?.id ?? "")}
+              disabled={restoringId !== null || (!restoringId && !latestBackup)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {restoringId ? "جاري الاستعادة..." : "استعادة الأسعار"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
