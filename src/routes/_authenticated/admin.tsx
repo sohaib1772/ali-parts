@@ -2274,6 +2274,19 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 /* ---------------- Bulk USD Price Update ---------------- */
 
+async function invalidateAllPriceCaches(qc: ReturnType<typeof useQueryClient>) {
+  // Cover every query that reads product prices so cards, details, cart, and
+  // checkout refresh immediately after a bulk update.
+  await Promise.all([
+    qc.invalidateQueries({ queryKey: ["products"] }),
+    qc.invalidateQueries({ queryKey: ["product"] }),
+    qc.invalidateQueries({ queryKey: ["cart"] }),
+    qc.invalidateQueries({ queryKey: ["admin", "products"] }),
+    qc.invalidateQueries({ queryKey: ["favorites"] }),
+  ]);
+  await qc.refetchQueries({ type: "active" });
+}
+
 function BulkUsdPriceUpdate() {
   const qc = useQueryClient();
   const previewFn = useServerFn(previewBulkPriceUpdate);
@@ -2339,7 +2352,7 @@ function BulkUsdPriceUpdate() {
       toast.success(`تم تحديث ${res.updated} منتج`);
       setConfirmOpen(false);
       setPreview(null);
-      qc.invalidateQueries({ queryKey: ["products"] });
+      await invalidateAllPriceCaches(qc);
       refetchBackups();
     } catch (e: any) {
       toast.error(e.message ?? "فشل التحديث");
@@ -2353,7 +2366,7 @@ function BulkUsdPriceUpdate() {
     try {
       const res = await restoreFn({ data: { backup_id: id } });
       toast.success(`تم استعادة ${res.restored} منتج`);
-      qc.invalidateQueries({ queryKey: ["products"] });
+      await invalidateAllPriceCaches(qc);
     } catch (e: any) {
       toast.error(e.message ?? "فشل الاستعادة");
     }
