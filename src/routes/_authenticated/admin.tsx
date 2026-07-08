@@ -2072,7 +2072,7 @@ function SettingsAdmin() {
   const [shipLocalCost, setShipLocalCost] = useState("");
   const [shipAramexName, setShipAramexName] = useState("");
   const [shipAramexCost, setShipAramexCost] = useState("");
-  const [priceAdjust, setPriceAdjust] = useState("");
+  const [priceAdjust, setPriceAdjust] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const waVal = wa || settings.whatsapp_number || "";
   const phoneVal = phone || settings.phone_number || "";
@@ -2088,8 +2088,12 @@ function SettingsAdmin() {
   const shipLocalCostVal = shipLocalCost || settings.ship_local_cost || "5000";
   const shipAramexNameVal = shipAramexName || settings.ship_aramex_name || "أرامكس";
   const shipAramexCostVal = shipAramexCost || settings.ship_aramex_cost || "10000";
+  // null = user hasn't touched the field yet → show saved value.
+  // Any string (including "") = user's current input; "" means "reset to 0".
   const priceAdjustVal =
-    priceAdjust !== "" ? priceAdjust : (settings.global_price_adjustment_iqd ?? "0");
+    priceAdjust !== null
+      ? priceAdjust
+      : String(settings.global_price_adjustment_iqd ?? "0");
 
   const upsert = async (rows: { key: string; value: string }[]) => {
     const { error } = await supabase
@@ -2118,7 +2122,14 @@ function SettingsAdmin() {
         { key: "ship_local_cost", value: String(Number(shipLocalCostVal) || 0) },
         { key: "ship_aramex_name", value: shipAramexNameVal },
         { key: "ship_aramex_cost", value: String(Number(shipAramexCostVal) || 0) },
-        { key: "global_price_adjustment_iqd", value: String(Math.trunc(Number(priceAdjustVal) || 0)) },
+        {
+          key: "global_price_adjustment_iqd",
+          value: String(
+            priceAdjustVal.trim() === "" || priceAdjustVal.trim() === "-"
+              ? 0
+              : Math.trunc(Number(priceAdjustVal)) || 0,
+          ),
+        },
       ]);
       toast.success("تم حفظ الإعدادات");
       qc.invalidateQueries({ queryKey: ["app_settings"] });
