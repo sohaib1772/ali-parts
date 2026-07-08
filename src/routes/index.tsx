@@ -21,6 +21,7 @@ import {
 import type { Banner, Product } from "@/lib/queries";
 import { formatIQD } from "@/lib/format";
 import { useAdjustedPrice } from "@/lib/admin";
+import { useCachedVideo } from "@/lib/use-cached-video";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => {
