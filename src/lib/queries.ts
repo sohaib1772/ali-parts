@@ -30,6 +30,12 @@ export type Brand = { id: string; name_ar: string; name_en: string; logo_url: st
 export type CarModel = { id: string; brand_id: string | null; name_ar: string; name_en: string };
 export type Banner = { id: string; title_ar: string | null; subtitle_ar: string | null; image_url: string; video_url?: string | null; link: string | null; expires_at?: string | null };
 
+// Slim projection for product lists (cards). Excludes heavy fields like
+// `description_ar`, `specs`, and `compatible_models` that are only needed
+// on the product detail page. Keeps payload small for fast list loads.
+const PRODUCT_LIST_COLUMNS =
+  "id, name_ar, name_en, oem_number, price_iqd, price_usd, compare_price_iqd, shipping_iqd, category_id, brand_id, images, in_stock, stock_qty, is_featured, is_deal, deal_expires_at, sales_count, condition, created_at";
+
 export const categoriesQuery = () =>
   queryOptions({
     queryKey: ["categories"],
@@ -84,7 +90,12 @@ export const featuredProductsQuery = () =>
     queryKey: ["products", "featured"],
     staleTime: 2 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("*").eq("is_featured", true).order("created_at", { ascending: false }).limit(10);
+      const { data, error } = await supabase
+        .from("products")
+        .select(PRODUCT_LIST_COLUMNS)
+        .eq("is_featured", true)
+        .order("created_at", { ascending: false })
+        .limit(10);
       if (error) throw error;
       return (data ?? []) as Product[];
     },
@@ -95,7 +106,12 @@ export const dealsQuery = () =>
     queryKey: ["products", "deals"],
     staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("*").eq("is_deal", true).order("created_at", { ascending: false }).limit(20);
+      const { data, error } = await supabase
+        .from("products")
+        .select(PRODUCT_LIST_COLUMNS)
+        .eq("is_deal", true)
+        .order("created_at", { ascending: false })
+        .limit(20);
       if (error) throw error;
       const now = Date.now();
       return ((data ?? []) as Product[]).filter(
@@ -111,7 +127,7 @@ export const bestSellersQuery = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("*")
+        .select(PRODUCT_LIST_COLUMNS)
         .order("sales_count", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(20);
@@ -129,7 +145,7 @@ export const productsInfiniteQuery = (condition?: "new" | "used" | null) =>
     queryFn: async ({ pageParam = 0 }) => {
       let q = supabase
         .from("products")
-        .select("*")
+        .select(PRODUCT_LIST_COLUMNS)
         .order("created_at", { ascending: true })
         .range(pageParam, pageParam + PRODUCTS_PAGE_SIZE - 1);
       if (condition) q = q.eq("condition", condition);
@@ -171,11 +187,11 @@ export const productsByCategoryQuery = (categoryId: string) =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("*")
+        .select(PRODUCT_LIST_COLUMNS)
         .eq("category_id", categoryId)
         .order("in_stock", { ascending: false })
         .order("created_at", { ascending: false })
-        .limit(100);
+        .limit(60);
       if (error) throw error;
       return (data ?? []) as Product[];
     },
@@ -190,11 +206,11 @@ export const searchProductsQuery = (q: string) =>
       const pattern = `%${q}%`;
       const { data, error } = await supabase
         .from("products")
-        .select("*")
+        .select(PRODUCT_LIST_COLUMNS)
         .or(`name_ar.ilike.${pattern},oem_number.ilike.${pattern},name_en.ilike.${pattern}`)
         .order("in_stock", { ascending: false })
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(40);
       if (error) throw error;
       return (data ?? []) as Product[];
     },
@@ -206,7 +222,10 @@ export const productsByIdsQuery = (ids: string[]) =>
     queryKey: ["products", "by-ids", ids],
     queryFn: async () => {
       if (!ids.length) return [] as Product[];
-      const { data, error } = await supabase.from("products").select("*").in("id", ids);
+      const { data, error } = await supabase
+        .from("products")
+        .select(PRODUCT_LIST_COLUMNS)
+        .in("id", ids);
       if (error) throw error;
       const map = new Map((data ?? []).map((p) => [p.id, p as Product]));
       return ids.map((id) => map.get(id)).filter((v): v is Product => !!v);
@@ -251,9 +270,10 @@ export const ordersQuery = (userId: string | null) =>
       if (!userId) return [];
       const { data, error } = await supabase
         .from("orders")
-        .select("*")
+        .select("id, user_id, order_number, status, total_iqd, subtotal_iqd, shipping_iqd, points_used, points_earned, payment_method, created_at, updated_at")
         .eq("user_id", userId)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(30);
       if (error) throw error;
       return data ?? [];
     },
