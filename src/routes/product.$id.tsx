@@ -838,6 +838,7 @@ function RelatedProductsSkeleton() {
 function RelatedProducts({ categoryId, excludeId }: { categoryId: string; excludeId: string }) {
   const { data: products } = useSuspenseQuery(productsByCategoryQuery(categoryId));
   const related = (products as Product[]).filter((p) => p.id !== excludeId).slice(0, 4);
+  const adjust = useAdjustedPrice();
   if (related.length === 0) {
     return <div className="text-xs text-muted-foreground text-center py-4">لا توجد منتجات مشابهة</div>;
   }
