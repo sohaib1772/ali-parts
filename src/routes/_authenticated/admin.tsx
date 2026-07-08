@@ -2319,6 +2319,7 @@ function ExchangeRateSettings() {
 
   const rateVal = rate ?? String(settings.usd_exchange_rate ?? "1500");
   const roundingVal = rounding ?? String(settings.usd_rounding ?? "500");
+  void qc; void rateVal; void roundingVal;
 
   const save = async () => {
     const r = Number(rateVal);
