@@ -20,6 +20,7 @@ import {
 } from "@/lib/queries";
 import type { Banner, Product } from "@/lib/queries";
 import { formatIQD } from "@/lib/format";
+import { useAdjustedPrice } from "@/lib/admin";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => {
@@ -570,6 +571,7 @@ function LimitedOffers({ deals }: { deals: Product[] }) {
 
 function OfferCard({ product }: { product: Product }) {
   const img = product.images?.[0];
+  const adjust = useAdjustedPrice();
   return (
     <Link
       to="/product/$id"
@@ -605,7 +607,7 @@ function OfferCard({ product }: { product: Product }) {
       <div className="p-3 flex flex-col gap-2">
         <h3 className="text-sm font-semibold line-clamp-2 leading-tight min-h-[2.5rem]">{product.name_ar}</h3>
         <div className="flex items-center justify-between gap-2">
-          <span className="text-base font-extrabold text-navy">{formatIQD(product.price_iqd)}</span>
+          <span className="text-base font-extrabold text-navy">{formatIQD(adjust(product.price_iqd))}</span>
           <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-muted text-foreground/80 group-hover:bg-gold group-hover:text-navy transition">
             عرض التفاصيل
           </span>
