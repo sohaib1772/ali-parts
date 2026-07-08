@@ -14,9 +14,13 @@ export function PageShell({
   showNav?: boolean;
 }) {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-[100dvh] bg-background flex flex-col" style={{ paddingTop: showHeader ? undefined : "env(safe-area-inset-top)" }}>
       {showHeader && <AppHeader title={title} />}
-      <main className={`flex-1 mx-auto w-full max-w-md ${showNav ? "pb-24" : ""}`}>{children}</main>
+      <main
+        className={`flex-1 mx-auto w-full max-w-md ${showNav ? "pb-[calc(6rem+env(safe-area-inset-bottom))]" : "pb-[env(safe-area-inset-bottom)]"}`}
+      >
+        {children}
+      </main>
       {showNav && <BottomNav />}
     </div>
   );
