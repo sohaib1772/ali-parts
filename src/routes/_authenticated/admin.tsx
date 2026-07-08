@@ -2313,6 +2313,8 @@ function BulkUsdPriceUpdate() {
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [restoreOpen, setRestoreOpen] = useState(false);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
 
   const { data: backups = [], refetch: refetchBackups } = useQuery({
     queryKey: ["price_backups"],
