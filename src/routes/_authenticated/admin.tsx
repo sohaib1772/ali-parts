@@ -1250,7 +1250,10 @@ function ProductsAdmin() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-sm truncate">{p.name_ar}</div>
-                <div className="text-xs text-muted-foreground">{formatIQD(p.price_iqd)}</div>
+                <div className="text-xs flex items-center gap-2" dir="ltr">
+                  <span className="font-bold text-gold">${Number(p.price_usd ?? 0).toFixed(2)}</span>
+                  <span className="text-muted-foreground">≈ {formatIQD(p.price_iqd)}</span>
+                </div>
                 <div className="text-[10px] text-muted-foreground">
                   {p.in_stock && (p.stock_qty ?? 0) > 0 ? `متوفر · ${p.stock_qty ?? 0} قطعة` : "غير متوفر"}
                 </div>
