@@ -2339,7 +2339,7 @@ function BulkUsdPriceUpdate() {
       toast.success(`تم تحديث ${res.updated} منتج`);
       setConfirmOpen(false);
       setPreview(null);
-      qc.invalidateQueries({ queryKey: ["products"] });
+      await invalidateAllPriceCaches(qc);
       refetchBackups();
     } catch (e: any) {
       toast.error(e.message ?? "فشل التحديث");
@@ -2353,7 +2353,7 @@ function BulkUsdPriceUpdate() {
     try {
       const res = await restoreFn({ data: { backup_id: id } });
       toast.success(`تم استعادة ${res.restored} منتج`);
-      qc.invalidateQueries({ queryKey: ["products"] });
+      await invalidateAllPriceCaches(qc);
     } catch (e: any) {
       toast.error(e.message ?? "فشل الاستعادة");
     }
