@@ -2433,28 +2433,19 @@ function BulkUsdPriceUpdate() {
           </Button>
         )}
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        <Field label="سعر الدولار القديم">
-          <Input
-            type="number"
-            value={oldRateVal}
-            onChange={(e) => { setOldRate(e.target.value); setPreview(null); }}
-            inputMode="numeric"
-            dir="ltr"
-            placeholder="1500"
-          />
-        </Field>
-        <Field label="سعر الدولار الجديد">
-          <Input
-            type="number"
-            value={newRateVal}
-            onChange={(e) => { setNewRate(e.target.value); setPreview(null); }}
-            inputMode="numeric"
-            dir="ltr"
-            placeholder="1600"
-          />
-        </Field>
-      </div>
+      <Field label="سعر صرف الدولار">
+        <Input
+          type="number"
+          value={newRateVal}
+          onChange={(e) => { setNewRate(e.target.value); setPreview(null); }}
+          inputMode="numeric"
+          dir="ltr"
+          placeholder="1600"
+        />
+        <div className="text-[11px] text-muted-foreground mt-1" dir="ltr">
+          1 USD = {Number(newRateVal) || 0} IQD
+        </div>
+      </Field>
       <Field label="التقريب">
         <Select value={roundingVal} onValueChange={(v) => { setRounding(v); setPreview(null); }}>
           <SelectTrigger><SelectValue /></SelectTrigger>
@@ -2489,14 +2480,13 @@ function BulkUsdPriceUpdate() {
               >
                 <div className="text-xs truncate flex-1 text-right">{it.name_ar}</div>
                 <div className="text-xs flex items-center gap-1 flex-shrink-0" dir="ltr">
-                  <span className="text-muted-foreground">{formatIQD(it.old_price)}</span>
+                  <span className="text-muted-foreground">
+                    ${(it.old_price / (Number(oldRateVal) || 1)).toFixed(2)}
+                  </span>
                   <span>→</span>
-                  <span className="text-gold font-bold">{formatIQD(it.new_price)}</span>
-                  {it.diff !== 0 && !it.excluded && (
-                    <span className={it.diff > 0 ? "text-green-500" : "text-red-500"}>
-                      ({it.diff > 0 ? "+" : ""}{it.diff})
-                    </span>
-                  )}
+                  <span className="text-gold font-bold">
+                    ${(it.new_price / (Number(newRateVal) || 1)).toFixed(2)}
+                  </span>
                 </div>
               </button>
             ))}
