@@ -50,6 +50,7 @@ import {
   listPriceBackups,
   restorePriceBackup,
 } from "@/lib/bulk-price.functions";
+import { broadcastPricesChanged } from "@/lib/price-sync";
 import { normalizePhone } from "@/lib/phone-auth";
 
 const STATUSES = ["received", "preparing", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"] as const;
@@ -2285,6 +2286,8 @@ async function invalidateAllPriceCaches(qc: ReturnType<typeof useQueryClient>) {
     qc.invalidateQueries({ queryKey: ["favorites"] }),
   ]);
   await qc.refetchQueries({ type: "active" });
+  // Notify other tabs / devices to refresh too.
+  broadcastPricesChanged().catch(() => {});
 }
 
 function BulkUsdPriceUpdate() {
