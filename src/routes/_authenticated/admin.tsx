@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import { PageShell } from "@/components/page-shell";
 import { supabase } from "@/integrations/supabase/client";
-import { useIsAdmin, useStaffPermissions, useAdminAccessStatus, uploadProductImage, uploadMediaFile, settingsQuery } from "@/lib/admin";
+import { useIsAdmin, useStaffPermissions, useAdminAccessStatus, uploadProductImage, uploadMediaFile, settingsQuery, useSetting } from "@/lib/admin";
 import {
   categoriesQuery,
   brandsQuery,
@@ -1073,7 +1073,7 @@ type ProductForm = {
   name_en: string;
   description_ar: string;
   oem_number: string;
-  price_iqd: string;
+  price_usd: string;
   compare_price_iqd: string;
   shipping_iqd: string;
   category_id: string;
@@ -1090,7 +1090,7 @@ type ProductForm = {
 
 const emptyProduct: ProductForm = {
   name_ar: "", name_en: "", description_ar: "", oem_number: "",
-  price_iqd: "", compare_price_iqd: "", shipping_iqd: "", category_id: "", brand_id: "",
+  price_usd: "", compare_price_iqd: "", shipping_iqd: "", category_id: "", brand_id: "",
   images: [], in_stock: true, is_featured: false, is_deal: false,
   compatible_models: [], deal_expires_at: "", stock_qty: "0",
   condition: "new",
