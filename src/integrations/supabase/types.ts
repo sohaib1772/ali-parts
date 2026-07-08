@@ -537,6 +537,42 @@ export type Database = {
         }
         Relationships: []
       }
+      price_update_backups: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          excluded_ids: string[]
+          id: string
+          items: Json
+          new_rate: number
+          note: string | null
+          old_rate: number
+          rounding: number
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          excluded_ids?: string[]
+          id?: string
+          items?: Json
+          new_rate: number
+          note?: string | null
+          old_rate: number
+          rounding?: number
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          excluded_ids?: string[]
+          id?: string
+          items?: Json
+          new_rate?: number
+          note?: string | null
+          old_rate?: number
+          rounding?: number
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           brand_id: string | null
