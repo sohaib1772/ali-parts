@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatIQD } from "@/lib/format";
 import { useAuth } from "@/lib/use-auth";
 import { cartQuery } from "@/lib/queries";
+import { useAdjustedPrice } from "@/lib/admin";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/cart")({
@@ -21,8 +22,9 @@ function CartPage() {
   const [pendingIds, setPendingIds] = useState<Record<string, boolean>>({});
   const markPending = (id: string, on: boolean) =>
     setPendingIds((p) => ({ ...p, [id]: on }));
+  const adjust = useAdjustedPrice();
 
-  const total = items.reduce((s, i: any) => s + Number(i.product?.price_iqd ?? 0) * i.quantity, 0);
+  const total = items.reduce((s, i: any) => s + adjust(i.product?.price_iqd) * i.quantity, 0);
 
   const setQty = async (id: string, q: number) => {
     if (q <= 0) return remove(id);
@@ -175,7 +177,7 @@ function CartPage() {
                   <span className="px-2 text-[10px] text-muted-foreground">اختياري</span>
                 )}
               </div>
-              <div className="text-navy font-extrabold text-sm mt-1">{formatIQD(it.product?.price_iqd)}</div>
+              <div className="text-navy font-extrabold text-sm mt-1">{formatIQD(adjust(it.product?.price_iqd))}</div>
               <div className="flex items-center gap-2 mt-2">
                 <div className="flex items-center bg-muted rounded-lg">
                   <button onClick={() => setQty(it.id, it.quantity - 1)} className="size-7 grid place-items-center"><Minus className="size-3.5" /></button>
