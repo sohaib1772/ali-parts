@@ -2230,6 +2230,7 @@ function SettingsAdmin() {
           الأسعار الأصلية المحفوظة في قاعدة البيانات.
         </p>
       </div>
+      <BulkUsdPriceUpdate />
       <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-3">
         <div className="text-sm font-bold text-gold flex items-center gap-2">
           <Package className="size-4" /> إعدادات شركات التوصيل
