@@ -2414,7 +2414,7 @@ function BulkUsdPriceUpdate() {
         <Field label="سعر الدولار القديم">
           <Input
             type="number"
-            value={oldRate}
+            value={oldRateVal}
             onChange={(e) => { setOldRate(e.target.value); setPreview(null); }}
             inputMode="numeric"
             dir="ltr"
@@ -2424,7 +2424,7 @@ function BulkUsdPriceUpdate() {
         <Field label="سعر الدولار الجديد">
           <Input
             type="number"
-            value={newRate}
+            value={newRateVal}
             onChange={(e) => { setNewRate(e.target.value); setPreview(null); }}
             inputMode="numeric"
             dir="ltr"
@@ -2433,7 +2433,7 @@ function BulkUsdPriceUpdate() {
         </Field>
       </div>
       <Field label="التقريب">
-        <Select value={rounding} onValueChange={(v) => { setRounding(v); setPreview(null); }}>
+        <Select value={roundingVal} onValueChange={(v) => { setRounding(v); setPreview(null); }}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="0">بدون تقريب</SelectItem>
