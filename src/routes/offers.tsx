@@ -149,12 +149,13 @@ function ReelItem({
   useEffect(() => {
     const el = videoRef.current;
     const box = containerRef.current;
-    if (!el || !box) return;
+    if (!box) return;
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
           if (e.isIntersecting && e.intersectionRatio > 0.6) {
             onActive();
+            if (!el) return;
             // Try to play with sound. If the browser blocks unmuted
             // autoplay, fall back to muted so the video still plays.
             el.muted = muted;
@@ -167,7 +168,7 @@ function ReelItem({
               });
             }
           } else {
-            el.pause();
+            el?.pause();
           }
         }
       },
