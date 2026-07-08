@@ -361,7 +361,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
           className="absolute inset-0 w-full h-full object-cover"
         />
       )}
-      {mounted && inView && (
+      {mounted && (
         <video
           ref={videoRef}
           src={(current as any).video_url}
@@ -370,7 +370,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
           muted={muted}
           loop
           playsInline
-          preload="none"
+          preload="auto"
           className="absolute inset-0 w-full h-full object-cover cursor-pointer"
           onVolumeChange={(e) => {
             const el = e.currentTarget;
