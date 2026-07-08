@@ -3,6 +3,33 @@ import { useEffect, useRef, useState } from "react";
 const CACHE_NAME = "app-videos-v1";
 const memoryBlobUrls = new Map<string, string>();
 const inflightWarm = new Set<string>();
+const prefetchQueue: string[] = [];
+let prefetchRunning = 0;
+const MAX_PREFETCH_CONCURRENCY = 1;
+let prefetchPaused = false;
+
+/**
+ * Temporarily pause background prefetching (e.g. while the active video is
+ * still buffering) so it doesn't compete for bandwidth and cause stutter.
+ */
+export function setPrefetchPaused(paused: boolean): void {
+  prefetchPaused = paused;
+  if (!paused) drainPrefetchQueue();
+}
+
+function drainPrefetchQueue(): void {
+  if (prefetchPaused) return;
+  while (prefetchRunning < MAX_PREFETCH_CONCURRENCY && prefetchQueue.length) {
+    const url = prefetchQueue.shift()!;
+    if (memoryBlobUrls.has(url)) { inflightWarm.delete(url); continue; }
+    prefetchRunning += 1;
+    fetchAndCache(url).finally(() => {
+      prefetchRunning -= 1;
+      inflightWarm.delete(url);
+      drainPrefetchQueue();
+    });
+  }
+}
 
 export async function clearVideoCache(): Promise<number> {
   let count = 0;
@@ -90,7 +117,12 @@ export function prefetchVideo(url: string | null | undefined): void {
   if (memoryBlobUrls.has(url)) return;
   if (inflightWarm.has(url)) return;
   inflightWarm.add(url);
-  fetchAndCache(url).finally(() => inflightWarm.delete(url));
+  prefetchQueue.push(url);
+  const ric = (window as any).requestIdleCallback as
+    | ((cb: () => void, opts?: { timeout?: number }) => number)
+    | undefined;
+  if (ric) ric(() => drainPrefetchQueue(), { timeout: 2000 });
+  else window.setTimeout(() => drainPrefetchQueue(), 300);
 }
 
 /**
