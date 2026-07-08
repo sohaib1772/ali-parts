@@ -2263,6 +2263,236 @@ function SettingsAdmin() {
 /* ---------------- Shared ---------------- */
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
+
+  return (
+    <div>
+      <Label className="text-xs mb-1 block">{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+/* ---------------- Bulk USD Price Update ---------------- */
+
+function BulkUsdPriceUpdate() {
+  const qc = useQueryClient();
+  const previewFn = useServerFn(previewBulkPriceUpdate);
+  const applyFn = useServerFn(applyBulkPriceUpdate);
+  const listFn = useServerFn(listPriceBackups);
+  const restoreFn = useServerFn(restorePriceBackup);
+
+  const [oldRate, setOldRate] = useState("1500");
+  const [newRate, setNewRate] = useState("1500");
+  const [rounding, setRounding] = useState("500");
+  const [excluded, setExcluded] = useState<Set<string>>(new Set());
+  const [note, setNote] = useState("");
+  const [preview, setPreview] = useState<null | {
+    items: Array<{ id: string; name_ar: string; old_price: number; new_price: number; diff: number; excluded: boolean }>;
+    count: number;
+  }>(null);
+  const [loading, setLoading] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const { data: backups = [], refetch: refetchBackups } = useQuery({
+    queryKey: ["price_backups"],
+    queryFn: () => listFn(),
+  });
+
+  const doPreview = async () => {
+    const oldN = Number(oldRate);
+    const newN = Number(newRate);
+    if (!(oldN > 0) || !(newN > 0)) {
+      toast.error("أدخل سعر دولار صحيح");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await previewFn({
+        data: {
+          old_rate: oldN,
+          new_rate: newN,
+          rounding: Number(rounding) || 0,
+          excluded_ids: Array.from(excluded),
+        },
+      });
+      setPreview(res);
+    } catch (e: any) {
+      toast.error(e.message ?? "خطأ في المعاينة");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const doApply = async () => {
+    setApplying(true);
+    try {
+      const res = await applyFn({
+        data: {
+          old_rate: Number(oldRate),
+          new_rate: Number(newRate),
+          rounding: Number(rounding) || 0,
+          excluded_ids: Array.from(excluded),
+          note: note || undefined,
+        },
+      });
+      toast.success(`تم تحديث ${res.updated} منتج`);
+      setConfirmOpen(false);
+      setPreview(null);
+      qc.invalidateQueries({ queryKey: ["products"] });
+      refetchBackups();
+    } catch (e: any) {
+      toast.error(e.message ?? "فشل التحديث");
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  const doRestore = async (id: string) => {
+    if (!confirm("استعادة الأسعار من هذه النسخة الاحتياطية؟")) return;
+    try {
+      const res = await restoreFn({ data: { backup_id: id } });
+      toast.success(`تم استعادة ${res.restored} منتج`);
+      qc.invalidateQueries({ queryKey: ["products"] });
+    } catch (e: any) {
+      toast.error(e.message ?? "فشل الاستعادة");
+    }
+  };
+
+  const toggleExclude = (id: string) => {
+    setExcluded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    setPreview(null);
+  };
+
+  const changedCount = preview?.items.filter((i) => !i.excluded && i.diff !== 0).length ?? 0;
+
+  return (
+    <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-3">
+      <div className="text-sm font-bold text-gold flex items-center gap-2">
+        💵 تحديث جماعي للأسعار حسب سعر الدولار
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="سعر الدولار القديم">
+          <Input
+            type="number"
+            value={oldRate}
+            onChange={(e) => { setOldRate(e.target.value); setPreview(null); }}
+            inputMode="numeric"
+            dir="ltr"
+            placeholder="1500"
+          />
+        </Field>
+        <Field label="سعر الدولار الجديد">
+          <Input
+            type="number"
+            value={newRate}
+            onChange={(e) => { setNewRate(e.target.value); setPreview(null); }}
+            inputMode="numeric"
+            dir="ltr"
+            placeholder="1600"
+          />
+        </Field>
+      </div>
+      <Field label="التقريب">
+        <Select value={rounding} onValueChange={(v) => { setRounding(v); setPreview(null); }}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="0">بدون تقريب</SelectItem>
+            <SelectItem value="250">أقرب 250 د.ع</SelectItem>
+            <SelectItem value="500">أقرب 500 د.ع</SelectItem>
+            <SelectItem value="1000">أقرب 1000 د.ع</SelectItem>
+          </SelectContent>
+        </Select>
+      </Field>
+      <Field label="ملاحظة (اختياري)">
+        <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="مثال: تحديث بعد رفع الدولار" />
+      </Field>
+
+      <Button className="w-full" onClick={doPreview} disabled={loading} variant="secondary">
+        {loading ? "جاري التحضير..." : "معاينة التغييرات"}
+      </Button>
+
+      {preview && (
+        <div className="space-y-2">
+          <div className="text-xs text-muted-foreground">
+            سيتم تحديث <span className="text-gold font-bold">{changedCount}</span> من أصل {preview.count} منتج. اضغط على المنتج لاستثنائه.
+          </div>
+          <div className="max-h-72 overflow-y-auto border border-border rounded-lg divide-y divide-border">
+            {preview.items.map((it) => (
+              <button
+                key={it.id}
+                type="button"
+                onClick={() => toggleExclude(it.id)}
+                className={`w-full text-right px-2 py-1.5 flex items-center justify-between gap-2 hover:bg-muted/50 ${it.excluded ? "opacity-50 line-through" : ""}`}
+              >
+                <div className="text-xs truncate flex-1 text-right">{it.name_ar}</div>
+                <div className="text-xs flex items-center gap-1 flex-shrink-0" dir="ltr">
+                  <span className="text-muted-foreground">{formatIQD(it.old_price)}</span>
+                  <span>→</span>
+                  <span className="text-gold font-bold">{formatIQD(it.new_price)}</span>
+                  {it.diff !== 0 && !it.excluded && (
+                    <span className={it.diff > 0 ? "text-green-500" : "text-red-500"}>
+                      ({it.diff > 0 ? "+" : ""}{it.diff})
+                    </span>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+          <Button
+            className="w-full"
+            onClick={() => setConfirmOpen(true)}
+            disabled={changedCount === 0}
+          >
+            تطبيق التحديث على {changedCount} منتج
+          </Button>
+        </div>
+      )}
+
+      {backups.length > 0 && (
+        <div className="pt-2 border-t border-border space-y-1">
+          <div className="text-xs font-bold text-muted-foreground">النسخ الاحتياطية</div>
+          <div className="max-h-40 overflow-y-auto space-y-1">
+            {backups.map((b) => (
+              <div key={b.id} className="flex items-center justify-between text-xs bg-background rounded px-2 py-1">
+                <div>
+                  <div dir="ltr">{b.old_rate} → {b.new_rate} ({b.count} منتج)</div>
+                  <div className="text-muted-foreground">{new Date(b.created_at).toLocaleString("ar-IQ")}</div>
+                  {b.note && <div className="text-muted-foreground">{b.note}</div>}
+                </div>
+                <Button size="sm" variant="outline" onClick={() => doRestore(b.id)}>استعادة</Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد التحديث الجماعي</AlertDialogTitle>
+            <AlertDialogDescription>
+              سيتم تحديث أسعار {changedCount} منتج نهائياً في قاعدة البيانات، مع حفظ نسخة احتياطية للأسعار القديمة.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={applying}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction onClick={doApply} disabled={applying}>
+              {applying ? "جاري..." : "تأكيد"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+function _FieldPlaceholder({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
       <Label className="text-xs mb-1 block">{label}</Label>
