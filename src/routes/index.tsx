@@ -312,6 +312,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const heroRef = useRef<HTMLDivElement | null>(null);
   const userWantsSoundRef = useRef(false);
+  const cachedSrc = useCachedVideo((current as any)?.video_url ?? null);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -365,7 +366,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
       {mounted && (
         <video
           ref={videoRef}
-          src={(current as any).video_url}
+          src={cachedSrc ?? (current as any).video_url}
           poster={current.image_url || undefined}
           autoPlay
           muted={muted}
