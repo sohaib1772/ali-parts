@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Sparkles, Volume2, VolumeX, ChevronLeft, X, Heart, MessageCircle,
   Send, Trash2, Pencil, Shield, Ban, Check, Search as SearchIcon, Users as UsersIcon,
@@ -67,6 +67,9 @@ function OffersPage() {
   const { data: banners } = useSuspenseQuery(bannersQuery());
   const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const handleActive = useCallback((index: number) => {
+    setActiveIndex((current) => (current === index ? current : index));
+  }, []);
 
   return (
     <PageShell showHeader={false} showNav={false}>
@@ -92,8 +95,9 @@ function OffersPage() {
               <ReelItem
                 key={b.id}
                 banner={b}
+                index={index}
                 shouldLoad={Math.abs(index - activeIndex) <= 1}
-                onActive={() => setActiveIndex(index)}
+                onActive={handleActive}
                 onOpenComments={() => setOpenCommentsFor(b.id)}
               />
             ))}
@@ -113,13 +117,15 @@ function OffersPage() {
 
 function ReelItem({
   banner,
+  index,
   shouldLoad,
   onActive,
   onOpenComments,
 }: {
   banner: Banner;
+  index: number;
   shouldLoad: boolean;
-  onActive: () => void;
+  onActive: (index: number) => void;
   onOpenComments: () => void;
 }) {
   const [muted, setMuted] = useState<boolean>(() => {
@@ -154,7 +160,7 @@ function ReelItem({
       (entries) => {
         for (const e of entries) {
           if (e.isIntersecting && e.intersectionRatio > 0.6) {
-            onActive();
+            onActive(index);
             if (!el) return;
             // Try to play with sound. If the browser blocks unmuted
             // autoplay, fall back to muted so the video still plays.
@@ -176,7 +182,7 @@ function ReelItem({
     );
     io.observe(box);
     return () => io.disconnect();
-  }, [video, muted, onActive]);
+  }, [video, muted, index, onActive]);
 
   const likes = useLikes(banner.id, userId, shouldLoad);
   const commentsCount = useCommentsCount(banner.id, shouldLoad);

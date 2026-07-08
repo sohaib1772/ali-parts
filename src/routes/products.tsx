@@ -16,8 +16,9 @@ const FILTER_OPTIONS: { value: ConditionFilter; label: string }[] = [
 ];
 
 export const Route = createFileRoute("/products")({
-  loader: ({ context }) =>
-    context.queryClient.prefetchInfiniteQuery(productsInfiniteQuery()),
+  loader: ({ context }) => {
+    void context.queryClient.prefetchInfiniteQuery(productsInfiniteQuery());
+  },
   head: () => ({
     meta: [
       { title: "المنتجات | الساير" },
