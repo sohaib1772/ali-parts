@@ -18,6 +18,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCachedVideo } from "@/lib/use-cached-video";
 
 function CommentsSkeleton({ count = 5 }: { count?: number }) {
   return (
@@ -114,6 +115,7 @@ function ReelItem({ banner, onOpenComments }: { banner: Banner; onOpenComments: 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const video = (banner as unknown as { video_url?: string | null }).video_url ?? null;
+  const cachedVideo = useCachedVideo(video);
   const { userId } = useAuth();
 
   // sync with global mute pref (when another reel toggles)
@@ -198,7 +200,7 @@ function ReelItem({ banner, onOpenComments }: { banner: Banner; onOpenComments: 
       {video ? (
         <video
           ref={videoRef}
-          src={video}
+          src={cachedVideo ?? video}
           poster={banner.image_url || undefined}
           autoPlay
           muted={muted}
