@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatIQD, whatsappLink } from "@/lib/format";
 import { useAuth } from "@/lib/use-auth";
-import { useSetting } from "@/lib/admin";
+import { useSetting, useAdjustedPrice } from "@/lib/admin";
 import { toast } from "sonner";
 import { WhatsappIcon } from "@/components/icons";
 import { uploadWithProgress } from "@/lib/upload-with-progress";
@@ -83,6 +83,7 @@ function ProductPage() {
     }
   };
   const waNumber = useSetting("whatsapp_number");
+  const adjust = useAdjustedPrice();
 
   // Show a "طلب استبدال" shortcut if this product was delivered in one of the user's orders
   const { data: deliveredOrder, isPending: deliveredPending } = useQuery({
@@ -353,7 +354,7 @@ function ProductPage() {
 
         <div className="flex items-end gap-3">
           <div>
-            <div className="text-3xl font-black text-navy">{formatIQD(product.price_iqd)}</div>
+            <div className="text-3xl font-black text-navy">{formatIQD(adjust(product.price_iqd))}</div>
           </div>
           <div className="ms-auto flex items-center gap-2">
             <span
@@ -837,6 +838,7 @@ function RelatedProductsSkeleton() {
 function RelatedProducts({ categoryId, excludeId }: { categoryId: string; excludeId: string }) {
   const { data: products } = useSuspenseQuery(productsByCategoryQuery(categoryId));
   const related = (products as Product[]).filter((p) => p.id !== excludeId).slice(0, 4);
+  const adjust = useAdjustedPrice();
   if (related.length === 0) {
     return <div className="text-xs text-muted-foreground text-center py-4">لا توجد منتجات مشابهة</div>;
   }
@@ -867,7 +869,7 @@ function RelatedProducts({ categoryId, excludeId }: { categoryId: string; exclud
           </div>
           <div className="p-2.5">
             <div className="text-xs font-semibold line-clamp-2 leading-tight min-h-[2.2rem]">{p.name_ar}</div>
-            <div className="text-sm font-extrabold text-navy mt-1">{formatIQD(p.price_iqd)}</div>
+            <div className="text-sm font-extrabold text-navy mt-1">{formatIQD(adjust(p.price_iqd))}</div>
           </div>
         </Link>
       ))}

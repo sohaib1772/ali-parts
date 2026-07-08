@@ -2072,6 +2072,7 @@ function SettingsAdmin() {
   const [shipLocalCost, setShipLocalCost] = useState("");
   const [shipAramexName, setShipAramexName] = useState("");
   const [shipAramexCost, setShipAramexCost] = useState("");
+  const [priceAdjust, setPriceAdjust] = useState("");
   const [saving, setSaving] = useState(false);
   const waVal = wa || settings.whatsapp_number || "";
   const phoneVal = phone || settings.phone_number || "";
@@ -2087,6 +2088,8 @@ function SettingsAdmin() {
   const shipLocalCostVal = shipLocalCost || settings.ship_local_cost || "5000";
   const shipAramexNameVal = shipAramexName || settings.ship_aramex_name || "أرامكس";
   const shipAramexCostVal = shipAramexCost || settings.ship_aramex_cost || "10000";
+  const priceAdjustVal =
+    priceAdjust !== "" ? priceAdjust : (settings.global_price_adjustment_iqd ?? "0");
 
   const upsert = async (rows: { key: string; value: string }[]) => {
     const { error } = await supabase
@@ -2115,6 +2118,7 @@ function SettingsAdmin() {
         { key: "ship_local_cost", value: String(Number(shipLocalCostVal) || 0) },
         { key: "ship_aramex_name", value: shipAramexNameVal },
         { key: "ship_aramex_cost", value: String(Number(shipAramexCostVal) || 0) },
+        { key: "global_price_adjustment_iqd", value: String(Math.trunc(Number(priceAdjustVal) || 0)) },
       ]);
       toast.success("تم حفظ الإعدادات");
       qc.invalidateQueries({ queryKey: ["app_settings"] });
@@ -2193,6 +2197,22 @@ function SettingsAdmin() {
       <Field label="نبذة عن المتجر (يظهر في من نحن)">
         <Textarea value={aboutVal} onChange={(e) => setAbout(e.target.value)} rows={4} placeholder="متجر متخصص في بيع قطع غيار..." />
       </Field>
+      <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-2">
+        <div className="text-sm font-bold text-gold">تعديل السعر العام (د.ع)</div>
+        <Input
+          type="number"
+          value={priceAdjustVal}
+          onChange={(e) => setPriceAdjust(e.target.value)}
+          inputMode="numeric"
+          dir="ltr"
+          placeholder="0"
+        />
+        <p className="text-xs text-muted-foreground">
+          يُضاف هذا المبلغ (أو يُطرح إذا كان سالباً) إلى سعر كل منتج عند عرضه للزبائن.
+          مثال: 1000 يعني رفع كل الأسعار 1000 د.ع، و -1000 يعني خصم 1000 د.ع. لا يغيّر
+          الأسعار الأصلية المحفوظة في قاعدة البيانات.
+        </p>
+      </div>
       <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-3">
         <div className="text-sm font-bold text-gold flex items-center gap-2">
           <Package className="size-4" /> إعدادات شركات التوصيل

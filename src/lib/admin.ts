@@ -122,6 +122,24 @@ export function useSetting(key: string, fallback = "") {
 }
 
 /**
+ * Global price adjustment (IQD) applied on top of every product's displayed
+ * price. Stored as `global_price_adjustment_iqd` in `app_settings`. Can be
+ * negative. Does NOT change the price stored in the database — only the
+ * number shown to customers in product listings and details.
+ */
+export function useGlobalPriceAdjustment(): number {
+  const { data } = useQuery(settingsQuery());
+  const n = Number(data?.global_price_adjustment_iqd ?? 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
+export function useAdjustedPrice() {
+  const adj = useGlobalPriceAdjustment();
+  return (price: number | string | null | undefined) =>
+    Math.max(0, Number(price ?? 0) + adj);
+}
+
+/**
  * Compress an image in the browser before upload.
  * Downscales to fit within `maxDim` and re-encodes as JPEG (or keeps PNG for
  * transparency). Cuts payloads 3–10x, so uploads finish much faster on mobile.
