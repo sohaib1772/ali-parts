@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 import { addressesQuery, cartQuery, profileQuery } from "@/lib/queries";
 import { formatIQD } from "@/lib/format";
+import { useAdjustedPrice } from "@/lib/admin";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/checkout")({
@@ -27,7 +28,8 @@ function CheckoutPage() {
   const qc = useQueryClient();
 
   const activeAddr = addresses.find((a: any) => a.id === (selectedAddr ?? addresses.find((x: any) => x.is_default)?.id ?? addresses[0]?.id));
-  const subtotal = items.reduce((s, i: any) => s + Number(i.product?.price_iqd ?? 0) * i.quantity, 0);
+  const adjust = useAdjustedPrice();
+  const subtotal = items.reduce((s, i: any) => s + adjust(i.product?.price_iqd) * i.quantity, 0);
   const shippingCost = items.reduce(
     (max, i: any) => Math.max(max, Number(i.product?.shipping_iqd ?? 0)),
     0,
