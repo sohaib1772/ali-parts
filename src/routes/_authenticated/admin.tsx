@@ -2360,9 +2360,10 @@ function BulkUsdPriceUpdate() {
         },
       });
       // Persist the rates so they load across sessions. After a successful
-      // apply the "new" rate becomes the baseline "old" rate for next time.
+      // apply, keep whatever values the admin typed so they can freely edit
+      // the old rate later (don't auto-overwrite it with the new rate).
       await supabase.from("app_settings").upsert([
-        { key: "usd_rate_old", value: String(newN), updated_at: new Date().toISOString() },
+        { key: "usd_rate_old", value: String(oldN), updated_at: new Date().toISOString() },
         { key: "usd_rate_new", value: String(newN), updated_at: new Date().toISOString() },
         { key: "usd_rate_rounding", value: String(roundN), updated_at: new Date().toISOString() },
       ]);
