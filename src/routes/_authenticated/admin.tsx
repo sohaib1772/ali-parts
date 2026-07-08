@@ -1104,6 +1104,14 @@ function ProductsAdmin() {
   const [search, setSearch] = useState("");
   const [deleteProduct, setDeleteProduct] = useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const usdRate = Number(useSetting("usd_exchange_rate", "1500")) || 1500;
+  const usdRounding = Number(useSetting("usd_rounding", "500")) || 0;
+  const previewIqd = (() => {
+    const u = Number(form.price_usd);
+    if (!Number.isFinite(u) || u <= 0) return 0;
+    const raw = u * usdRate;
+    return usdRounding > 0 ? Math.round(raw / usdRounding) * usdRounding : Math.round(raw);
+  })();
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["admin", "products"],
@@ -1135,7 +1143,7 @@ function ProductsAdmin() {
       name_en: p.name_en ?? "",
       description_ar: p.description_ar ?? "",
       oem_number: p.oem_number ?? "",
-      price_iqd: String(p.price_iqd ?? ""),
+      price_usd: p.price_usd ? String(p.price_usd) : "",
       compare_price_iqd: String(p.compare_price_iqd ?? ""),
       shipping_iqd: String(p.shipping_iqd ?? ""),
       category_id: p.category_id ?? "",
@@ -1153,8 +1161,8 @@ function ProductsAdmin() {
   };
 
   const save = async () => {
-    if (!form.name_ar.trim() || !form.price_iqd) {
-      toast.error("الاسم والسعر مطلوبان");
+    if (!form.name_ar.trim() || !form.price_usd) {
+      toast.error("الاسم والسعر بالدولار مطلوبان");
       return;
     }
     setSaving(true);
@@ -1164,8 +1172,8 @@ function ProductsAdmin() {
         name_en: form.name_en || null,
         description_ar: form.description_ar || null,
         oem_number: form.oem_number || null,
-        price_iqd: Number(form.price_iqd),
-        price_usd: Number(form.price_iqd) / 1310,
+        // price_iqd is auto-computed by DB trigger from price_usd × usd_exchange_rate
+        price_usd: Number(form.price_usd),
         compare_price_iqd: form.compare_price_iqd ? Number(form.compare_price_iqd) : null,
         shipping_iqd: form.shipping_iqd ? Number(form.shipping_iqd) : 0,
         category_id: form.category_id || null,
@@ -1279,14 +1287,26 @@ function ProductsAdmin() {
             <Field label="رقم القطعة (OEM)">
               <Input value={form.oem_number} onChange={(e) => setForm({ ...form, oem_number: e.target.value })} />
             </Field>
-            <div className="grid grid-cols-2 gap-2">
-              <Field label="السعر (د.ع) *">
-                <Input type="number" value={form.price_iqd} onChange={(e) => setForm({ ...form, price_iqd: e.target.value })} />
-              </Field>
-              <Field label="السعر قبل الخصم">
-                <Input type="number" value={form.compare_price_iqd} onChange={(e) => setForm({ ...form, compare_price_iqd: e.target.value })} />
-              </Field>
-            </div>
+            <Field label="السعر بالدولار *">
+              <Input
+                type="number"
+                step="0.01"
+                value={form.price_usd}
+                onChange={(e) => setForm({ ...form, price_usd: e.target.value })}
+                inputMode="decimal"
+                dir="ltr"
+                placeholder="مثال: 12.50"
+              />
+              <div className="text-[11px] text-muted-foreground mt-1 flex items-center justify-between" dir="ltr">
+                <span>× {usdRate} IQD</span>
+                <span className="text-gold font-bold">
+                  ≈ {previewIqd > 0 ? formatIQD(previewIqd) : "—"}
+                </span>
+              </div>
+            </Field>
+            <Field label="السعر قبل الخصم (د.ع، اختياري)">
+              <Input type="number" value={form.compare_price_iqd} onChange={(e) => setForm({ ...form, compare_price_iqd: e.target.value })} inputMode="numeric" dir="ltr" />
+            </Field>
             <Field label="كلفة التوصيل لهذا المنتج (د.ع)">
               <Input type="number" value={form.shipping_iqd} onChange={(e) => setForm({ ...form, shipping_iqd: e.target.value })} inputMode="numeric" dir="ltr" placeholder="0" />
             </Field>
