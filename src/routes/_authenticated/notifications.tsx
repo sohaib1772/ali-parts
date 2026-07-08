@@ -45,16 +45,20 @@ function NotificationsPage() {
   const { userId } = useAuth();
   const [items, setItems] = useState<Notif[]>([]);
   const [loading, setLoading] = useState(true);
+  const [limit, setLimit] = useState(30);
+  const [hasMore, setHasMore] = useState(false);
 
   const load = async () => {
     if (!userId) return;
     const { data } = await (supabase as any)
       .from("notifications")
-      .select("*")
+      .select("id, order_id, title, body, status, read_at, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(100);
-    setItems((data as Notif[]) ?? []);
+      .limit(limit + 1);
+    const rows = (data as Notif[]) ?? [];
+    setHasMore(rows.length > limit);
+    setItems(rows.slice(0, limit));
     setLoading(false);
   };
 
@@ -71,7 +75,7 @@ function NotificationsPage() {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [userId, limit]);
 
   const markAllRead = async () => {
     if (!userId) return;
@@ -161,6 +165,15 @@ function NotificationsPage() {
                 </div>
               );
             })}
+            {hasMore && (
+              <button
+                type="button"
+                onClick={() => setLimit((n) => n + 30)}
+                className="w-full h-10 rounded-xl border border-border text-xs font-bold hover:bg-muted"
+              >
+                تحميل المزيد
+              </button>
+            )}
           </div>
         )}
       </div>
