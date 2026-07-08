@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatIQD, whatsappLink } from "@/lib/format";
 import type { Product } from "@/lib/queries";
 import { useAuth } from "@/lib/use-auth";
-import { useSetting } from "@/lib/admin";
+import { useSetting, useAdjustedPrice } from "@/lib/admin";
 import { WhatsappIcon } from "./icons";
 
 export function ProductCard({ product }: { product: Product }) {
@@ -14,6 +14,7 @@ export function ProductCard({ product }: { product: Product }) {
   const qc = useQueryClient();
   const img = product.images?.[0];
   const waNumber = useSetting("whatsapp_number");
+  const adjust = useAdjustedPrice();
   const stockQty = (product as any).stock_qty ?? 0;
   const available = product.in_stock && stockQty > 0;
   const condition = (product as any).condition === "used" ? "used" : "new";
@@ -136,7 +137,7 @@ export function ProductCard({ product }: { product: Product }) {
         )}
         <div className="mt-auto space-y-1">
           <div className="flex items-baseline gap-2">
-            <span className="text-base font-extrabold text-navy">{formatIQD(product.price_iqd)}</span>
+            <span className="text-base font-extrabold text-navy">{formatIQD(adjust(product.price_iqd))}</span>
             {available ? (
               <span className="ms-auto text-[10px] font-bold text-success">
                 متوفر · {stockQty} قطعة
