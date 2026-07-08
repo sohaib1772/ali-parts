@@ -44,6 +44,12 @@ import { PrintableInvoice, InvoicePreviewDialog } from "@/components/printable-i
 import { adminListUsers, adminSetUserBlocked, adminSetUserPassword } from "@/lib/admin.functions";
 import { adminOtpStatus, requestAdminOtp, verifyAdminOtp } from "@/lib/admin-otp.functions";
 import { createStaff, updateStaff, deleteStaff, listStaff } from "@/lib/staff.functions";
+import {
+  previewBulkPriceUpdate,
+  applyBulkPriceUpdate,
+  listPriceBackups,
+  restorePriceBackup,
+} from "@/lib/bulk-price.functions";
 import { normalizePhone } from "@/lib/phone-auth";
 
 const STATUSES = ["received", "preparing", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"] as const;
