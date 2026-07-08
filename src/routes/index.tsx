@@ -308,6 +308,8 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   const [muted, setMuted] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [inView, setInView] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
   // Show only the latest uploaded VIDEO as a fixed hero — no rotation.
   // Hide the whole section when no video has been uploaded.
   const current = banners.find((b) => !!(b as any).video_url) ?? null;
@@ -373,14 +375,24 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
           muted={muted}
           loop
           playsInline
-          preload="metadata"
+          preload="auto"
           className="absolute inset-0 w-full h-full object-cover cursor-pointer"
+          onCanPlay={() => setVideoReady(true)}
+          onPlaying={() => setVideoReady(true)}
+          onWaiting={() => setVideoReady(false)}
+          onStalled={() => setVideoReady(false)}
+          onError={() => setVideoFailed(true)}
           onVolumeChange={(e) => {
             const el = e.currentTarget;
             setMuted(el.muted);
             if (!el.muted) userWantsSoundRef.current = true;
           }}
         />
+      )}
+      {mounted && !videoReady && !videoFailed && (
+        <div className="absolute inset-0 grid place-items-center bg-navy/40 backdrop-blur-[2px] pointer-events-none">
+          <div className="size-10 rounded-full border-2 border-white/25 border-t-gold animate-spin" />
+        </div>
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/40 to-transparent pointer-events-none" />
       {mounted && (
