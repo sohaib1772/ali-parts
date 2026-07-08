@@ -2292,14 +2292,18 @@ async function invalidateAllPriceCaches(qc: ReturnType<typeof useQueryClient>) {
 
 function BulkUsdPriceUpdate() {
   const qc = useQueryClient();
+  const { data: settings = {} } = useQuery(settingsQuery());
   const previewFn = useServerFn(previewBulkPriceUpdate);
   const applyFn = useServerFn(applyBulkPriceUpdate);
   const listFn = useServerFn(listPriceBackups);
   const restoreFn = useServerFn(restorePriceBackup);
 
-  const [oldRate, setOldRate] = useState("1500");
-  const [newRate, setNewRate] = useState("1500");
-  const [rounding, setRounding] = useState("500");
+  const [oldRate, setOldRate] = useState<string | null>(null);
+  const [newRate, setNewRate] = useState<string | null>(null);
+  const [rounding, setRounding] = useState<string | null>(null);
+  const oldRateVal = oldRate ?? String(settings.usd_rate_old ?? "1500");
+  const newRateVal = newRate ?? String(settings.usd_rate_new ?? settings.usd_rate_old ?? "1500");
+  const roundingVal = rounding ?? String(settings.usd_rate_rounding ?? "500");
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
   const [note, setNote] = useState("");
   const [preview, setPreview] = useState<null | {
@@ -2316,8 +2320,8 @@ function BulkUsdPriceUpdate() {
   });
 
   const doPreview = async () => {
-    const oldN = Number(oldRate);
-    const newN = Number(newRate);
+    const oldN = Number(oldRateVal);
+    const newN = Number(newRateVal);
     if (!(oldN > 0) || !(newN > 0)) {
       toast.error("أدخل سعر دولار صحيح");
       return;
@@ -2328,7 +2332,7 @@ function BulkUsdPriceUpdate() {
         data: {
           old_rate: oldN,
           new_rate: newN,
-          rounding: Number(rounding) || 0,
+          rounding: Number(roundingVal) || 0,
           excluded_ids: Array.from(excluded),
         },
       });
@@ -2343,15 +2347,29 @@ function BulkUsdPriceUpdate() {
   const doApply = async () => {
     setApplying(true);
     try {
+      const oldN = Number(oldRateVal);
+      const newN = Number(newRateVal);
+      const roundN = Number(roundingVal) || 0;
       const res = await applyFn({
         data: {
-          old_rate: Number(oldRate),
-          new_rate: Number(newRate),
-          rounding: Number(rounding) || 0,
+          old_rate: oldN,
+          new_rate: newN,
+          rounding: roundN,
           excluded_ids: Array.from(excluded),
           note: note || undefined,
         },
       });
+      // Persist the rates so they load across sessions. After a successful
+      // apply the "new" rate becomes the baseline "old" rate for next time.
+      await supabase.from("app_settings").upsert([
+        { key: "usd_rate_old", value: String(newN), updated_at: new Date().toISOString() },
+        { key: "usd_rate_new", value: String(newN), updated_at: new Date().toISOString() },
+        { key: "usd_rate_rounding", value: String(roundN), updated_at: new Date().toISOString() },
+      ]);
+      qc.invalidateQueries({ queryKey: ["app_settings"] });
+      setOldRate(null);
+      setNewRate(null);
+      setRounding(null);
       toast.success(`تم تحديث ${res.updated} منتج`);
       setConfirmOpen(false);
       setPreview(null);
