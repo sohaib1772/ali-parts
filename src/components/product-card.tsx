@@ -5,12 +5,10 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatIQD, whatsappLink } from "@/lib/format";
 import type { Product } from "@/lib/queries";
-import { useAuth } from "@/lib/use-auth";
 import { useSetting, useAdjustedPrice } from "@/lib/admin";
 import { WhatsappIcon } from "./icons";
 
 export function ProductCard({ product }: { product: Product }) {
-  const { userId } = useAuth();
   const qc = useQueryClient();
   const img = product.images?.[0];
   const waNumber = useSetting("whatsapp_number");
@@ -19,22 +17,25 @@ export function ProductCard({ product }: { product: Product }) {
   const available = product.in_stock && stockQty > 0;
   const condition = (product as any).condition === "used" ? "used" : "new";
 
-  const requireAuth = () => {
-    if (!userId) {
+  const requireAuth = async () => {
+    const { data } = await supabase.auth.getSession();
+    const uid = data.session?.user?.id ?? null;
+    if (!uid) {
       toast.error("سجّل الدخول أولاً لإكمال هذه الخطوة");
-      return false;
+      return null;
     }
-    return true;
+    return uid;
   };
 
   const addToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!requireAuth()) return;
+    const userId = await requireAuth();
+    if (!userId) return;
     const { data: existing } = await supabase
       .from("cart_items")
       .select("id, quantity, side")
-      .eq("user_id", userId!)
+      .eq("user_id", userId)
       .eq("product_id", product.id)
       .is("side", null)
       .maybeSingle();
@@ -59,14 +60,15 @@ export function ProductCard({ product }: { product: Product }) {
   const toggleFav = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!requireAuth()) return;
+    const userId = await requireAuth();
+    if (!userId) return;
     const { data: existing } = await supabase
-      .from("favorites").select("id").eq("user_id", userId!).eq("product_id", product.id).maybeSingle();
+      .from("favorites").select("id").eq("user_id", userId).eq("product_id", product.id).maybeSingle();
     if (existing) {
       await supabase.from("favorites").delete().eq("id", existing.id);
       toast.success("أزيل من المفضلة");
     } else {
-      await supabase.from("favorites").insert({ user_id: userId!, product_id: product.id });
+      await supabase.from("favorites").insert({ user_id: userId, product_id: product.id });
       toast.success("أضيف للمفضلة");
     }
     qc.invalidateQueries({ queryKey: ["favorites"] });
@@ -85,8 +87,7 @@ export function ProductCard({ product }: { product: Product }) {
             alt={product.name_ar}
             loading="lazy"
             decoding="async"
-            // @ts-expect-error - fetchpriority is a valid HTML attribute
-            fetchpriority="low"
+            fetchPriority="low"
             width={400}
             height={400}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
