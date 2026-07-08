@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SplashScreen } from "@/components/splash-screen";
 import { NotificationPopup } from "@/components/notification-popup";
 import { usePriceSyncListener } from "@/lib/price-sync";
+import { AuthProvider } from "@/lib/use-auth";
 
 function NotFoundComponent() {
   return (
@@ -143,13 +144,15 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
-      <Toaster position="top-center" richColors closeButton />
-      <AuthListener />
-      <PriceSync />
-      <SplashScreen />
-      <NotificationPermissionGate />
-      <NotificationPopup />
+      <AuthProvider>
+        <Outlet />
+        <Toaster position="top-center" richColors closeButton />
+        <AuthListener />
+        <PriceSync />
+        <SplashScreen />
+        <NotificationPermissionGate />
+        <NotificationPopup />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

@@ -21,7 +21,6 @@ import {
 import type { Banner, Product } from "@/lib/queries";
 import { formatIQD } from "@/lib/format";
 import { useAdjustedPrice } from "@/lib/admin";
-import { useCachedVideo } from "@/lib/use-cached-video";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => {
@@ -31,9 +30,7 @@ export const Route = createFileRoute("/")({
     void context.queryClient.prefetchQuery(featuredProductsQuery());
     void context.queryClient.prefetchQuery(dealsQuery());
     void context.queryClient.prefetchQuery(bannersQuery());
-    void context.queryClient.prefetchQuery(brandsQuery());
     void context.queryClient.prefetchQuery(bestSellersQuery());
-    void context.queryClient.prefetchInfiniteQuery(productsInfiniteQuery());
   },
   component: HomePage,
 });
@@ -143,6 +140,11 @@ function HomePage() {
 }
 
 function AllProductsInfinite() {
+  const [enabled, setEnabled] = useState(false);
+  useEffect(() => {
+    const t = window.setTimeout(() => setEnabled(true), 1800);
+    return () => window.clearTimeout(t);
+  }, []);
   const {
     data,
     fetchNextPage,
@@ -150,7 +152,7 @@ function AllProductsInfinite() {
     isFetchingNextPage,
     isFetchNextPageError,
     error,
-  } = useInfiniteQuery(productsInfiniteQuery());
+  } = useInfiniteQuery({ ...productsInfiniteQuery(), enabled });
   const sentinelRef = useRef<HTMLDivElement>(null);
   const products = data?.pages.flat() ?? [];
 
@@ -184,7 +186,7 @@ function AllProductsInfinite() {
     return () => io.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage, isFetchNextPageError]);
 
-  if (products.length === 0) return null;
+  if (!enabled || products.length === 0) return null;
 
   return (
     <Section title="جميع المنتجات" icon={<Sparkles className="size-4 text-gold" />}>
@@ -312,7 +314,6 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const heroRef = useRef<HTMLDivElement | null>(null);
   const userWantsSoundRef = useRef(false);
-  const cachedSrc = useCachedVideo((current as any)?.video_url ?? null);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -366,13 +367,13 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
       {mounted && (
         <video
           ref={videoRef}
-          src={cachedSrc ?? (current as any).video_url}
+          src={(current as any).video_url}
           poster={current.image_url || undefined}
           autoPlay
           muted={muted}
           loop
           playsInline
-          preload="auto"
+          preload="metadata"
           className="absolute inset-0 w-full h-full object-cover cursor-pointer"
           onVolumeChange={(e) => {
             const el = e.currentTarget;

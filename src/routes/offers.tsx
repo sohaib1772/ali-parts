@@ -66,6 +66,7 @@ type CommentRow = {
 function OffersPage() {
   const { data: banners } = useSuspenseQuery(bannersQuery());
   const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   return (
     <PageShell showHeader={false} showNav={false}>
@@ -87,8 +88,14 @@ function OffersPage() {
           <div className="h-full grid place-items-center text-white/70 text-sm">لا توجد عروض حالياً.</div>
         ) : (
           <div className="h-full overflow-y-auto snap-y snap-mandatory scroll-smooth" style={{ scrollbarWidth: "none" }}>
-            {banners.map((b) => (
-              <ReelItem key={b.id} banner={b} onOpenComments={() => setOpenCommentsFor(b.id)} />
+            {banners.map((b, index) => (
+              <ReelItem
+                key={b.id}
+                banner={b}
+                shouldLoad={Math.abs(index - activeIndex) <= 1}
+                onActive={() => setActiveIndex(index)}
+                onOpenComments={() => setOpenCommentsFor(b.id)}
+              />
             ))}
           </div>
         )}
@@ -104,7 +111,17 @@ function OffersPage() {
 
 /* ---------- Reel item ---------- */
 
-function ReelItem({ banner, onOpenComments }: { banner: Banner; onOpenComments: () => void }) {
+function ReelItem({
+  banner,
+  shouldLoad,
+  onActive,
+  onOpenComments,
+}: {
+  banner: Banner;
+  shouldLoad: boolean;
+  onActive: () => void;
+  onOpenComments: () => void;
+}) {
   const [muted, setMuted] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     // Default: sound ON when opening a clip. Only stay muted if the user
@@ -137,6 +154,7 @@ function ReelItem({ banner, onOpenComments }: { banner: Banner; onOpenComments: 
       (entries) => {
         for (const e of entries) {
           if (e.isIntersecting && e.intersectionRatio > 0.6) {
+            onActive();
             // Try to play with sound. If the browser blocks unmuted
             // autoplay, fall back to muted so the video still plays.
             el.muted = muted;
@@ -157,10 +175,10 @@ function ReelItem({ banner, onOpenComments }: { banner: Banner; onOpenComments: 
     );
     io.observe(box);
     return () => io.disconnect();
-  }, [video, muted]);
+  }, [video, muted, onActive]);
 
-  const likes = useLikes(banner.id, userId);
-  const commentsCount = useCommentsCount(banner.id);
+  const likes = useLikes(banner.id, userId, shouldLoad);
+  const commentsCount = useCommentsCount(banner.id, shouldLoad);
 
   const lastTapRef = useRef<number>(0);
   const [burst, setBurst] = useState(0);
@@ -195,7 +213,7 @@ function ReelItem({ banner, onOpenComments }: { banner: Banner; onOpenComments: 
       ref={containerRef}
       className="relative w-full h-[100dvh] snap-start snap-always bg-black"
     >
-      {video ? (
+      {video && shouldLoad ? (
         <video
           ref={videoRef}
           src={video}
@@ -212,13 +230,15 @@ function ReelItem({ banner, onOpenComments }: { banner: Banner; onOpenComments: 
             setMuted(el.muted);
           }}
         />
-      ) : (
+      ) : banner.image_url ? (
         <img
           src={banner.image_url}
           alt={banner.title_ar ?? ""}
           className="absolute inset-0 w-full h-full object-contain"
           onClick={handleMediaTap}
         />
+      ) : (
+        <div className="absolute inset-0 bg-black" />
       )}
 
       {/* double-tap heart burst */}
@@ -305,10 +325,12 @@ function ReelItem({ banner, onOpenComments }: { banner: Banner; onOpenComments: 
 
 /* ---------- hooks ---------- */
 
-function useLikes(bannerId: string, userId: string | null) {
+function useLikes(bannerId: string, userId: string | null, enabled = true) {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["banner_likes", bannerId, userId],
+    enabled,
+    staleTime: 30_000,
     queryFn: async () => {
       const { count } = await supabase
         .from("banner_likes")
@@ -347,9 +369,11 @@ function useLikes(bannerId: string, userId: string | null) {
   return { liked: !!data?.liked, count: data?.count ?? 0, toggle: () => m.mutate(), pending: m.isPending || isLoading };
 }
 
-function useCommentsCount(bannerId: string) {
+function useCommentsCount(bannerId: string, enabled = true) {
   const { data } = useQuery({
     queryKey: ["banner_comments_count", bannerId],
+    enabled,
+    staleTime: 30_000,
     queryFn: async () => {
       const { count } = await supabase
         .from("banner_comments")

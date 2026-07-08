@@ -120,7 +120,7 @@ export const bestSellersQuery = () =>
     },
   });
 
-const PRODUCTS_PAGE_SIZE = 20;
+const PRODUCTS_PAGE_SIZE = 12;
 
 export const productsInfiniteQuery = (condition?: "new" | "used" | null) =>
   infiniteQueryOptions({
