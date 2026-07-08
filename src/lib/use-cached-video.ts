@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const CACHE_NAME = "app-videos-v1";
 const memoryBlobUrls = new Map<string, string>();
@@ -50,34 +50,95 @@ async function readCachedBlob(url: string): Promise<string | null> {
   }
 }
 
+async function fetchAndCache(url: string): Promise<void> {
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    const existing = await cache.match(url);
+    if (existing) return;
+    const res = await fetch(url, { mode: "cors", credentials: "omit" });
+    if (!res.ok) return;
+    const len = Number(res.headers.get("content-length") ?? 0);
+    // Only cache reasonably-sized videos (< 25MB) to avoid quota abuse.
+    if (len > 25 * 1024 * 1024) return;
+    await cache.put(url, res.clone());
+  } catch {
+    /* ignore */
+  }
+}
+
 function warmCache(url: string): void {
   if (typeof window === "undefined" || !("caches" in window)) return;
   if (inflightWarm.has(url)) return;
   inflightWarm.add(url);
   const kickoff = () => {
-    (async () => {
-      try {
-        const cache = await caches.open(CACHE_NAME);
-        const existing = await cache.match(url);
-        if (existing) return;
-        const res = await fetch(url, { mode: "cors", credentials: "omit" });
-        if (!res.ok) return;
-        // Only cache reasonably-sized videos (< 25MB) to avoid quota abuse.
-        const len = Number(res.headers.get("content-length") ?? 0);
-        if (len > 25 * 1024 * 1024) return;
-        await cache.put(url, res.clone());
-      } catch {
-        /* ignore */
-      } finally {
-        inflightWarm.delete(url);
-      }
-    })();
+    fetchAndCache(url).finally(() => inflightWarm.delete(url));
   };
   const ric = (window as any).requestIdleCallback as
     | ((cb: () => void, opts?: { timeout?: number }) => number)
     | undefined;
   if (ric) ric(kickoff, { timeout: 4000 });
   else window.setTimeout(kickoff, 2500);
+}
+
+/**
+ * Eagerly prefetch a video into Cache Storage without waiting for idle time.
+ * Safe to call multiple times — dedupes against in-flight warms.
+ */
+export function prefetchVideo(url: string | null | undefined): void {
+  if (!url) return;
+  if (typeof window === "undefined" || !("caches" in window)) return;
+  if (memoryBlobUrls.has(url)) return;
+  if (inflightWarm.has(url)) return;
+  inflightWarm.add(url);
+  fetchAndCache(url).finally(() => inflightWarm.delete(url));
+}
+
+/**
+ * Attach to an element to prefetch a video when it approaches the viewport.
+ * Uses IntersectionObserver with a generous rootMargin so the video is
+ * warmed BEFORE the user scrolls to it — playback starts near-instantly.
+ */
+export function usePrefetchNearbyVideo(
+  url: string | null | undefined,
+  options?: { rootMargin?: string; root?: Element | null },
+): (node: Element | null) => void {
+  const rootMargin = options?.rootMargin ?? "200% 0px";
+  const root = options?.root ?? null;
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const nodeRef = useRef<Element | null>(null);
+
+  useEffect(() => {
+    return () => {
+      observerRef.current?.disconnect();
+      observerRef.current = null;
+    };
+  }, []);
+
+  return (node: Element | null) => {
+    if (nodeRef.current === node) return;
+    observerRef.current?.disconnect();
+    nodeRef.current = node;
+    if (!node || !url) return;
+    if (typeof window === "undefined" || !("IntersectionObserver" in window)) {
+      prefetchVideo(url);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            prefetchVideo(url);
+            io.disconnect();
+            observerRef.current = null;
+            break;
+          }
+        }
+      },
+      { root, rootMargin, threshold: 0 },
+    );
+    io.observe(node);
+    observerRef.current = io;
+  };
 }
 
 /**

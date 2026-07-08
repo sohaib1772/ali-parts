@@ -18,7 +18,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCachedVideo } from "@/lib/use-cached-video";
+import { useCachedVideo, usePrefetchNearbyVideo } from "@/lib/use-cached-video";
 
 function CommentsSkeleton({ count = 5 }: { count?: number }) {
   return (
@@ -139,6 +139,9 @@ function ReelItem({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const video = (banner as unknown as { video_url?: string | null }).video_url ?? null;
   const cachedVideo = useCachedVideo(shouldLoad ? video : null);
+  // Prefetch this reel's video into Cache Storage as it approaches the
+  // viewport, so tapping/scrolling to it starts playback near-instantly.
+  const prefetchRef = usePrefetchNearbyVideo(video, { rootMargin: "250% 0px" });
   const { userId } = useAuth();
 
   // sync with global mute pref (when another reel toggles)
@@ -219,7 +222,10 @@ function ReelItem({
 
   return (
     <div
-      ref={containerRef}
+      ref={(node) => {
+        containerRef.current = node;
+        prefetchRef(node);
+      }}
       className="relative w-full h-[100dvh] snap-start snap-always bg-black"
     >
       {video && shouldLoad ? (
