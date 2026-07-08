@@ -5,7 +5,7 @@ export type Product = {
   id: string;
   name_ar: string;
   name_en: string | null;
-  description_ar: string | null;
+  description_ar?: string | null;
   oem_number: string | null;
   price_iqd: number;
   price_usd: number;
@@ -13,13 +13,13 @@ export type Product = {
   shipping_iqd: number | null;
   category_id: string | null;
   brand_id: string | null;
-  compatible_models: string[] | null;
+  compatible_models?: string[] | null;
   images: string[] | null;
   in_stock: boolean;
   stock_qty: number;
   is_featured: boolean;
   is_deal: boolean;
-  specs: Record<string, unknown> | null;
+  specs?: Record<string, unknown> | null;
   deal_expires_at?: string | null;
   created_at?: string | null;
   condition?: "new" | "used" | null;
