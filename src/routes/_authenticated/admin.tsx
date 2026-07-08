@@ -2309,7 +2309,6 @@ function BulkUsdPriceUpdate() {
   const [preview, setPreview] = useState<null | {
     items: Array<{ id: string; name_ar: string; old_price: number; new_price: number; diff: number; excluded: boolean }>;
     count: number;
-    adjustment?: number;
   }>(null);
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
@@ -2458,11 +2457,6 @@ function BulkUsdPriceUpdate() {
           <div className="text-xs text-muted-foreground">
             سيتم تحديث <span className="text-gold font-bold">{changedCount}</span> من أصل {preview.count} منتج. اضغط على المنتج لاستثنائه.
           </div>
-          {(preview.adjustment ?? 0) !== 0 && (
-            <div className="text-xs text-amber-500">
-              ملاحظة: الأسعار المعروضة تشمل تعديل السعر العام ({preview.adjustment! > 0 ? "+" : ""}{preview.adjustment} د.ع). إذا تريد الحساب صافي، صفّر حقل "تعديل السعر العام" أعلاه.
-            </div>
-          )}
           <div className="max-h-72 overflow-y-auto border border-border rounded-lg divide-y divide-border">
             {preview.items.map((it) => (
               <button

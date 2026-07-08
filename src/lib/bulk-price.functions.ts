@@ -43,34 +43,21 @@ export const previewBulkPriceUpdate = createServerFn({ method: "POST" })
       .order("name_ar", { ascending: true });
     if (error) throw new Error(error.message);
 
-    // Fetch the global display adjustment so the preview shows exactly what
-    // customers will see, not the raw DB number.
-    const { data: adjRow } = await supabaseAdmin
-      .from("app_settings")
-      .select("value")
-      .eq("key", "global_price_adjustment_iqd")
-      .maybeSingle();
-    const adj = Number(adjRow?.value ?? 0) || 0;
-
     const excluded = new Set(data.excluded_ids);
     const items = (products ?? []).map((p: any) => {
       const cur = Number(p.price_iqd) || 0;
       const isExcluded = excluded.has(p.id);
       const next = isExcluded ? cur : computeNewPrice(cur, data.old_rate, data.new_rate, data.rounding);
-      const oldDisplay = Math.max(0, cur + adj);
-      const newDisplay = Math.max(0, next + adj);
       return {
         id: p.id,
         name_ar: p.name_ar,
-        old_price: oldDisplay,
-        new_price: newDisplay,
-        diff: newDisplay - oldDisplay,
-        db_old_price: cur,
-        db_new_price: next,
+        old_price: cur,
+        new_price: next,
+        diff: next - cur,
         excluded: isExcluded,
       };
     });
-    return { items, count: items.length, adjustment: adj };
+    return { items, count: items.length };
   });
 
 export const applyBulkPriceUpdate = createServerFn({ method: "POST" })
