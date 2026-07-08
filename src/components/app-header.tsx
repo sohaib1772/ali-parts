@@ -93,7 +93,7 @@ export function AppHeader({ title }: { title?: string }) {
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 bg-gradient-navy text-primary-foreground shadow-luxe">
+    <header className="sticky top-0 z-30 bg-gradient-navy text-primary-foreground shadow-luxe pt-[env(safe-area-inset-top)]">
       <div className="mx-auto max-w-md px-4 py-3 flex items-center gap-3">
         <Link to="/" className="flex items-center gap-2">
           {storeLogo ? (
