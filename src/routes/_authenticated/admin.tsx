@@ -2412,10 +2412,26 @@ function BulkUsdPriceUpdate() {
 
   const changedCount = preview?.items.filter((i) => !i.excluded && i.diff !== 0).length ?? 0;
 
+  const latestBackup = backups[0] ?? null;
+
   return (
     <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-3">
-      <div className="text-sm font-bold text-gold flex items-center gap-2">
-        💵 تحديث جماعي للأسعار حسب سعر الدولار
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-sm font-bold text-gold flex items-center gap-2">
+          💵 تحديث جماعي للأسعار حسب سعر الدولار
+        </div>
+        {latestBackup && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-destructive border-destructive/30 hover:bg-destructive/10"
+            onClick={() => setRestoreOpen(true)}
+            disabled={restoringId !== null}
+          >
+            <RefreshCw className="size-3.5 ml-1" />
+            تراجع عن آخر تحديث
+          </Button>
+        )}
       </div>
       <div className="grid grid-cols-2 gap-2">
         <Field label="سعر الدولار القديم">
