@@ -68,8 +68,10 @@ export function useCachedVideo(url: string | null | undefined): string | null {
     if (typeof window === "undefined" || !("caches" in window)) return;
 
     let cancelled = false;
+    let idleHandle: number | undefined;
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
 
-    (async () => {
+    const run = async () => {
       // Reuse an existing blob URL from this session if we have one.
       const memHit = memoryBlobUrls.get(url);
       if (memHit) {
@@ -78,27 +80,50 @@ export function useCachedVideo(url: string | null | undefined): string | null {
       }
       try {
         const cache = await caches.open(CACHE_NAME);
-        let response = await cache.match(url);
-        if (!response) {
+        const hit = await cache.match(url);
+        if (hit) {
+          // Repeat visit: swap to a local blob URL for instant playback.
+          const blob = await hit.blob();
+          if (cancelled) return;
+          const objUrl = URL.createObjectURL(blob);
+          memoryBlobUrls.set(url, objUrl);
+          setResolved(objUrl);
+          return;
+        }
+        // First visit: don't double-download. Let the <video> element load
+        // over the network normally, then quietly warm the cache from the
+        // browser's HTTP cache so the next visit is instant.
+        setTimeout(async () => {
+          if (cancelled) return;
+          try {
           const fresh = await fetch(url, { mode: "cors", credentials: "omit" });
           if (!fresh.ok) return;
-          // Clone before consuming; put() consumes the body.
-          await cache.put(url, fresh.clone());
-          response = fresh;
+            await cache.put(url, fresh);
           void trimCache(cache, url);
-        }
-        const blob = await response.blob();
-        if (cancelled) return;
-        const objUrl = URL.createObjectURL(blob);
-        memoryBlobUrls.set(url, objUrl);
-        setResolved(objUrl);
+          } catch { /* ignore */ }
+        }, 8000);
       } catch {
         // network/CORS/quota — silently keep the original url
       }
-    })();
+    };
+
+    // Defer to idle time so the fetch doesn't compete with the page load.
+    const w = window as unknown as {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    if (typeof w.requestIdleCallback === "function") {
+      idleHandle = w.requestIdleCallback(() => { void run(); }, { timeout: 3000 });
+    } else {
+      timeoutHandle = setTimeout(() => { void run(); }, 1500);
+    }
 
     return () => {
       cancelled = true;
+      if (idleHandle !== undefined && typeof w.cancelIdleCallback === "function") {
+        w.cancelIdleCallback(idleHandle);
+      }
+      if (timeoutHandle) clearTimeout(timeoutHandle);
     };
   }, [url]);
 
