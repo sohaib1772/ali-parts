@@ -229,7 +229,7 @@ function ReelItem({
           muted={muted}
           loop
           playsInline
-          preload="metadata"
+          preload="auto"
           className="absolute inset-0 w-full h-full object-contain"
           onClick={handleMediaTap}
           onVolumeChange={(e) => {
