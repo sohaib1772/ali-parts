@@ -2386,13 +2386,17 @@ function BulkUsdPriceUpdate() {
   };
 
   const doRestore = async (id: string) => {
-    if (!confirm("استعادة الأسعار من هذه النسخة الاحتياطية؟")) return;
+    setRestoringId(id);
     try {
       const res = await restoreFn({ data: { backup_id: id } });
       toast.success(`تم استعادة ${res.restored} منتج`);
       await invalidateAllPriceCaches(qc);
+      await refetchBackups();
     } catch (e: any) {
       toast.error(e.message ?? "فشل الاستعادة");
+    } finally {
+      setRestoringId(null);
+      setRestoreOpen(false);
     }
   };
 
