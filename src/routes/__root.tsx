@@ -82,7 +82,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" },
       { title: "Ali Parts — قطع غيار شفروليه GMC كاديلاك الأصلية في العراق" },
       { name: "description", content: "Ali Parts: متجرك الأول لقطع غيار السيارات الأصلية شفروليه، GMC، وكاديلاك داخل العراق. توصيل سريع وضمان الجودة." },
       { name: "theme-color", content: "#0A192F" },
