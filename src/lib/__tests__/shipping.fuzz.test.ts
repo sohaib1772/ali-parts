@@ -154,11 +154,12 @@ describe("computeShipping / shipmentCount — fuzz on weird inputs", () => {
       const before = computeShipping(items);
       const extra = {
         quantity: 1,
-        product: { id: "extra", shipping_iqd: 500, delivery_group: "brand-new-group", merge_delivery: true },
+        // merge_delivery:false → its own independent shipment, always adds exactly 500
+        product: { id: "extra", shipping_iqd: 500, merge_delivery: false },
       };
       const after = computeShipping([...items, extra]);
       expect(after).toBeGreaterThanOrEqual(before);
-      // and adds exactly 500 (new group)
+      // and adds exactly 500 (independent shipment)
       expect(after - before).toBe(500);
     }
   });
