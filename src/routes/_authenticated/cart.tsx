@@ -8,6 +8,7 @@ import { formatIQD } from "@/lib/format";
 import { useAuth } from "@/lib/use-auth";
 import { cartQuery } from "@/lib/queries";
 import { useAdjustedPrice } from "@/lib/admin";
+import { computeShipping } from "@/lib/shipping";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/cart")({
@@ -25,21 +26,7 @@ function CartPage() {
   const adjust = useAdjustedPrice();
 
   const total = items.reduce((s, i: any) => s + adjust(i.product?.price_iqd) * i.quantity, 0);
-  const shippingCost = (() => {
-    const groups = new Map<string, number>();
-    for (const i of items as any[]) {
-      const p = i.product;
-      if (!p) continue;
-      const fee = Number(p.shipping_iqd ?? 0) || 0;
-      const merge = p.merge_delivery !== false;
-      const group = typeof p.delivery_group === "string" ? p.delivery_group.trim() : "";
-      const key = merge && group ? `g:${group}` : `p:${p.id}`;
-      groups.set(key, Math.max(groups.get(key) ?? 0, fee));
-    }
-    let sum = 0;
-    for (const v of groups.values()) sum += v;
-    return sum;
-  })();
+  const shippingCost = computeShipping(items as any);
   const grandTotal = total + shippingCost;
 
   const setQty = async (id: string, q: number) => {
