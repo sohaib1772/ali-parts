@@ -1989,7 +1989,14 @@ function OrderAdminCard({ order: o, onStatusChange, onDelete }: { order: any; on
   return (
     <div className="bg-card border border-border rounded-2xl p-3 space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <div className="text-xs font-mono text-muted-foreground">#{(o.order_number ?? o.id).toString().slice(0, 10)}</div>
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="text-xs font-mono text-muted-foreground">#{(o.order_number ?? o.id).toString().slice(0, 10)}</div>
+          {o.admin_reviewed && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-300 rounded-full px-2 py-0.5">
+              <CheckCircle2 className="size-3" /> تمت المراجعة
+            </span>
+          )}
+        </div>
         <div className={`text-xs font-bold px-2 py-0.5 rounded-full ${statusColor(o.status)}`}>{statusLabel(o.status)}</div>
       </div>
 
@@ -2132,15 +2139,25 @@ function OrderAdminCard({ order: o, onStatusChange, onDelete }: { order: any; on
 
 function InvoiceActions({ order, items, customer }: { order: any; items: any[]; customer: { full_name: string | null; phone: string | null } | null }) {
   const [open, setOpen] = useState(false);
+  const qc = useQueryClient();
   const domId = `admin-invoice-${order.id}`;
   const previewId = `admin-invoice-preview-${order.id}`;
+  const saved = !!order.admin_reviewed;
+  const handleSave = async () => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ admin_reviewed: true, reviewed_at: new Date().toISOString() } as never)
+      .eq("id", order.id);
+    if (error) throw error;
+    qc.invalidateQueries({ queryKey: ["admin", "orders"] });
+  };
   return (
     <>
       <button
         onClick={() => setOpen(true)}
         className="w-full flex items-center justify-center gap-1.5 h-9 rounded-lg bg-gradient-gold text-navy text-xs font-bold shadow-gold"
       >
-        <Receipt className="size-4" /> معاينة الفاتورة
+        <Receipt className="size-4" /> معاينة الفاتورة {saved && <CheckCircle2 className="size-4 text-emerald-700" />}
       </button>
       <PrintableInvoice order={order} items={items} customer={customer} domId={domId} />
       <InvoicePreviewDialog
@@ -2150,6 +2167,8 @@ function InvoiceActions({ order, items, customer }: { order: any; items: any[]; 
         open={open}
         onOpenChange={setOpen}
         domId={previewId}
+        onSave={handleSave}
+        saved={saved}
       />
     </>
   );

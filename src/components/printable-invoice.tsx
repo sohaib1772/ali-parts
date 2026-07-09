@@ -3,7 +3,7 @@ import { formatIQDEn, formatDateEn } from "@/lib/format";
 import { statusLabel } from "@/lib/order-status";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Printer, FileDown, Image as ImageIcon, X } from "lucide-react";
+import { Printer, FileDown, Image as ImageIcon, X, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import logoAsset from "@/assets/ali-chevrolet-logo.jpeg.asset.json";
 
@@ -241,6 +241,8 @@ export function InvoicePreviewDialog({
   open,
   onOpenChange,
   domId,
+  onSave,
+  saved,
 }: {
   order: any;
   items: any[];
@@ -248,8 +250,11 @@ export function InvoicePreviewDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   domId: string;
+  onSave?: () => Promise<void> | void;
+  saved?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const handlePdf = async () => {
     setBusy(true);
@@ -279,6 +284,19 @@ export function InvoicePreviewDialog({
     printOnlyThisInvoice(domId);
   };
 
+  const handleSave = async () => {
+    if (!onSave) return;
+    setSaving(true);
+    try {
+      await onSave();
+      toast.success("تم حفظ الفاتورة ووضع علامة صح على الطلب");
+    } catch {
+      toast.error("تعذّر الحفظ");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -292,6 +310,19 @@ export function InvoicePreviewDialog({
               معاينة الفاتورة
             </DialogTitle>
             <div className="flex items-center gap-2">
+              {onSave && (
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-black border disabled:opacity-50 ${
+                    saved
+                      ? "bg-emerald-500/20 border-emerald-400/60 text-emerald-200"
+                      : "bg-emerald-500 border-emerald-400 text-white hover:bg-emerald-600"
+                  }`}
+                >
+                  <CheckCircle2 className="size-3.5" /> {saving ? "..." : saved ? "محفوظ ✓" : "حفظ"}
+                </button>
+              )}
               <button
                 onClick={handlePrint}
                 className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-gradient-gold text-navy text-xs font-black shadow-gold"
@@ -446,6 +477,7 @@ function InvoiceBody({ order, items, customer }: { order: any; items: any[]; cus
           <thead>
             <tr style={{ background: "#0a1a3a", color: "#f5c96a" }}>
               <th style={thStyle}>#</th>
+              <th style={thStyle}>الصورة</th>
               <th style={{ ...thStyle, textAlign: "right" }}>الوصف</th>
               <th style={thStyle}>الجهة</th>
               <th style={thStyle}>الكمية</th>
@@ -457,6 +489,18 @@ function InvoiceBody({ order, items, customer }: { order: any; items: any[]; cus
             {items.map((it, idx) => (
               <tr key={it.id} style={{ borderBottom: "1px solid #eee" }}>
                 <td style={tdStyle}>{idx + 1}</td>
+                <td style={{ ...tdStyle, textAlign: "center", width: "56px" }}>
+                  {it.image_url ? (
+                    <img
+                      src={it.image_url}
+                      alt=""
+                      crossOrigin="anonymous"
+                      style={{ width: "48px", height: "48px", objectFit: "cover", borderRadius: "6px", border: "1px solid #e6e2d5", background: "#f8f8f8" }}
+                    />
+                  ) : (
+                    <div style={{ width: "48px", height: "48px", borderRadius: "6px", background: "#f4efe4", border: "1px dashed #e6e2d5" }} />
+                  )}
+                </td>
                 <td style={{ ...tdStyle, textAlign: "right" }}>
                   <div style={{ fontWeight: 800, lineHeight: 1.25, color: "#0a1a3a" }}>{it.name_ar}</div>
                   {it.oem_number && (
