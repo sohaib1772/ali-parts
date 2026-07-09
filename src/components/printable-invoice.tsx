@@ -477,6 +477,7 @@ function InvoiceBody({ order, items, customer }: { order: any; items: any[]; cus
           <thead>
             <tr style={{ background: "#0a1a3a", color: "#f5c96a" }}>
               <th style={thStyle}>#</th>
+              <th style={thStyle}>الصورة</th>
               <th style={{ ...thStyle, textAlign: "right" }}>الوصف</th>
               <th style={thStyle}>الجهة</th>
               <th style={thStyle}>الكمية</th>
@@ -488,6 +489,18 @@ function InvoiceBody({ order, items, customer }: { order: any; items: any[]; cus
             {items.map((it, idx) => (
               <tr key={it.id} style={{ borderBottom: "1px solid #eee" }}>
                 <td style={tdStyle}>{idx + 1}</td>
+                <td style={{ ...tdStyle, textAlign: "center", width: "56px" }}>
+                  {it.image_url ? (
+                    <img
+                      src={it.image_url}
+                      alt=""
+                      crossOrigin="anonymous"
+                      style={{ width: "48px", height: "48px", objectFit: "cover", borderRadius: "6px", border: "1px solid #e6e2d5", background: "#f8f8f8" }}
+                    />
+                  ) : (
+                    <div style={{ width: "48px", height: "48px", borderRadius: "6px", background: "#f4efe4", border: "1px dashed #e6e2d5" }} />
+                  )}
+                </td>
                 <td style={{ ...tdStyle, textAlign: "right" }}>
                   <div style={{ fontWeight: 800, lineHeight: 1.25, color: "#0a1a3a" }}>{it.name_ar}</div>
                   {it.oem_number && (
