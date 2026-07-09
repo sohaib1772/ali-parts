@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Phone, MapPin } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { WhatsappIcon } from "@/components/icons";
-import { whatsappLink, WHATSAPP_NUMBER } from "@/lib/format";
+import { formatIraqiWhatsAppNumber, whatsappLink, WHATSAPP_NUMBER } from "@/lib/format";
 import { useSetting } from "@/lib/admin";
 
 export const Route = createFileRoute("/contact")({
@@ -12,8 +12,8 @@ export const Route = createFileRoute("/contact")({
 
 function ContactPage() {
   const address = useSetting("store_address", "بغداد، العراق");
-  const waNumber = useSetting("whatsapp_number", WHATSAPP_NUMBER);
-  const phoneNumber = useSetting("phone_number", "") || waNumber;
+  const waNumber = formatIraqiWhatsAppNumber(useSetting("whatsapp_number", WHATSAPP_NUMBER));
+  const phoneNumber = formatIraqiWhatsAppNumber(useSetting("phone_number", "") || waNumber);
   return (
     <PageShell title="اتصل بنا">
       <div className="px-4 pt-4 space-y-3">
