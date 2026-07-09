@@ -1072,6 +1072,8 @@ type ProductForm = {
   price_usd: string;
   compare_price_iqd: string;
   shipping_iqd: string;
+  merge_delivery: boolean;
+  delivery_group: string;
   category_id: string;
   brand_id: string;
   images: string[];
@@ -1086,7 +1088,9 @@ type ProductForm = {
 
 const emptyProduct: ProductForm = {
   name_ar: "", name_en: "", description_ar: "", oem_number: "",
-  price_usd: "", compare_price_iqd: "", shipping_iqd: "", category_id: "", brand_id: "",
+  price_usd: "", compare_price_iqd: "", shipping_iqd: "",
+  merge_delivery: true, delivery_group: "",
+  category_id: "", brand_id: "",
   images: [], in_stock: true, is_featured: false, is_deal: false,
   compatible_models: [], deal_expires_at: "", stock_qty: "0",
   condition: "new",
