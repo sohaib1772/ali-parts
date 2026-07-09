@@ -154,7 +154,7 @@ function CartPage() {
               </div>
             )}
             <div className="size-20 rounded-xl bg-muted overflow-hidden flex-shrink-0">
-              {it.product?.images?.[0] && <img src={it.product.images[0]} alt="" className="size-full object-cover" />}
+              {it.product?.images?.[0] && <img src={it.product.images[0]} alt="" loading="lazy" decoding="async" className="size-full object-cover" />}
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-bold line-clamp-2">{it.product?.name_ar}</h3>
