@@ -1,31 +1,65 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageShell } from "@/components/page-shell";
 
 export const Route = createFileRoute("/privacy")({
-  head: () => ({ meta: [{ title: "سياسة الخصوصية — Ali Parts" }] }),
+  head: () => ({
+    meta: [
+      { title: "سياسة الخصوصية | مكتب علي شوفرليت" },
+      { name: "description", content: "سياسة الخصوصية لتطبيق مكتب علي شوفرليت لقطع غيار السيارات في العراق." },
+    ],
+  }),
   component: PrivacyPage,
 });
 
 function PrivacyPage() {
   return (
-    <PageShell title="سياسة الخصوصية">
-      <div className="px-4 pt-4">
-        <div className="bg-card rounded-2xl border border-border p-5 shadow-card space-y-4 text-sm leading-relaxed">
-          <p>نحن في Ali Parts نحترم خصوصيتك ونلتزم بحماية بياناتك الشخصية.</p>
-          <div>
-            <div className="font-bold text-gold mb-1">جمع البيانات</div>
-            <p>نجمع فقط البيانات اللازمة لإتمام طلبك: الاسم، رقم الهاتف، والعنوان.</p>
-          </div>
-          <div>
-            <div className="font-bold text-gold mb-1">استخدام البيانات</div>
-            <p>تُستخدم بياناتك لإتمام الطلب والتواصل بشأنه فقط.</p>
-          </div>
-          <div>
-            <div className="font-bold text-gold mb-1">حماية البيانات</div>
-            <p>نستخدم أفضل ممارسات الأمان لحماية بياناتك.</p>
-          </div>
+    <main dir="rtl" className="mx-auto max-w-3xl px-6 py-12 text-foreground">
+      <h1 className="mb-6 text-3xl font-bold">سياسة الخصوصية</h1>
+      <p className="mb-4 text-sm text-muted-foreground">آخر تحديث: 9 يوليو 2026</p>
+
+      <section className="space-y-6 leading-8">
+        <p>
+          نحن في <strong>مكتب علي شوفرليت</strong> نحترم خصوصيتك ونلتزم بحماية بياناتك.
+          توضح هذه السياسة نوع المعلومات التي نجمعها وكيفية استخدامها.
+        </p>
+
+        <div>
+          <h2 className="mb-2 text-xl font-semibold">١. المعلومات التي نجمعها</h2>
+          <ul className="list-disc space-y-2 pr-6">
+            <li>معلومات الطلب: الاسم، رقم الهاتف، العنوان لأغراض التوصيل.</li>
+            <li>موديل سيارتك (اختياري) لعرض القطع المتوافقة.</li>
+            <li>بيانات تقنية أساسية لتحسين أداء التطبيق.</li>
+          </ul>
         </div>
-      </div>
-    </PageShell>
+
+        <div>
+          <h2 className="mb-2 text-xl font-semibold">٢. كيفية استخدام المعلومات</h2>
+          <ul className="list-disc space-y-2 pr-6">
+            <li>معالجة الطلبات وتوصيلها.</li>
+            <li>التواصل معك بخصوص طلبك عبر الهاتف أو واتساب.</li>
+            <li>تحسين تجربتك داخل التطبيق.</li>
+          </ul>
+        </div>
+
+        <div>
+          <h2 className="mb-2 text-xl font-semibold">٣. مشاركة البيانات</h2>
+          <p>لا نبيع أو نشارك بياناتك مع أي جهة خارجية، عدا شركات التوصيل بالحد اللازم لإتمام الطلب.</p>
+        </div>
+
+        <div>
+          <h2 className="mb-2 text-xl font-semibold">٤. الأمان</h2>
+          <p>نستخدم إجراءات أمنية قياسية لحماية بياناتك من الوصول غير المصرح به.</p>
+        </div>
+
+        <div>
+          <h2 className="mb-2 text-xl font-semibold">٥. حقوقك</h2>
+          <p>يمكنك طلب حذف بياناتك في أي وقت عبر التواصل معنا.</p>
+        </div>
+
+        <div>
+          <h2 className="mb-2 text-xl font-semibold">٦. التواصل</h2>
+          <p>لأي استفسار بخصوص الخصوصية، تواصل معنا عبر واتساب من داخل التطبيق.</p>
+        </div>
+      </section>
+    </main>
   );
 }
