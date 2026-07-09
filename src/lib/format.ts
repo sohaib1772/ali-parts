@@ -67,8 +67,22 @@ export function formatIraqiWhatsAppNumber(input: string): string {
   return digits;
 }
 
+/**
+ * Validates an Iraqi mobile number suitable for WhatsApp.
+ * A valid number normalizes to 964 + 7XXXXXXXXX (13 digits total).
+ */
+export function isValidIraqiWhatsAppNumber(input: string | null | undefined): boolean {
+  if (!input) return false;
+  const n = formatIraqiWhatsAppNumber(String(input));
+  return /^9647\d{9}$/.test(n);
+}
+
 export function whatsappLink(text: string, number?: string): string {
-  const n = formatIraqiWhatsAppNumber(number || WHATSAPP_NUMBER);
+  const raw = number || WHATSAPP_NUMBER;
+  const normalized = formatIraqiWhatsAppNumber(raw);
+  const n = /^9647\d{9}$/.test(normalized)
+    ? normalized
+    : formatIraqiWhatsAppNumber(WHATSAPP_NUMBER);
   return `https://wa.me/${n}?text=${encodeURIComponent(text)}`;
 }
 
