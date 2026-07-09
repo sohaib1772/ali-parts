@@ -1151,6 +1151,8 @@ function ProductsAdmin() {
       price_usd: p.price_usd ? String(p.price_usd) : "",
       compare_price_iqd: String(p.compare_price_iqd ?? ""),
       shipping_iqd: String(p.shipping_iqd ?? ""),
+      merge_delivery: p.merge_delivery !== false,
+      delivery_group: p.delivery_group ?? "",
       category_id: p.category_id ?? "",
       brand_id: p.brand_id ?? "",
       images: p.images ?? [],
@@ -1181,6 +1183,8 @@ function ProductsAdmin() {
         price_usd: Number(form.price_usd),
         compare_price_iqd: form.compare_price_iqd ? Number(form.compare_price_iqd) : null,
         shipping_iqd: form.shipping_iqd ? Number(form.shipping_iqd) : 0,
+        merge_delivery: form.merge_delivery,
+        delivery_group: form.delivery_group.trim() || null,
         category_id: form.category_id || null,
         brand_id: form.brand_id || null,
         images: form.images,
@@ -1318,6 +1322,25 @@ function ProductsAdmin() {
             <Field label="كلفة التوصيل لهذا المنتج (د.ع)">
               <Input type="number" value={form.shipping_iqd} onChange={(e) => setForm({ ...form, shipping_iqd: e.target.value })} inputMode="numeric" dir="ltr" placeholder="0" />
             </Field>
+            <div className="rounded-xl border border-border p-3 space-y-3 bg-muted/20">
+              <div className="text-xs font-bold text-gold">إعدادات التوصيل</div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="block">دمج التوصيل مع منتجات نفس المجموعة</Label>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    عند التفعيل، تُحتسب أجرة التوصيل مرة واحدة لكل مجموعة. عند الإيقاف، تُحتسب مستقلة دائماً.
+                  </div>
+                </div>
+                <Switch checked={form.merge_delivery} onCheckedChange={(v) => setForm({ ...form, merge_delivery: v })} />
+              </div>
+              <Field label="مجموعة التوصيل (مثال: Small Parts / Medium Parts / Large Parts)">
+                <Input
+                  value={form.delivery_group}
+                  onChange={(e) => setForm({ ...form, delivery_group: e.target.value })}
+                  placeholder="اترك فارغاً لتوصيل مستقل لهذا المنتج"
+                />
+              </Field>
+            </div>
             <Field label="التصنيف">
               <Select value={form.category_id} onValueChange={(v) => setForm({ ...form, category_id: v })}>
                 <SelectTrigger><SelectValue placeholder="اختر تصنيف" /></SelectTrigger>
