@@ -2132,15 +2132,25 @@ function OrderAdminCard({ order: o, onStatusChange, onDelete }: { order: any; on
 
 function InvoiceActions({ order, items, customer }: { order: any; items: any[]; customer: { full_name: string | null; phone: string | null } | null }) {
   const [open, setOpen] = useState(false);
+  const qc = useQueryClient();
   const domId = `admin-invoice-${order.id}`;
   const previewId = `admin-invoice-preview-${order.id}`;
+  const saved = !!order.admin_reviewed;
+  const handleSave = async () => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ admin_reviewed: true, reviewed_at: new Date().toISOString() } as never)
+      .eq("id", order.id);
+    if (error) throw error;
+    qc.invalidateQueries({ queryKey: ["admin", "orders"] });
+  };
   return (
     <>
       <button
         onClick={() => setOpen(true)}
         className="w-full flex items-center justify-center gap-1.5 h-9 rounded-lg bg-gradient-gold text-navy text-xs font-bold shadow-gold"
       >
-        <Receipt className="size-4" /> معاينة الفاتورة
+        <Receipt className="size-4" /> معاينة الفاتورة {saved && <CheckCircle2 className="size-4 text-emerald-700" />}
       </button>
       <PrintableInvoice order={order} items={items} customer={customer} domId={domId} />
       <InvoicePreviewDialog
@@ -2150,6 +2160,8 @@ function InvoiceActions({ order, items, customer }: { order: any; items: any[]; 
         open={open}
         onOpenChange={setOpen}
         domId={previewId}
+        onSave={handleSave}
+        saved={saved}
       />
     </>
   );
