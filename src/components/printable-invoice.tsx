@@ -3,7 +3,7 @@ import { formatIQDEn, formatDateEn } from "@/lib/format";
 import { statusLabel } from "@/lib/order-status";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Printer, FileDown, Image as ImageIcon, X } from "lucide-react";
+import { Printer, FileDown, Image as ImageIcon, X, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import logoAsset from "@/assets/ali-chevrolet-logo.jpeg.asset.json";
 
@@ -241,6 +241,8 @@ export function InvoicePreviewDialog({
   open,
   onOpenChange,
   domId,
+  onSave,
+  saved,
 }: {
   order: any;
   items: any[];
@@ -248,8 +250,11 @@ export function InvoicePreviewDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   domId: string;
+  onSave?: () => Promise<void> | void;
+  saved?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const handlePdf = async () => {
     setBusy(true);
@@ -279,6 +284,19 @@ export function InvoicePreviewDialog({
     printOnlyThisInvoice(domId);
   };
 
+  const handleSave = async () => {
+    if (!onSave) return;
+    setSaving(true);
+    try {
+      await onSave();
+      toast.success("تم حفظ الفاتورة ووضع علامة صح على الطلب");
+    } catch {
+      toast.error("تعذّر الحفظ");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -292,6 +310,19 @@ export function InvoicePreviewDialog({
               معاينة الفاتورة
             </DialogTitle>
             <div className="flex items-center gap-2">
+              {onSave && (
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-black border disabled:opacity-50 ${
+                    saved
+                      ? "bg-emerald-500/20 border-emerald-400/60 text-emerald-200"
+                      : "bg-emerald-500 border-emerald-400 text-white hover:bg-emerald-600"
+                  }`}
+                >
+                  <CheckCircle2 className="size-3.5" /> {saving ? "..." : saved ? "محفوظ ✓" : "حفظ"}
+                </button>
+              )}
               <button
                 onClick={handlePrint}
                 className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-gradient-gold text-navy text-xs font-black shadow-gold"
