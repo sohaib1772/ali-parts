@@ -1,0 +1,1 @@
+import{t as e}from"./createServerFn-plUiVn56.js";import{t}from"./auth-middleware-BDJDJV-D.js";import{U as n}from"./index-BdxtMbzP.js";var r=e({method:`POST`}).middleware([t]).handler(n(`b9e529f0850c2850bc6f721791444437b5b772c146c5078346159706e568634b`));export{r as broadcastBannerPush};
