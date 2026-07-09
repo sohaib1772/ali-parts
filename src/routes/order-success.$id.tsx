@@ -1,8 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { CheckCircle2, Package } from "lucide-react";
+import { WhatsappIcon } from "@/components/icons";
 import { orderByIdQuery } from "@/lib/queries";
 import { formatIQD } from "@/lib/format";
+
+const ADMIN_WHATSAPP = "9647855500585";
 
 export const Route = createFileRoute("/order-success/$id")({
   ssr: false,
@@ -13,7 +16,32 @@ export const Route = createFileRoute("/order-success/$id")({
 function OrderSuccess() {
   const { id } = Route.useParams();
   const { data } = useSuspenseQuery(orderByIdQuery(id));
-  const { order } = data;
+  const { order, items, customer } = data as any;
+
+  const addr = (order?.address ?? {}) as Record<string, any>;
+  const lines: string[] = [];
+  lines.push(`🛒 *طلب جديد*`);
+  lines.push(`رقم الطلب: #${order.order_number ?? String(order.id).slice(0, 8)}`);
+  lines.push("");
+  lines.push(`👤 الاسم: ${addr.full_name || customer?.full_name || "—"}`);
+  const phone = addr.phone || customer?.phone;
+  if (phone) lines.push(`📞 الهاتف: ${phone}`);
+  const addrParts = [addr.city, addr.area, addr.street].filter(Boolean).join(" · ");
+  if (addrParts) lines.push(`📍 العنوان: ${addrParts}`);
+  if (addr.notes) lines.push(`📝 ملاحظات العنوان: ${addr.notes}`);
+  lines.push("");
+  lines.push(`🧾 القطع (${items?.length ?? 0}):`);
+  (items ?? []).forEach((it: any, i: number) => {
+    const side = it.side === "LH" ? " · يسار" : it.side === "RH" ? " · يمين" : it.side === "PAIR" ? " · تخم" : "";
+    lines.push(`${i + 1}. ${it.name_ar}${side} ×${it.quantity} — ${formatIQD(Number(it.unit_price_iqd) * it.quantity)}`);
+    if (it.oem_number) lines.push(`   OEM: ${it.oem_number}`);
+  });
+  lines.push("");
+  lines.push(`💰 الإجمالي: ${formatIQD(order.total_iqd)}`);
+  lines.push(`💳 الدفع: ${order.payment_method === "cod" ? "عند الاستلام" : "حوالة"}`);
+  if (order.notes) lines.push(`📌 ملاحظة الطلب: ${order.notes}`);
+
+  const waHref = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(lines.join("\n"))}`;
 
   return (
     <div className="min-h-screen bg-gradient-hero text-primary-foreground flex flex-col">
@@ -22,7 +50,10 @@ function OrderSuccess() {
           <CheckCircle2 className="size-14" strokeWidth={2.5} />
         </div>
         <h1 className="text-3xl font-black mb-2">شكراً لثقتك بنا!</h1>
-        <p className="text-primary-foreground/80 mb-8">تم استلام طلبك بنجاح، سنبدأ بتجهيزه فوراً.</p>
+        <p className="text-primary-foreground/80 mb-6">تم استلام طلبك بنجاح، سنبدأ بتجهيزه فوراً.</p>
+        <p className="text-primary-foreground/90 text-sm mb-4 font-bold">
+          لتأكيد الطلب بشكل أسرع، أرسل تفاصيله لنا على واتساب 👇
+        </p>
 
         <div className="w-full bg-white/10 border border-white/20 rounded-2xl p-4 mb-3">
           <div className="text-xs text-gold mb-1">رقم الطلب</div>
@@ -32,6 +63,15 @@ function OrderSuccess() {
           <div className="text-xs text-gold mb-1">الإجمالي</div>
           <div className="font-black text-2xl text-gold">{formatIQD(order.total_iqd)}</div>
         </div>
+
+        <a
+          href={waHref}
+          target="_blank"
+          rel="noreferrer"
+          className="w-full h-14 rounded-2xl bg-whatsapp text-white font-black flex items-center justify-center gap-2 shadow-gold mb-3 text-base"
+        >
+          <WhatsappIcon className="size-5" /> أرسل الطلب عبر واتساب
+        </a>
 
         <Link to="/orders/$id" params={{ id: order.id }} className="w-full h-12 rounded-2xl bg-gradient-gold text-navy font-black flex items-center justify-center gap-2 shadow-gold mb-3">
           <Package className="size-4" /> تتبع الطلب
