@@ -533,6 +533,7 @@ export type Database = {
           status: Database["public"]["Enums"]["order_status"]
           subtotal_iqd: number
           total_iqd: number
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -548,6 +549,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_iqd?: number
           total_iqd?: number
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -563,6 +565,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_iqd?: number
           total_iqd?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
