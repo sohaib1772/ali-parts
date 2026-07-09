@@ -40,7 +40,7 @@ import { runDiagnostics, type DiagnosticsReport, type CheckStatus } from "@/lib/
 import { adminUpdateReplacementStatus } from "@/lib/replacement-admin.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { WhatsappIcon } from "@/components/icons";
-import { formatIQD, whatsappLink } from "@/lib/format";
+import { formatIQD, isValidIraqiWhatsAppNumber, whatsappLink } from "@/lib/format";
 import { statusLabel, statusColor } from "@/lib/order-status";
 import { PrintableInvoice, InvoicePreviewDialog } from "@/components/printable-invoice";
 import { adminListUsers, adminSetUserBlocked, adminSetUserPassword } from "@/lib/admin.functions";
