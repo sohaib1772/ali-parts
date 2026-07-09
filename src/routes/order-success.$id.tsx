@@ -3,7 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { CheckCircle2, Package } from "lucide-react";
 import { WhatsappIcon } from "@/components/icons";
 import { orderByIdQuery } from "@/lib/queries";
-import { buildOrderWhatsAppMessage, formatIraqiWhatsAppNumber, whatsappLink } from "@/lib/format";
+import { buildOrderWhatsAppMessage, formatIQD, formatIraqiWhatsAppNumber, whatsappLink } from "@/lib/format";
 
 const ADMIN_WHATSAPP = formatIraqiWhatsAppNumber("009647855500585");
 
