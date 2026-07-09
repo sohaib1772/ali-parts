@@ -146,8 +146,8 @@ export function useAdjustedPrice() {
  */
 export async function compressImageFile(
   file: File,
-  maxDim = 1600,
-  quality = 0.82,
+  maxDim = 1200,
+  quality = 0.75,
 ): Promise<File> {
   if (!file.type.startsWith("image/")) return file;
   // Don't reprocess tiny files or unsupported formats (GIF/SVG).

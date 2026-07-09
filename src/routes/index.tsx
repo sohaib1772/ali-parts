@@ -366,6 +366,8 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
         <img
           src={current.image_url}
           alt={current.title_ar ?? ""}
+          decoding="async"
+          fetchPriority="low"
           className="absolute inset-0 w-full h-full object-cover"
         />
       )}

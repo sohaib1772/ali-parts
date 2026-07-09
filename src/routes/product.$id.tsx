@@ -315,6 +315,8 @@ function ProductPage() {
               src={img}
               alt={product.name_ar}
               draggable={false}
+              decoding="async"
+              fetchPriority="high"
               onContextMenu={(e) => e.preventDefault()}
               onDragStart={(e) => e.preventDefault()}
               className="size-full object-cover pointer-events-none select-none"
@@ -332,6 +334,8 @@ function ProductPage() {
                   src={im}
                   alt=""
                   draggable={false}
+                  loading="lazy"
+                  decoding="async"
                   onContextMenu={(e) => e.preventDefault()}
                   onDragStart={(e) => e.preventDefault()}
                   className="size-full object-cover pointer-events-none select-none"
