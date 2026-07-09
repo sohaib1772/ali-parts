@@ -3,9 +3,10 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { CheckCircle2, Package } from "lucide-react";
 import { WhatsappIcon } from "@/components/icons";
 import { orderByIdQuery } from "@/lib/queries";
-import { formatIQD } from "@/lib/format";
+import { formatIQD, formatIraqiWhatsAppNumber, whatsappLink } from "@/lib/format";
 
-const ADMIN_WHATSAPP = "9647855500585";
+const ADMIN_WHATSAPP = formatIraqiWhatsAppNumber("009647855500585");
+
 
 export const Route = createFileRoute("/order-success/$id")({
   ssr: false,
@@ -41,7 +42,7 @@ function OrderSuccess() {
   lines.push(`💳 الدفع: ${order.payment_method === "cod" ? "عند الاستلام" : "حوالة"}`);
   if (order.notes) lines.push(`📌 ملاحظة الطلب: ${order.notes}`);
 
-  const waHref = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(lines.join("\n"))}`;
+  const waHref = whatsappLink(lines.join("\n"), ADMIN_WHATSAPP);
 
   return (
     <div className="min-h-screen bg-gradient-hero text-primary-foreground flex flex-col">
