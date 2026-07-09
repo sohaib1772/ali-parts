@@ -3,7 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { CheckCircle2, Package } from "lucide-react";
 import { WhatsappIcon } from "@/components/icons";
 import { orderByIdQuery } from "@/lib/queries";
-import { formatIQD, formatIraqiWhatsAppNumber, whatsappLink } from "@/lib/format";
+import { buildOrderWhatsAppMessage, formatIraqiWhatsAppNumber, whatsappLink } from "@/lib/format";
 
 const ADMIN_WHATSAPP = formatIraqiWhatsAppNumber("009647855500585");
 
@@ -19,30 +19,8 @@ function OrderSuccess() {
   const { data } = useSuspenseQuery(orderByIdQuery(id));
   const { order, items, customer } = data as any;
 
-  const addr = (order?.address ?? {}) as Record<string, any>;
-  const lines: string[] = [];
-  lines.push(`🛒 *طلب جديد*`);
-  lines.push(`رقم الطلب: #${order.order_number ?? String(order.id).slice(0, 8)}`);
-  lines.push("");
-  lines.push(`👤 الاسم: ${addr.full_name || customer?.full_name || "—"}`);
-  const phone = addr.phone || customer?.phone;
-  if (phone) lines.push(`📞 الهاتف: ${phone}`);
-  const addrParts = [addr.city, addr.area, addr.street].filter(Boolean).join(" · ");
-  if (addrParts) lines.push(`📍 العنوان: ${addrParts}`);
-  if (addr.notes) lines.push(`📝 ملاحظات العنوان: ${addr.notes}`);
-  lines.push("");
-  lines.push(`🧾 القطع (${items?.length ?? 0}):`);
-  (items ?? []).forEach((it: any, i: number) => {
-    const side = it.side === "LH" ? " · يسار" : it.side === "RH" ? " · يمين" : it.side === "PAIR" ? " · تخم" : "";
-    lines.push(`${i + 1}. ${it.name_ar}${side} ×${it.quantity} — ${formatIQD(Number(it.unit_price_iqd) * it.quantity)}`);
-    if (it.oem_number) lines.push(`   OEM: ${it.oem_number}`);
-  });
-  lines.push("");
-  lines.push(`💰 الإجمالي: ${formatIQD(order.total_iqd)}`);
-  lines.push(`💳 الدفع: ${order.payment_method === "cod" ? "عند الاستلام" : "حوالة"}`);
-  if (order.notes) lines.push(`📌 ملاحظة الطلب: ${order.notes}`);
-
-  const waHref = whatsappLink(lines.join("\n"), ADMIN_WHATSAPP);
+  const message = buildOrderWhatsAppMessage(order, items ?? [], customer);
+  const waHref = whatsappLink(message, ADMIN_WHATSAPP);
 
   return (
     <div className="min-h-screen bg-gradient-hero text-primary-foreground flex flex-col">
