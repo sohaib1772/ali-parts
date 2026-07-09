@@ -522,6 +522,7 @@ export type Database = {
       orders: {
         Row: {
           address: Json
+          admin_reviewed: boolean
           created_at: string
           id: string
           notes: string | null
@@ -529,6 +530,7 @@ export type Database = {
           payment_method: string
           points_earned: number
           points_used: number
+          reviewed_at: string | null
           shipping_iqd: number
           status: Database["public"]["Enums"]["order_status"]
           subtotal_iqd: number
@@ -538,6 +540,7 @@ export type Database = {
         }
         Insert: {
           address: Json
+          admin_reviewed?: boolean
           created_at?: string
           id?: string
           notes?: string | null
@@ -545,6 +548,7 @@ export type Database = {
           payment_method?: string
           points_earned?: number
           points_used?: number
+          reviewed_at?: string | null
           shipping_iqd?: number
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_iqd?: number
@@ -554,6 +558,7 @@ export type Database = {
         }
         Update: {
           address?: Json
+          admin_reviewed?: boolean
           created_at?: string
           id?: string
           notes?: string | null
@@ -561,6 +566,7 @@ export type Database = {
           payment_method?: string
           points_earned?: number
           points_used?: number
+          reviewed_at?: string | null
           shipping_iqd?: number
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_iqd?: number
