@@ -1989,7 +1989,14 @@ function OrderAdminCard({ order: o, onStatusChange, onDelete }: { order: any; on
   return (
     <div className="bg-card border border-border rounded-2xl p-3 space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <div className="text-xs font-mono text-muted-foreground">#{(o.order_number ?? o.id).toString().slice(0, 10)}</div>
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="text-xs font-mono text-muted-foreground">#{(o.order_number ?? o.id).toString().slice(0, 10)}</div>
+          {o.admin_reviewed && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-300 rounded-full px-2 py-0.5">
+              <CheckCircle2 className="size-3" /> تمت المراجعة
+            </span>
+          )}
+        </div>
         <div className={`text-xs font-bold px-2 py-0.5 rounded-full ${statusColor(o.status)}`}>{statusLabel(o.status)}</div>
       </div>
 
