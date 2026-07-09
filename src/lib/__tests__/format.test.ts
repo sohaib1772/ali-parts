@@ -67,7 +67,7 @@ describe("buildOrderWhatsAppMessage", () => {
     expect(message).toContain("القطع (2)");
     expect(message).toContain("1. فرامل أمامي · يسار ×2");
     expect(message).toContain("2.  disc خلفي · يمين ×1");
-    expect(message).toContain("الإجمالي: 125,000 د.ع");
+    expect(message).toContain("الإجمالي: ١٢٥٬٠٠٠ د.ع");
     expect(message).toContain("الدفع: عند الاستلام");
     expect(message).toContain("ملاحظات العنوان: بجانب المسجد");
   });
@@ -91,7 +91,7 @@ describe("buildOrderWhatsAppMessage", () => {
     const message = buildOrderWhatsAppMessage(minimalOrder, [], customer);
     expect(message).toContain("الاسم: علي");
     expect(message).toContain("الهاتف: 07800000000");
-    expect(message).toContain("الإجمالي: 50,000 د.ع");
+    expect(message).toContain("الإجمالي: ٥٠٬٠٠٠ د.ع");
     expect(message).toContain("الدفع: حوالة");
   });
 });
