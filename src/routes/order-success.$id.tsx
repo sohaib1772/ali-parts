@@ -42,7 +42,7 @@ function OrderSuccess() {
   lines.push(`💳 الدفع: ${order.payment_method === "cod" ? "عند الاستلام" : "حوالة"}`);
   if (order.notes) lines.push(`📌 ملاحظة الطلب: ${order.notes}`);
 
-  const waHref = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(lines.join("\n"))}`;
+  const waHref = whatsappLink(lines.join("\n"), ADMIN_WHATSAPP);
 
   return (
     <div className="min-h-screen bg-gradient-hero text-primary-foreground flex flex-col">
