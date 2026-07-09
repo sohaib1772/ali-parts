@@ -8,6 +8,7 @@ import { ordersQuery } from "@/lib/queries";
 import { useAuth } from "@/lib/use-auth";
 import { formatIQD, formatArabicDate } from "@/lib/format";
 import { statusLabel, statusColor } from "@/lib/order-status";
+import { statusIcon } from "@/lib/order-status";
 import { isOrderUnseen, useOrderSeenMap } from "@/lib/order-updates";
 import { toast } from "sonner";
 
@@ -67,6 +68,7 @@ function OrdersPage() {
         ) : (
           orders.map((o: any) => {
             const updated = isOrderUnseen(seen, o.id, o.updated_at, o.created_at);
+            const StatusIcon = statusIcon(o.status);
             return (
             <Link
               key={o.id}
@@ -79,7 +81,10 @@ function OrdersPage() {
                 {updated && (
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500 text-white">تحديث جديد</span>
                 )}
-                <span className={`ms-auto text-[10px] font-bold px-2 py-1 rounded-full ${statusColor(o.status)}`}>{statusLabel(o.status)}</span>
+                <span className={`ms-auto inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full ${statusColor(o.status)}`}>
+                  <StatusIcon className="size-3" />
+                  {statusLabel(o.status)}
+                </span>
               </div>
               <div className="text-xs text-muted-foreground mb-2">{formatArabicDate(o.created_at)}</div>
               <div className="flex justify-between items-baseline">
