@@ -24,7 +24,8 @@ function makeItems(n: number, mode: Mode) {
         delivery_group = "single";
         break;
       case "no-groups":
-        delivery_group = "";
+        // each item independent — flip merge off
+        merge_delivery = false;
         break;
       case "mixed":
         if (i % 3 === 0) delivery_group = `g_${i % 20}`;
