@@ -1,7 +1,8 @@
 // Shipping cost computation shared by cart & checkout.
-// Rule: group items by `delivery_group` (trimmed) when `merge_delivery !== false`;
-// items without a group, or with merge_delivery === false, are billed independently.
-// For each group, MAX(shipping_iqd) wins. Final cost = sum of per-group maxes.
+// Simple rule: `merge_delivery !== false` → item joins the shared "merged"
+// shipment (MAX(shipping_iqd) wins across all merged items).
+// `merge_delivery === false` → item is billed as its own independent shipment.
+// `delivery_group` is ignored.
 
 export type ShippingItem = {
   product?: {
@@ -22,12 +23,10 @@ export function computeShipping(items: ReadonlyArray<ShippingItem> | null | unde
     const rawFee = Number((p as any).shipping_iqd ?? 0);
     const fee = Number.isFinite(rawFee) && rawFee > 0 ? rawFee : 0;
     const merge = (p as any).merge_delivery !== false;
-    const rawGroup = (p as any).delivery_group;
-    const group = typeof rawGroup === "string" ? rawGroup.trim() : "";
     const id = typeof (p as any).id === "string" || typeof (p as any).id === "number"
       ? String((p as any).id)
       : `__anon_${anon++}`;
-    const key = merge && group ? `g:${group}` : `p:${id}`;
+    const key = merge ? "g:__merged__" : `p:${id}`;
     groups.set(key, Math.max(groups.get(key) ?? 0, fee));
   }
   let sum = 0;
@@ -43,12 +42,10 @@ export function shipmentCount(items: ReadonlyArray<ShippingItem> | null | undefi
     const p = i?.product;
     if (!p) continue;
     const merge = (p as any).merge_delivery !== false;
-    const rawGroup = (p as any).delivery_group;
-    const group = typeof rawGroup === "string" ? rawGroup.trim() : "";
     const id = typeof (p as any).id === "string" || typeof (p as any).id === "number"
       ? String((p as any).id)
       : `__anon_${anon++}`;
-    keys.add(merge && group ? `g:${group}` : `p:${id}`);
+    keys.add(merge ? "g:__merged__" : `p:${id}`);
   }
   return keys.size;
 }
