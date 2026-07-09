@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { CreditCard, Truck, MapPin, Loader2, Plus, Sparkles, StickyNote } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { CreditCard, Truck, MapPin, Loader2, Plus, Sparkles, StickyNote, AlertTriangle } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
@@ -45,6 +45,29 @@ function CheckoutPage() {
     for (const v of groups.values()) sum += v;
     return sum;
   })();
+
+  // Count distinct shipping groups to detect multi-shipment orders
+  const shipmentCount = useMemo(() => {
+    const keys = new Set<string>();
+    for (const i of items as any[]) {
+      const p = i.product;
+      if (!p) continue;
+      const merge = p.merge_delivery !== false;
+      const group = typeof p.delivery_group === "string" ? p.delivery_group.trim() : "";
+      keys.add(merge && group ? `g:${group}` : `p:${p.id}`);
+    }
+    return keys.size;
+  }, [items]);
+
+  const [showSplitAlert, setShowSplitAlert] = useState(false);
+  const [alertShown, setAlertShown] = useState(false);
+  useEffect(() => {
+    if (!alertShown && items.length > 0 && shipmentCount > 1) {
+      setShowSplitAlert(true);
+      setAlertShown(true);
+    }
+  }, [items.length, shipmentCount, alertShown]);
+
   const pointsBalance = Number((profile as any)?.points_balance ?? 0);
   const maxPointsBySubtotal = Math.floor(subtotal / 10); // 100 points = 1000 IQD, so max = subtotal/10
   const maxPoints = Math.max(0, Math.min(pointsBalance, maxPointsBySubtotal));
