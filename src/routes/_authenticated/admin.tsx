@@ -1776,6 +1776,22 @@ function OrdersAdmin() {
   const [confirmMode, setConfirmMode] = useState<"single" | "all">("single");
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [range, setRange] = useState<"24h" | "7d" | "all">("24h");
+
+  const now = Date.now();
+  const cutoff24 = now - 24 * 60 * 60 * 1000;
+  const cutoff7 = now - 7 * 24 * 60 * 60 * 1000;
+  const count24 = (orders as any[]).filter((o) => new Date(o.created_at).getTime() >= cutoff24).length;
+  const count7 = (orders as any[]).filter((o) => new Date(o.created_at).getTime() >= cutoff7).length;
+  const filtered = (orders as any[]).filter((o) => {
+    const t = new Date(o.created_at).getTime();
+    if (range === "24h") return t >= cutoff24;
+    if (range === "7d") return t >= cutoff7;
+    return true;
+  });
+  const sum24 = (orders as any[])
+    .filter((o) => new Date(o.created_at).getTime() >= cutoff24)
+    .reduce((s, o) => s + Number(o.total_iqd || 0), 0);
 
   const updateStatus = async (id: string, status: string) => {
     const { error } = await supabase.from("orders").update({ status: status as never }).eq("id", id);
@@ -1822,8 +1838,37 @@ function OrdersAdmin() {
 
   return (
     <div className="space-y-2">
+      <div className="rounded-2xl border border-gold/40 bg-gradient-to-l from-gold/10 to-transparent p-3">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <div className="text-[11px] text-muted-foreground">آخر 24 ساعة</div>
+            <div className="text-lg font-black text-navy">{count24} طلب جديد</div>
+          </div>
+          <div className="text-left">
+            <div className="text-[11px] text-muted-foreground">إجمالي</div>
+            <div className="text-sm font-bold text-navy">{new Intl.NumberFormat("ar-IQ").format(sum24)} د.ع</div>
+          </div>
+        </div>
+        <div className="flex gap-1.5">
+          {([
+            { k: "24h", label: `24 ساعة (${count24})` },
+            { k: "7d", label: `7 أيام (${count7})` },
+            { k: "all", label: `الكل (${orders.length})` },
+          ] as const).map((t) => (
+            <button
+              key={t.k}
+              onClick={() => setRange(t.k)}
+              className={`h-8 px-3 rounded-xl text-[11px] font-bold border transition ${
+                range === t.k ? "bg-gold text-navy border-gold" : "bg-card border-border text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs text-muted-foreground">{orders.length} طلب</span>
+        <span className="text-xs text-muted-foreground">{filtered.length} طلب معروض</span>
         <button
           onClick={openDeleteAll}
           disabled={deleting}
@@ -1832,9 +1877,13 @@ function OrdersAdmin() {
           <Trash2 className="size-3.5" /> حذف جميع الطلبات
         </button>
       </div>
-      {orders.map((o: any) => (
-        <OrderAdminCard key={o.id} order={o} onStatusChange={updateStatus} onDelete={openDeleteSingle} />
-      ))}
+      {filtered.length === 0 ? (
+        <div className="text-center text-sm text-muted-foreground py-8">لا توجد طلبات ضمن هذه الفترة</div>
+      ) : (
+        filtered.map((o: any) => (
+          <OrderAdminCard key={o.id} order={o} onStatusChange={updateStatus} onDelete={openDeleteSingle} />
+        ))
+      )}
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent dir="rtl" className="max-w-sm">
           <AlertDialogHeader className="items-center sm:items-center">
