@@ -25,6 +25,22 @@ function CartPage() {
   const adjust = useAdjustedPrice();
 
   const total = items.reduce((s, i: any) => s + adjust(i.product?.price_iqd) * i.quantity, 0);
+  const shippingCost = (() => {
+    const groups = new Map<string, number>();
+    for (const i of items as any[]) {
+      const p = i.product;
+      if (!p) continue;
+      const fee = Number(p.shipping_iqd ?? 0) || 0;
+      const merge = p.merge_delivery !== false;
+      const group = typeof p.delivery_group === "string" ? p.delivery_group.trim() : "";
+      const key = merge && group ? `g:${group}` : `p:${p.id}`;
+      groups.set(key, Math.max(groups.get(key) ?? 0, fee));
+    }
+    let sum = 0;
+    for (const v of groups.values()) sum += v;
+    return sum;
+  })();
+  const grandTotal = total + shippingCost;
 
   const setQty = async (id: string, q: number) => {
     if (q <= 0) return remove(id);
@@ -193,10 +209,10 @@ function CartPage() {
 
         <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
           <div className="flex justify-between text-sm mb-2"><span className="text-muted-foreground">المجموع الفرعي</span><span className="font-bold">{formatIQD(total)}</span></div>
-          <div className="flex justify-between text-sm mb-3"><span className="text-muted-foreground">التوصيل</span><span className="font-bold">يحسب لاحقاً</span></div>
+          <div className="flex justify-between text-sm mb-3"><span className="text-muted-foreground">التوصيل</span><span className="font-bold">{shippingCost > 0 ? formatIQD(shippingCost) : "مجاني"}</span></div>
           <div className="border-t border-border pt-3 flex justify-between items-baseline">
             <span className="font-bold">الإجمالي</span>
-            <span className="text-xl font-black text-navy">{formatIQD(total)}</span>
+            <span className="text-xl font-black text-navy">{formatIQD(grandTotal)}</span>
           </div>
         </div>
 
