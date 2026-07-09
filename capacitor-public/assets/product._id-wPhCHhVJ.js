@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-BpRO-UL9.js";var t=e(),n=()=>(0,t.jsx)(`div`,{className:`p-8 text-center`,children:`المنتج غير موجود`});export{n as notFoundComponent};
