@@ -34,7 +34,7 @@ export type Banner = { id: string; title_ar: string | null; subtitle_ar: string 
 // `description_ar`, `specs`, and `compatible_models` that are only needed
 // on the product detail page. Keeps payload small for fast list loads.
 const PRODUCT_LIST_COLUMNS =
-  "id, name_ar, name_en, oem_number, price_iqd, price_usd, compare_price_iqd, shipping_iqd, category_id, brand_id, images, in_stock, stock_qty, is_featured, is_deal, deal_expires_at, sales_count, condition, created_at";
+  "id, name_ar, name_en, oem_number, price_iqd, price_usd, compare_price_iqd, shipping_iqd, merge_delivery, delivery_group, category_id, brand_id, images, in_stock, stock_qty, is_featured, is_deal, deal_expires_at, sales_count, condition, created_at";
 
 export const categoriesQuery = () =>
   queryOptions({

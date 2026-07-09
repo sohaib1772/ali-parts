@@ -612,12 +612,14 @@ export type Database = {
           condition: string
           created_at: string
           deal_expires_at: string | null
+          delivery_group: string | null
           description_ar: string | null
           id: string
           images: string[] | null
           in_stock: boolean
           is_deal: boolean
           is_featured: boolean
+          merge_delivery: boolean
           name_ar: string
           name_en: string | null
           oem_number: string | null
@@ -636,12 +638,14 @@ export type Database = {
           condition?: string
           created_at?: string
           deal_expires_at?: string | null
+          delivery_group?: string | null
           description_ar?: string | null
           id?: string
           images?: string[] | null
           in_stock?: boolean
           is_deal?: boolean
           is_featured?: boolean
+          merge_delivery?: boolean
           name_ar: string
           name_en?: string | null
           oem_number?: string | null
@@ -660,12 +664,14 @@ export type Database = {
           condition?: string
           created_at?: string
           deal_expires_at?: string | null
+          delivery_group?: string | null
           description_ar?: string | null
           id?: string
           images?: string[] | null
           in_stock?: boolean
           is_deal?: boolean
           is_featured?: boolean
+          merge_delivery?: boolean
           name_ar?: string
           name_en?: string | null
           oem_number?: string | null

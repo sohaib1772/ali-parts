@@ -30,10 +30,21 @@ function CheckoutPage() {
   const activeAddr = addresses.find((a: any) => a.id === (selectedAddr ?? addresses.find((x: any) => x.is_default)?.id ?? addresses[0]?.id));
   const adjust = useAdjustedPrice();
   const subtotal = items.reduce((s, i: any) => s + adjust(i.product?.price_iqd) * i.quantity, 0);
-  const shippingCost = items.reduce(
-    (max, i: any) => Math.max(max, Number(i.product?.shipping_iqd ?? 0)),
-    0,
-  );
+  const shippingCost = (() => {
+    const groups = new Map<string, number>();
+    for (const i of items as any[]) {
+      const p = i.product;
+      if (!p) continue;
+      const fee = Number(p.shipping_iqd ?? 0) || 0;
+      const merge = p.merge_delivery !== false;
+      const group = typeof p.delivery_group === "string" ? p.delivery_group.trim() : "";
+      const key = merge && group ? `g:${group}` : `p:${p.id}`;
+      groups.set(key, Math.max(groups.get(key) ?? 0, fee));
+    }
+    let sum = 0;
+    for (const v of groups.values()) sum += v;
+    return sum;
+  })();
   const pointsBalance = Number((profile as any)?.points_balance ?? 0);
   const maxPointsBySubtotal = Math.floor(subtotal / 10); // 100 points = 1000 IQD, so max = subtotal/10
   const maxPoints = Math.max(0, Math.min(pointsBalance, maxPointsBySubtotal));
