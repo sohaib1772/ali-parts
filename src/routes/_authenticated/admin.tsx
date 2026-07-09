@@ -2037,10 +2037,12 @@ function OrderAdminCard({ order: o, onStatusChange, onDelete }: { order: any; on
       )}
 
       {phoneDigits && (
-        <div className="grid grid-cols-2 gap-2">
-          <a href={whatsappLink(`مرحباً، بخصوص طلبك #${(o.order_number ?? o.id).toString().slice(0, 10)}`, phoneDigits)} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-whatsapp text-white text-xs font-bold">
-            <WhatsappIcon className="size-4" /> واتساب
-          </a>
+        <div className={`grid ${isValidIraqiWhatsAppNumber(phoneDigits) ? "grid-cols-2" : "grid-cols-1"} gap-2`}>
+          {isValidIraqiWhatsAppNumber(phoneDigits) && (
+            <a href={whatsappLink(`مرحباً، بخصوص طلبك #${(o.order_number ?? o.id).toString().slice(0, 10)}`, phoneDigits)} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-whatsapp text-white text-xs font-bold">
+              <WhatsappIcon className="size-4" /> واتساب
+            </a>
+          )}
           <a href={`tel:+${phoneDigits}`} className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-navy text-primary-foreground text-xs font-bold">
             <Phone className="size-4" /> اتصال
           </a>
