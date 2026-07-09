@@ -864,6 +864,7 @@ export type Database = {
       staff_permissions: {
         Row: {
           can_block: boolean
+          can_moderate_comments: boolean
           can_orders: boolean
           can_products: boolean
           can_replacements: boolean
@@ -874,6 +875,7 @@ export type Database = {
         }
         Insert: {
           can_block?: boolean
+          can_moderate_comments?: boolean
           can_orders?: boolean
           can_products?: boolean
           can_replacements?: boolean
@@ -884,6 +886,7 @@ export type Database = {
         }
         Update: {
           can_block?: boolean
+          can_moderate_comments?: boolean
           can_orders?: boolean
           can_products?: boolean
           can_replacements?: boolean
