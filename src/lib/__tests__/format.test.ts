@@ -35,6 +35,29 @@ describe("formatIraqiWhatsAppNumber", () => {
     expect(link).not.toContain("+");
     expect(link).not.toContain("/00964");
   });
+
+  it("normalizes +964 numbers in wa.me links", () => {
+    expect(whatsappLink("مرحباً", "+964 785 550 0585")).toBe(
+      "https://wa.me/9647855500585?text=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7%D9%8B",
+    );
+  });
+
+  it("normalizes 07... numbers in wa.me links", () => {
+    expect(whatsappLink("استفسار", "07855500585")).toBe(
+      "https://wa.me/9647855500585?text=%D8%A7%D8%B3%D8%AA%D9%81%D8%B3%D8%A7%D8%B1",
+    );
+  });
+
+  it("normalizes 7... numbers in wa.me links", () => {
+    expect(whatsappLink("طلب", "7855500585")).toBe(
+      "https://wa.me/9647855500585?text=%D8%B7%D9%84%D8%A8",
+    );
+  });
+
+  it("uses the default number when no number is provided", () => {
+    const link = whatsappLink("test");
+    expect(link).toMatch(/^https:\/\/wa\.me\/9647800000000\?text=test$/);
+  });
 });
 
 describe("buildOrderWhatsAppMessage", () => {
