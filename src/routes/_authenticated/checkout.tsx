@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { CreditCard, Truck, MapPin, Loader2, Plus, Sparkles, StickyNote } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { CreditCard, Truck, MapPin, Loader2, Plus, Sparkles, StickyNote, AlertTriangle } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
@@ -45,6 +45,29 @@ function CheckoutPage() {
     for (const v of groups.values()) sum += v;
     return sum;
   })();
+
+  // Count distinct shipping groups to detect multi-shipment orders
+  const shipmentCount = useMemo(() => {
+    const keys = new Set<string>();
+    for (const i of items as any[]) {
+      const p = i.product;
+      if (!p) continue;
+      const merge = p.merge_delivery !== false;
+      const group = typeof p.delivery_group === "string" ? p.delivery_group.trim() : "";
+      keys.add(merge && group ? `g:${group}` : `p:${p.id}`);
+    }
+    return keys.size;
+  }, [items]);
+
+  const [showSplitAlert, setShowSplitAlert] = useState(false);
+  const [alertShown, setAlertShown] = useState(false);
+  useEffect(() => {
+    if (!alertShown && items.length > 0 && shipmentCount > 1) {
+      setShowSplitAlert(true);
+      setAlertShown(true);
+    }
+  }, [items.length, shipmentCount, alertShown]);
+
   const pointsBalance = Number((profile as any)?.points_balance ?? 0);
   const maxPointsBySubtotal = Math.floor(subtotal / 10); // 100 points = 1000 IQD, so max = subtotal/10
   const maxPoints = Math.max(0, Math.min(pointsBalance, maxPointsBySubtotal));
@@ -192,6 +215,41 @@ function CheckoutPage() {
           تأكيد الطلب
         </button>
       </div>
+
+      {showSplitAlert && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setShowSplitAlert(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm bg-card rounded-2xl border border-border shadow-card p-5 animate-in fade-in zoom-in-95"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <div className="size-10 rounded-full bg-gold/15 grid place-items-center">
+                <AlertTriangle className="size-5 text-gold" />
+              </div>
+              <h2 className="text-base font-black">تنبيه بخصوص التوصيل</h2>
+            </div>
+            <div className="text-sm text-muted-foreground leading-6 space-y-2">
+              <p>المنتجات التي اخترتها لا يمكن شحنها ضمن شحنة واحدة حفاظًا على سلامتها أثناء النقل.</p>
+              <p>لذلك سيتم تقسيم الطلب إلى شحنتين أو أكثر، وسيتم احتساب رسوم توصيل مستقلة لكل شحنة.</p>
+              <p className="text-[11px] text-muted-foreground/80">
+                يرجى العلم: هذا التنبيه يخص المنتجات الحالية في سلة التسوق فقط، ولا ينطبق على جميع المنتجات داخل التطبيق.
+              </p>
+              <p className="font-bold text-foreground">شكرًا لتفهمكم.</p>
+            </div>
+            <button
+              onClick={() => setShowSplitAlert(false)}
+              className="mt-4 w-full h-12 rounded-2xl bg-gradient-gold text-navy font-black shadow-gold"
+            >
+              فهمت
+            </button>
+          </div>
+        </div>
+      )}
     </PageShell>
   );
 }
