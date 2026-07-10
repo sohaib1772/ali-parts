@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, ChevronLeft, X } from "lucide-react";
+import { Package, ChevronLeft, X, Eye } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { OrderTracking } from "@/components/order-tracking";
 import { ordersQuery } from "@/lib/queries";
@@ -94,12 +94,11 @@ function OrdersPage() {
           orders.map((o: any) => {
             const updated = isOrderUnseen(seen, o.id, o.updated_at, o.created_at);
             const StatusIcon = statusIcon(o.status);
+            const hasUpdateAfterCreate = !!o.updated_at && o.updated_at !== o.created_at;
             return (
-            <Link
+            <div
               key={o.id}
-              to="/orders/$id"
-              params={{ id: o.id }}
-              className={`block bg-card rounded-2xl border p-4 shadow-card hover:shadow-luxe transition ${updated ? "border-gold ring-1 ring-gold/40" : "border-border"}`}
+              className={`bg-card rounded-2xl border p-4 shadow-card transition ${updated ? "border-gold ring-1 ring-gold/40" : "border-border"}`}
             >
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xs font-mono text-muted-foreground">{o.order_number}</span>
@@ -111,23 +110,38 @@ function OrdersPage() {
                   {statusLabel(o.status)}
                 </span>
               </div>
-              <div className="text-xs text-muted-foreground mb-2">{formatArabicDate(o.created_at)}</div>
-              <div className="flex justify-between items-baseline">
+              <div className="text-xs text-muted-foreground mb-1">{formatArabicDate(o.created_at)}</div>
+              {hasUpdateAfterCreate && (
+                <div className="text-[10px] text-gold font-semibold mb-2">
+                  آخر تحديث: {formatArabicDate(o.updated_at)}
+                </div>
+              )}
+              <div className="flex justify-between items-baseline mb-3">
                 <span className="text-lg font-black text-navy">{formatIQD(o.total_iqd)}</span>
                 <ChevronLeft className="size-4 text-muted-foreground" />
               </div>
               <OrderTracking status={o.status} pulse={pulseId === o.id} />
-              {(o.status === "received" || o.status === "preparing") && (
-                <button
-                  onClick={(e) => cancelOrder(e, o.id)}
-                  disabled={cancellingId === o.id}
-                  className="mt-3 w-full h-9 rounded-xl border border-destructive/40 text-destructive text-xs font-bold flex items-center justify-center gap-1 hover:bg-destructive/10 disabled:opacity-50"
+              <div className="mt-3 flex items-center gap-2">
+                <Link
+                  to="/orders/$id"
+                  params={{ id: o.id }}
+                  className="flex-1 h-9 rounded-xl bg-gradient-gold text-navy text-xs font-bold flex items-center justify-center gap-1.5 shadow-gold hover:brightness-105 transition"
                 >
-                  <X className="size-3.5" />
-                  {cancellingId === o.id ? "جاري الإلغاء..." : "إلغاء الطلب"}
-                </button>
-              )}
-            </Link>
+                  <Eye className="size-3.5" />
+                  عرض التفاصيل والتتبع
+                </Link>
+                {(o.status === "received" || o.status === "preparing") && (
+                  <button
+                    onClick={(e) => cancelOrder(e, o.id)}
+                    disabled={cancellingId === o.id}
+                    className="h-9 px-3 rounded-xl border border-destructive/40 text-destructive text-xs font-bold flex items-center justify-center gap-1 hover:bg-destructive/10 disabled:opacity-50 shrink-0"
+                  >
+                    <X className="size-3.5" />
+                    {cancellingId === o.id ? "جاري..." : "إلغاء"}
+                  </button>
+                )}
+              </div>
+            </div>
             );
           })
         )}
