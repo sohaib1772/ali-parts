@@ -187,45 +187,38 @@ export async function downloadInvoicePng(elementId: string, filename: string) {
   const source = document.getElementById(elementId);
   if (!source) return;
   const { toPng } = await import("html-to-image");
-  const frame = document.createElement("iframe");
-  frame.setAttribute("aria-hidden", "true");
-  frame.style.cssText = "position:fixed;left:-10000px;top:0;width:900px;height:1300px;border:0;background:#ffffff";
-  document.body.appendChild(frame);
-  const frameDoc = frame.contentDocument;
-  if (!frameDoc) { frame.remove(); throw new Error("PNG frame unavailable"); }
-  frameDoc.open();
-  frameDoc.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><style>
-    html,body{margin:0;padding:0;background:#fff;color:#0a1a3a;font-family:'IBM Plex Sans Arabic',Arial,sans-serif;}
-    *{box-sizing:border-box;box-shadow:none!important;text-shadow:none!important;}
-    table{border-collapse:collapse;}
-  </style></head><body></body></html>`);
-  frameDoc.close();
-  const captureNode = source.cloneNode(true) as HTMLElement;
-  captureNode.removeAttribute("id");
-  captureNode.className = "";
-  captureNode.style.cssText = "display:block!important;position:relative!important;width:820px!important;background:#ffffff!important;color:#0a1a3a!important;opacity:1!important;transform:none!important;font-family:'IBM Plex Sans Arabic', system-ui, sans-serif!important";
-  frameDoc.body.appendChild(captureNode);
-  try {
-    await frameDoc.fonts?.ready;
-    await new Promise((r) => requestAnimationFrame(() => r(null)));
-    const w = captureNode.scrollWidth || 820;
-    const h = captureNode.scrollHeight || 1123;
-    const dataUrl = await toPng(captureNode, {
-      backgroundColor: "#ffffff",
-      cacheBust: true,
-      pixelRatio: 2,
-      width: w,
-      height: h,
-    });
-    const link = document.createElement("a");
-    link.href = dataUrl;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-  } finally {
-    frame.remove();
-  }
+  // Wait for images (logo, product photos) to be decoded first — html-to-image
+  // relies on them being ready in the DOM. crossOrigin="anonymous" on the logo
+  // combined with a slow decode was hanging the previous iframe pipeline.
+  const imgs = Array.from(source.querySelectorAll("img"));
+  await Promise.all(
+    imgs.map((img) => {
+      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+      return new Promise<void>((resolve) => {
+        img.addEventListener("load", () => resolve(), { once: true });
+        img.addEventListener("error", () => resolve(), { once: true });
+        // Safety timeout so a single broken image can't hang the whole export.
+        setTimeout(() => resolve(), 4000);
+      });
+    }),
+  );
+  await (document as any).fonts?.ready?.catch?.(() => {});
+  const w = source.scrollWidth || 820;
+  const h = source.scrollHeight || 1123;
+  const dataUrl = await toPng(source, {
+    backgroundColor: "#ffffff",
+    cacheBust: true,
+    pixelRatio: 2,
+    width: w,
+    height: h,
+    skipFonts: true,
+  });
+  const link = document.createElement("a");
+  link.href = dataUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 
 /**
