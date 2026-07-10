@@ -220,20 +220,43 @@ export async function downloadInvoicePng(elementId: string, filename: string) {
     const { Capacitor } = await import("@capacitor/core");
     if (Capacitor.isNativePlatform()) {
       const base64 = dataUrl.split(",")[1] ?? "";
+      const platform = Capacitor.getPlatform(); // "ios" | "android" | "web"
       // 1) Try direct save to Photos / Gallery
       try {
         const { Media } = await import("@capacitor-community/media");
         const albumName = "Ali Chevrolet";
+        // Resolve / create the album. iOS returns a PHAssetCollection
+        // localIdentifier that must be passed to savePhoto; Android just
+        // uses the album name.
+        let albumIdentifier: string | undefined;
         try {
           const albums = await Media.getAlbums();
-          const exists = (albums as any).albums?.some((a: any) => a.name === albumName);
-          if (!exists) await Media.createAlbum({ name: albumName });
-        } catch {}
-        await Media.savePhoto({
-          path: `data:image/png;base64,${base64}`,
-          albumIdentifier: albumName,
-          fileName: filename,
-        } as any);
+          const found = (albums as any).albums?.find((a: any) => a.name === albumName);
+          if (found) {
+            albumIdentifier = found.identifier ?? found.id ?? albumName;
+          } else {
+            await Media.createAlbum({ name: albumName });
+            const after = await Media.getAlbums();
+            const created = (after as any).albums?.find((a: any) => a.name === albumName);
+            albumIdentifier = created?.identifier ?? created?.id ?? albumName;
+          }
+        } catch {
+          albumIdentifier = platform === "android" ? albumName : undefined;
+        }
+        try {
+          await Media.savePhoto({
+            path: `data:image/png;base64,${base64}`,
+            albumIdentifier,
+            fileName: filename,
+          } as any);
+        } catch (saveErr) {
+          // iOS: retry without album (writes to Camera Roll — still visible in Photos)
+          console.warn("[invoice] savePhoto with album failed, retrying without album", saveErr);
+          await Media.savePhoto({
+            path: `data:image/png;base64,${base64}`,
+            fileName: filename,
+          } as any);
+        }
         return "native" as const;
       } catch (mediaErr) {
         console.warn("[invoice] Media.savePhoto failed, falling back to Share", mediaErr);
