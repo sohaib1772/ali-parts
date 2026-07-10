@@ -47,5 +47,9 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>يحتاج التطبيق إذنك لحفظ صور الفواتير في معرض الصور.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>يحتاج التطبيق إذنك للوصول إلى معرض الصور لحفظ الفواتير.</string>
 </dict>
 </plist>
