@@ -30,6 +30,7 @@ export const Route = createFileRoute("/products")({
 
 function AllProductsPage() {
   const [condition, setCondition] = useState<ConditionFilter>("all");
+  const [autoLoadAll, setAutoLoadAll] = useState(false);
   const {
     data,
     fetchNextPage,
@@ -51,10 +52,17 @@ function AllProductsPage() {
       console.error("[products] فشل تحميل الدفعة التالية", error);
       toast.error("تعذّر تحميل المزيد من المنتجات", {
         description: "يرجى التحقق من الاتصال بالإنترنت والمحاولة مرة أخرى.",
-        action: { label: "إعادة المحاولة", onClick: () => fetchNextPage() },
+        action: { label: "إعادة المحاولة", onClick: () => { setAutoLoadAll(true); fetchNextPage(); } },
       });
     }
   }, [isFetchNextPageError, error, fetchNextPage]);
+
+  useEffect(() => {
+    if (!autoLoadAll) return;
+    if (hasNextPage && !isFetchingNextPage && !isFetchNextPageError) {
+      fetchNextPage();
+    }
+  }, [autoLoadAll, hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage]);
 
   useEffect(() => {
     const el = loadMoreRef.current;
@@ -65,16 +73,17 @@ function AllProductsPage() {
           entries[0].isIntersecting &&
           hasNextPage &&
           !isFetchingNextPage &&
-          !isFetchNextPageError
+          !isFetchNextPageError &&
+          !autoLoadAll
         ) {
-          fetchNextPage();
+          setAutoLoadAll(true);
         }
       },
       { rootMargin: "200px" },
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage, isFetchNextPageError]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, isFetchNextPageError, autoLoadAll]);
 
   return (
     <PageShell title="المنتجات">
@@ -102,7 +111,7 @@ function AllProductsPage() {
             return (
               <button
                 key={opt.value}
-                onClick={() => setCondition(opt.value)}
+                onClick={() => { setCondition(opt.value); setAutoLoadAll(false); }}
                 className={`flex-1 h-9 rounded-xl text-xs font-bold border transition ${
                   active
                     ? "bg-navy text-primary-foreground border-navy"
@@ -152,10 +161,10 @@ function AllProductsPage() {
               className="h-16 flex items-center justify-center text-xs text-muted-foreground"
             >
               {isFetchingNextPage ? (
-                "جاري تحميل المزيد..."
+                autoLoadAll ? "جاري تحميل باقي المنتجات..." : "جاري تحميل المزيد..."
               ) : isFetchNextPageError ? (
                 <button
-                  onClick={() => fetchNextPage()}
+                  onClick={() => { setAutoLoadAll(true); fetchNextPage(); }}
                   className="text-destructive font-bold underline underline-offset-4"
                 >
                   فشل التحميل — اضغط لإعادة المحاولة
