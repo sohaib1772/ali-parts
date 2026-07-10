@@ -1,12 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { CheckCircle2, Package } from "lucide-react";
-import { WhatsappIcon } from "@/components/icons";
 import { orderByIdQuery } from "@/lib/queries";
-import { buildOrderWhatsAppMessage, formatIQD, formatIraqiWhatsAppNumber, whatsappLink } from "@/lib/format";
-
-const ADMIN_WHATSAPP = formatIraqiWhatsAppNumber("009647855500585");
-
+import { formatIQD } from "@/lib/format";
 
 export const Route = createFileRoute("/order-success/$id")({
   ssr: false,
@@ -17,10 +13,7 @@ export const Route = createFileRoute("/order-success/$id")({
 function OrderSuccess() {
   const { id } = Route.useParams();
   const { data } = useSuspenseQuery(orderByIdQuery(id));
-  const { order, items, customer } = data as any;
-
-  const message = buildOrderWhatsAppMessage(order, items ?? [], customer);
-  const waHref = whatsappLink(message, ADMIN_WHATSAPP);
+  const { order } = data as any;
 
   return (
     <div className="min-h-screen bg-gradient-hero text-primary-foreground flex flex-col">
@@ -30,10 +23,6 @@ function OrderSuccess() {
         </div>
         <h1 className="text-3xl font-black mb-2">شكراً لثقتك بنا!</h1>
         <p className="text-primary-foreground/80 mb-6">تم استلام طلبك بنجاح، سنبدأ بتجهيزه فوراً.</p>
-        <p className="text-primary-foreground/90 text-sm mb-4 font-bold">
-          لتأكيد الطلب بشكل أسرع، أرسل تفاصيله لنا على واتساب 👇
-        </p>
-
         <div className="w-full bg-white/10 border border-white/20 rounded-2xl p-4 mb-3">
           <div className="text-xs text-gold mb-1">رقم الطلب</div>
           <div className="font-mono font-bold text-lg">{order.order_number}</div>
@@ -42,15 +31,6 @@ function OrderSuccess() {
           <div className="text-xs text-gold mb-1">الإجمالي</div>
           <div className="font-black text-2xl text-gold">{formatIQD(order.total_iqd)}</div>
         </div>
-
-        <a
-          href={waHref}
-          target="_blank"
-          rel="noreferrer"
-          className="w-full h-14 rounded-2xl bg-whatsapp text-white font-black flex items-center justify-center gap-2 shadow-gold mb-3 text-base"
-        >
-          <WhatsappIcon className="size-5" /> أرسل الطلب عبر واتساب
-        </a>
 
         <Link to="/orders/$id" params={{ id: order.id }} className="w-full h-12 rounded-2xl bg-gradient-gold text-navy font-black flex items-center justify-center gap-2 shadow-gold mb-3">
           <Package className="size-4" /> تتبع الطلب
