@@ -235,7 +235,7 @@ export async function downloadInvoicePng(elementId: string, filename: string) {
         url: written.uri,
         dialogTitle: "حفظ الفاتورة في الاستوديو",
       });
-      return;
+      return "native" as const;
     }
   } catch {
     // fall through to browser download
@@ -246,6 +246,7 @@ export async function downloadInvoicePng(elementId: string, filename: string) {
   document.body.appendChild(link);
   link.click();
   link.remove();
+  return "browser" as const;
 }
 
 /**
@@ -291,8 +292,17 @@ export function InvoicePreviewDialog({
   const handlePng = async () => {
     setBusy(true);
     try {
-      await downloadInvoicePng(domId, `invoice-${order.order_number ?? order.id}.png`);
-      toast.success("تم حفظ الفاتورة كصورة");
+      const result = await downloadInvoicePng(domId, `invoice-${order.order_number ?? order.id}.png`);
+      if (result === "native") {
+        toast.success("تم حفظ صورة الفاتورة بنجاح ✓", {
+          description: "افتح استوديو/معرض الصور للاطلاع على الفاتورة",
+          duration: 5000,
+        });
+      } else {
+        toast.success("تم حفظ الفاتورة كصورة ✓", {
+          description: "تم تنزيل الملف على جهازك",
+        });
+      }
     } catch {
       toast.error("تعذّر حفظ الصورة");
     } finally {
