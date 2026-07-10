@@ -213,6 +213,33 @@ export async function downloadInvoicePng(elementId: string, filename: string) {
     height: h,
     skipFonts: true,
   });
+  // On native (Capacitor Android/iOS) write the PNG to the app cache and
+  // open the system share sheet so the user can tap "Save to Photos" /
+  // "حفظ الصورة" and land it directly in the phone gallery.
+  try {
+    const { Capacitor } = await import("@capacitor/core");
+    if (Capacitor.isNativePlatform()) {
+      const [{ Filesystem, Directory }, { Share }] = await Promise.all([
+        import("@capacitor/filesystem"),
+        import("@capacitor/share"),
+      ]);
+      const base64 = dataUrl.split(",")[1] ?? "";
+      const written = await Filesystem.writeFile({
+        path: filename,
+        data: base64,
+        directory: Directory.Cache,
+      });
+      await Share.share({
+        title: filename,
+        text: "فاتورة",
+        url: written.uri,
+        dialogTitle: "حفظ الفاتورة في الاستوديو",
+      });
+      return;
+    }
+  } catch {
+    // fall through to browser download
+  }
   const link = document.createElement("a");
   link.href = dataUrl;
   link.download = filename;
