@@ -219,15 +219,34 @@ export async function downloadInvoicePng(elementId: string, filename: string) {
   try {
     const { Capacitor } = await import("@capacitor/core");
     if (Capacitor.isNativePlatform()) {
+      const base64 = dataUrl.split(",")[1] ?? "";
+      // 1) Try direct save to Photos / Gallery
+      try {
+        const { Media } = await import("@capacitor-community/media");
+        const albumName = "Ali Chevrolet";
+        try {
+          const albums = await Media.getAlbums();
+          const exists = (albums as any).albums?.some((a: any) => a.name === albumName);
+          if (!exists) await Media.createAlbum({ name: albumName });
+        } catch {}
+        await Media.savePhoto({
+          path: `data:image/png;base64,${base64}`,
+          albumIdentifier: albumName,
+          fileName: filename,
+        } as any);
+        return "native" as const;
+      } catch (mediaErr) {
+        console.warn("[invoice] Media.savePhoto failed, falling back to Share", mediaErr);
+      }
+      // 2) Fallback: write file + open share sheet
       const [{ Filesystem, Directory }, { Share }] = await Promise.all([
         import("@capacitor/filesystem"),
         import("@capacitor/share"),
       ]);
-      const base64 = dataUrl.split(",")[1] ?? "";
       const written = await Filesystem.writeFile({
         path: filename,
         data: base64,
-        directory: Directory.Cache,
+        directory: Directory.Documents,
       });
       await Share.share({
         title: filename,
@@ -235,10 +254,10 @@ export async function downloadInvoicePng(elementId: string, filename: string) {
         url: written.uri,
         dialogTitle: "حفظ الفاتورة في الاستوديو",
       });
-      return "native" as const;
+      return "native-share" as const;
     }
-  } catch {
-    // fall through to browser download
+  } catch (err) {
+    console.warn("[invoice] native save failed, falling back to browser download", err);
   }
   const link = document.createElement("a");
   link.href = dataUrl;
