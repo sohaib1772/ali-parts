@@ -314,7 +314,12 @@ export function InvoicePreviewDialog({
       const result = await downloadInvoicePng(domId, `invoice-${order.order_number ?? order.id}.png`);
       if (result === "native") {
         toast.success("تم حفظ صورة الفاتورة بنجاح ✓", {
-          description: "افتح استوديو/معرض الصور للاطلاع على الفاتورة",
+          description: "تم إضافتها إلى معرض الصور — ألبوم Ali Chevrolet",
+          duration: 5000,
+        });
+      } else if (result === "native-share") {
+        toast.success("تم إنشاء صورة الفاتورة ✓", {
+          description: "اختر «حفظ الصورة» من قائمة المشاركة لإضافتها للاستوديو",
           duration: 5000,
         });
       } else {
