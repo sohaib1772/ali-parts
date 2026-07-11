@@ -73,7 +73,12 @@ export function guestCartCount(): number {
 }
 
 // ---- Guest order tokens (for retrieving order details/tracking) ----
-export type GuestOrderRef = { order_number: string; guest_token: string; created_at: string };
+export type GuestOrderRef = {
+  order_id?: string;
+  order_number: string;
+  guest_token: string;
+  created_at: string;
+};
 
 export function readGuestOrders(): GuestOrderRef[] {
   if (typeof window === "undefined") return [];
@@ -91,7 +96,6 @@ export function findGuestToken(orderNumber: string): string | null {
   return readGuestOrders().find((r) => r.order_number === orderNumber)?.guest_token ?? null;
 }
 
-export function findGuestTokenById(_orderId: string): string | null {
-  // Not indexed by id; kept for API symmetry.
-  return null;
+export function findGuestTokenById(orderId: string): string | null {
+  return readGuestOrders().find((r) => r.order_id === orderId)?.guest_token ?? null;
 }
