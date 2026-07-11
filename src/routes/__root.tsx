@@ -17,6 +17,7 @@ import { SplashScreen } from "@/components/splash-screen";
 import { NotificationPopup } from "@/components/notification-popup";
 import { usePriceSyncListener } from "@/lib/price-sync";
 import { AuthProvider } from "@/lib/use-auth";
+import { SessionPersistence } from "@/lib/session-persistence";
 
 function NotFoundComponent() {
   return (
@@ -148,6 +149,7 @@ function RootComponent() {
         <Outlet />
         <Toaster position="top-center" richColors closeButton />
         <AuthListener />
+        <SessionPersistence />
         <PriceSync />
         <SplashScreen />
         <NotificationPermissionGate />
