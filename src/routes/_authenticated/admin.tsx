@@ -621,6 +621,9 @@ function AdminPageInner() {
             {isAdmin && (
               <TabsTrigger value="diagnostics" className="flex-col gap-1 py-2 text-[10px]"><Activity className="size-4" />تشخيص</TabsTrigger>
             )}
+            {isAdmin && (
+              <TabsTrigger value="otp-log" className="flex-col gap-1 py-2 text-[10px]"><KeyRound className="size-4" />سجل OTP</TabsTrigger>
+            )}
           </TabsList>
 
           {canProducts && <TabsContent value="products" className="mt-4"><ProductsAdmin /></TabsContent>}
@@ -634,6 +637,7 @@ function AdminPageInner() {
           {canProducts && <TabsContent value="stock" className="mt-4"><StockMovementsAdmin /></TabsContent>}
           {isAdmin && <TabsContent value="settings" className="mt-4"><SettingsAdmin /></TabsContent>}
           {isAdmin && <TabsContent value="diagnostics" className="mt-4"><DiagnosticsAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="otp-log" className="mt-4"><AdminOtpEventsLog /></TabsContent>}
         </Tabs>
       </div>
     </PageShell>
