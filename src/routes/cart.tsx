@@ -12,6 +12,7 @@ import { computeShipping } from "@/lib/shipping";
 import { toast } from "sonner";
 import {
   readGuestCart,
+  getGuestCartSnapshot,
   removeGuestCartItem,
   updateGuestCartItem,
   type GuestCartItem,
@@ -32,7 +33,7 @@ function useGuestCart(): GuestCartItem[] {
         window.removeEventListener("storage", onChange);
       };
     },
-    () => readGuestCart(),
+    () => getGuestCartSnapshot(),
     () => [] as GuestCartItem[],
   );
 }
