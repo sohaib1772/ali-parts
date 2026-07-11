@@ -28,9 +28,7 @@ import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
 import { Route as AuthenticatedFavoritesRouteImport } from './routes/_authenticated/favorites'
-import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
 import { Route as AuthenticatedChangePasswordRouteImport } from './routes/_authenticated/change-password'
-import { Route as AuthenticatedCartRouteImport } from './routes/_authenticated/cart'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAddressesRouteImport } from './routes/_authenticated/addresses'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
@@ -134,22 +132,12 @@ const AuthenticatedFavoritesRoute = AuthenticatedFavoritesRouteImport.update({
   path: '/favorites',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedCheckoutRoute = AuthenticatedCheckoutRouteImport.update({
-  id: '/checkout',
-  path: '/checkout',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedChangePasswordRoute =
   AuthenticatedChangePasswordRouteImport.update({
     id: '/change-password',
     path: '/change-password',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedCartRoute = AuthenticatedCartRouteImport.update({
-  id: '/cart',
-  path: '/cart',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -197,9 +185,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AuthenticatedAccountRoute
   '/addresses': typeof AuthenticatedAddressesRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
-  '/cart': typeof AuthenticatedCartRoute
   '/change-password': typeof AuthenticatedChangePasswordRoute
-  '/checkout': typeof AuthenticatedCheckoutRoute
   '/favorites': typeof AuthenticatedFavoritesRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
@@ -226,9 +212,7 @@ export interface FileRoutesByTo {
   '/account': typeof AuthenticatedAccountRoute
   '/addresses': typeof AuthenticatedAddressesRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
-  '/cart': typeof AuthenticatedCartRoute
   '/change-password': typeof AuthenticatedChangePasswordRoute
-  '/checkout': typeof AuthenticatedCheckoutRoute
   '/favorites': typeof AuthenticatedFavoritesRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
@@ -257,9 +241,7 @@ export interface FileRoutesById {
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/addresses': typeof AuthenticatedAddressesRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
-  '/_authenticated/cart': typeof AuthenticatedCartRoute
   '/_authenticated/change-password': typeof AuthenticatedChangePasswordRoute
-  '/_authenticated/checkout': typeof AuthenticatedCheckoutRoute
   '/_authenticated/favorites': typeof AuthenticatedFavoritesRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
@@ -288,9 +270,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/addresses'
     | '/admin'
-    | '/cart'
     | '/change-password'
-    | '/checkout'
     | '/favorites'
     | '/messages'
     | '/notifications'
@@ -317,9 +297,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/addresses'
     | '/admin'
-    | '/cart'
     | '/change-password'
-    | '/checkout'
     | '/favorites'
     | '/messages'
     | '/notifications'
@@ -347,9 +325,7 @@ export interface FileRouteTypes {
     | '/_authenticated/account'
     | '/_authenticated/addresses'
     | '/_authenticated/admin'
-    | '/_authenticated/cart'
     | '/_authenticated/change-password'
-    | '/_authenticated/checkout'
     | '/_authenticated/favorites'
     | '/_authenticated/messages'
     | '/_authenticated/notifications'
@@ -515,25 +491,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFavoritesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/checkout': {
-      id: '/_authenticated/checkout'
-      path: '/checkout'
-      fullPath: '/checkout'
-      preLoaderRoute: typeof AuthenticatedCheckoutRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/change-password': {
       id: '/_authenticated/change-password'
       path: '/change-password'
       fullPath: '/change-password'
       preLoaderRoute: typeof AuthenticatedChangePasswordRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/cart': {
-      id: '/_authenticated/cart'
-      path: '/cart'
-      fullPath: '/cart'
-      preLoaderRoute: typeof AuthenticatedCartRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin': {
@@ -621,9 +583,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedAddressesRoute: typeof AuthenticatedAddressesRoute
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
-  AuthenticatedCartRoute: typeof AuthenticatedCartRoute
   AuthenticatedChangePasswordRoute: typeof AuthenticatedChangePasswordRoute
-  AuthenticatedCheckoutRoute: typeof AuthenticatedCheckoutRoute
   AuthenticatedFavoritesRoute: typeof AuthenticatedFavoritesRoute
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
@@ -635,9 +595,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedAddressesRoute: AuthenticatedAddressesRoute,
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
-  AuthenticatedCartRoute: AuthenticatedCartRoute,
   AuthenticatedChangePasswordRoute: AuthenticatedChangePasswordRoute,
-  AuthenticatedCheckoutRoute: AuthenticatedCheckoutRoute,
   AuthenticatedFavoritesRoute: AuthenticatedFavoritesRoute,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
