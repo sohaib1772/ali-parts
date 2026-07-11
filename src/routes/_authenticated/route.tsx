@@ -1,7 +1,8 @@
-import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LogIn } from "lucide-react";
+import { LogIn, Package } from "lucide-react";
+import { readGuestOrders } from "@/lib/guest-cart";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -10,6 +11,9 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthedGate() {
   const [state, setState] = useState<"loading" | "in" | "out">("loading");
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isOrders = pathname.startsWith("/orders");
+  const guestOrdersCount = isOrders && state === "out" ? readGuestOrders().length : 0;
   useEffect(() => {
     let alive = true;
     supabase.auth.getUser().then(({ data, error }) => {
@@ -50,6 +54,17 @@ function AuthedGate() {
           >
             تسجيل الدخول
           </Link>
+          {isOrders && (
+            <Link
+              to="/track"
+              className="inline-flex items-center justify-center gap-2 w-full h-11 rounded-xl border border-gold/40 text-gold font-bold hover:bg-gold/10 transition"
+            >
+              <Package className="size-4" />
+              {guestOrdersCount > 0
+                ? `تتبّع طلباتك كضيف (${guestOrdersCount})`
+                : "تتبّع طلبك برقم الطلب"}
+            </Link>
+          )}
           <Link to="/" className="block text-xs text-white/50 hover:text-gold transition">
             العودة للرئيسية
           </Link>
