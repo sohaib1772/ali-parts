@@ -11,7 +11,7 @@ import { useAdjustedPrice } from "@/lib/admin";
 import { computeShipping } from "@/lib/shipping";
 import { toast } from "sonner";
 import {
-  readGuestCart,
+  getGuestCartSnapshot,
   removeGuestCartItem,
   updateGuestCartItem,
   type GuestCartItem,
@@ -21,6 +21,7 @@ export const Route = createFileRoute("/cart")({
   component: CartPage,
 });
 
+const EMPTY_GUEST_CART: GuestCartItem[] = [];
 function useGuestCart(): GuestCartItem[] {
   return useSyncExternalStore(
     (cb) => {
@@ -32,8 +33,8 @@ function useGuestCart(): GuestCartItem[] {
         window.removeEventListener("storage", onChange);
       };
     },
-    () => readGuestCart(),
-    () => [] as GuestCartItem[],
+    () => getGuestCartSnapshot(),
+    () => EMPTY_GUEST_CART,
   );
 }
 

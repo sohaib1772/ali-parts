@@ -25,6 +25,19 @@ export function readGuestCart(): GuestCartItem[] {
   return safeParse<GuestCartItem[]>(window.localStorage.getItem(KEY), []);
 }
 
+// Cached snapshot for useSyncExternalStore — must return the same reference
+// unless the underlying data actually changed, or React loops (error #185).
+let cachedRaw: string | null = null;
+let cachedItems: GuestCartItem[] = [];
+export function getGuestCartSnapshot(): GuestCartItem[] {
+  if (typeof window === "undefined") return cachedItems;
+  const raw = window.localStorage.getItem(KEY);
+  if (raw === cachedRaw) return cachedItems;
+  cachedRaw = raw;
+  cachedItems = safeParse<GuestCartItem[]>(raw, []);
+  return cachedItems;
+}
+
 function writeGuestCart(items: GuestCartItem[]) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(KEY, JSON.stringify(items));
