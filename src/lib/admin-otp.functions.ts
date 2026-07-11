@@ -29,6 +29,52 @@ function maskEmail(e: string): string {
   return `${shown}${"*".repeat(Math.max(1, u.length - shown.length))}@${d}`;
 }
 
+async function logOtpEvent(params: {
+  event:
+    | "request"
+    | "request_rate_limited"
+    | "request_failed"
+    | "verify_success"
+    | "verify_wrong_code"
+    | "verify_no_active"
+    | "verify_expired"
+    | "verify_max_attempts"
+    | "revoke";
+  user_id?: string | null;
+  device_id?: string | null;
+  detail?: string | null;
+}) {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("admin_otp_events").insert({
+      event: params.event,
+      user_id: params.user_id ?? null,
+      device_id: params.device_id ?? null,
+      detail: params.detail ?? null,
+    });
+  } catch (e) {
+    console.error("logOtpEvent failed", e);
+  }
+}
+
+export const listAdminOtpEvents = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ limit: z.number().int().min(1).max(200).optional() }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { isAdmin } = await isAdminOrStaff(context);
+    if (!isAdmin) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin
+      .from("admin_otp_events")
+      .select("id, event, user_id, device_id, detail, created_at")
+      .order("created_at", { ascending: false })
+      .limit(data.limit ?? 100);
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
 const StatusInput = z.object({ device_id: z.string().min(1).max(128).optional() });
 
 export const adminOtpStatus = createServerFn({ method: "POST" })
