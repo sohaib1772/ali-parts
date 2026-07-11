@@ -84,7 +84,11 @@ function OrderSuccess() {
             <Package className="size-4" /> تتبع الطلب
           </Link>
         ) : (
-          <Link to="/track" className="w-full h-12 rounded-2xl bg-gradient-gold text-navy font-black flex items-center justify-center gap-2 shadow-gold mb-3">
+          <Link
+            to="/track"
+            search={{ o: order.order_number } as any}
+            className="w-full h-12 rounded-2xl bg-gradient-gold text-navy font-black flex items-center justify-center gap-2 shadow-gold mb-3"
+          >
             <Package className="size-4" /> تتبع الطلب
           </Link>
         )}
