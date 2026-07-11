@@ -1,19 +1,66 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { CheckCircle2, Package } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { CheckCircle2, Package, Loader2 } from "lucide-react";
+import { queryOptions } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { orderByIdQuery } from "@/lib/queries";
 import { formatIQD } from "@/lib/format";
+import { useAuth } from "@/lib/use-auth";
+import { findGuestTokenById } from "@/lib/guest-cart";
+
+const guestOrderByIdQuery = (id: string, token: string) =>
+  queryOptions({
+    queryKey: ["guest-order", id, token],
+    queryFn: async () => {
+      // We stored order_number when placing the order; but here we only have id.
+      // Fetch by looking up via order_number reverse — since we can't SELECT anon,
+      // we rely on stored ref that has order_number.
+      const ref = JSON.parse(localStorage.getItem("aliparts.guest_orders.v1") || "[]").find(
+        (r: any) => r.order_id === id,
+      );
+      if (!ref) throw new Error("Order ref not found");
+      const { data, error } = await supabase.rpc("get_guest_order", {
+        p_order_number: ref.order_number,
+        p_guest_token: token,
+      });
+      if (error) throw error;
+      return { order: data as any };
+    },
+    enabled: !!id && !!token,
+  });
 
 export const Route = createFileRoute("/order-success/$id")({
   ssr: false,
-  loader: ({ context, params }) => context.queryClient.ensureQueryData(orderByIdQuery(params.id)),
   component: OrderSuccess,
 });
 
 function OrderSuccess() {
   const { id } = Route.useParams();
-  const { data } = useSuspenseQuery(orderByIdQuery(id));
-  const { order } = data as any;
+  const { userId, loading } = useAuth();
+  const guestToken = typeof window !== "undefined" ? findGuestTokenById(id) : null;
+
+  const authedQ = useQuery({ ...orderByIdQuery(id), enabled: !!userId });
+  const guestQ = useQuery({ ...guestOrderByIdQuery(id, guestToken ?? ""), enabled: !userId && !!guestToken });
+
+  if (loading || authedQ.isLoading || guestQ.isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-hero text-primary-foreground grid place-items-center">
+        <Loader2 className="size-8 animate-spin text-gold" />
+      </div>
+    );
+  }
+
+  const order = (authedQ.data as any)?.order ?? (guestQ.data as any)?.order;
+  if (!order) {
+    return (
+      <div className="min-h-screen bg-gradient-hero text-primary-foreground grid place-items-center px-6 text-center">
+        <div>
+          <h1 className="text-xl font-black mb-2">تعذر عرض الطلب</h1>
+          <Link to="/" className="text-gold font-bold">العودة للرئيسية</Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-hero text-primary-foreground flex flex-col">
@@ -32,9 +79,15 @@ function OrderSuccess() {
           <div className="font-black text-2xl text-gold">{formatIQD(order.total_iqd)}</div>
         </div>
 
-        <Link to="/orders/$id" params={{ id: order.id }} className="w-full h-12 rounded-2xl bg-gradient-gold text-navy font-black flex items-center justify-center gap-2 shadow-gold mb-3">
-          <Package className="size-4" /> تتبع الطلب
-        </Link>
+        {userId ? (
+          <Link to="/orders/$id" params={{ id: order.id }} className="w-full h-12 rounded-2xl bg-gradient-gold text-navy font-black flex items-center justify-center gap-2 shadow-gold mb-3">
+            <Package className="size-4" /> تتبع الطلب
+          </Link>
+        ) : (
+          <Link to="/track" className="w-full h-12 rounded-2xl bg-gradient-gold text-navy font-black flex items-center justify-center gap-2 shadow-gold mb-3">
+            <Package className="size-4" /> تتبع الطلب
+          </Link>
+        )}
         <Link to="/" className="text-sm text-gold font-bold">العودة للرئيسية</Link>
       </div>
     </div>
