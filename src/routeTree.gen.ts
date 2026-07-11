@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrackRouteImport } from './routes/track'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -38,6 +39,11 @@ import { Route as AuthenticatedReplacementsIdRouteImport } from './routes/_authe
 import { Route as AuthenticatedOrdersIdRouteImport } from './routes/_authenticated/orders.$id'
 import { Route as AuthenticatedAdminStockTestRouteImport } from './routes/_authenticated/admin.stock-test'
 
+const TrackRoute = TrackRouteImport.update({
+  id: '/track',
+  path: '/track',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
@@ -196,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/products': typeof ProductsRoute
   '/search': typeof SearchRoute
+  '/track': typeof TrackRoute
   '/account': typeof AuthenticatedAccountRoute
   '/addresses': typeof AuthenticatedAddressesRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
@@ -225,6 +232,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/products': typeof ProductsRoute
   '/search': typeof SearchRoute
+  '/track': typeof TrackRoute
   '/account': typeof AuthenticatedAccountRoute
   '/addresses': typeof AuthenticatedAddressesRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
@@ -256,6 +264,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/products': typeof ProductsRoute
   '/search': typeof SearchRoute
+  '/track': typeof TrackRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/addresses': typeof AuthenticatedAddressesRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
@@ -287,6 +296,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/products'
     | '/search'
+    | '/track'
     | '/account'
     | '/addresses'
     | '/admin'
@@ -316,6 +326,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/products'
     | '/search'
+    | '/track'
     | '/account'
     | '/addresses'
     | '/admin'
@@ -346,6 +357,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/products'
     | '/search'
+    | '/track'
     | '/_authenticated/account'
     | '/_authenticated/addresses'
     | '/_authenticated/admin'
@@ -377,6 +389,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ProductsRoute: typeof ProductsRoute
   SearchRoute: typeof SearchRoute
+  TrackRoute: typeof TrackRoute
   CategoryIdRoute: typeof CategoryIdRoute
   OrderSuccessIdRoute: typeof OrderSuccessIdRoute
   ProductIdRoute: typeof ProductIdRoute
@@ -384,6 +397,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/track': {
+      id: '/track'
+      path: '/track'
+      fullPath: '/track'
+      preLoaderRoute: typeof TrackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/search': {
       id: '/search'
       path: '/search'
@@ -660,6 +680,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ProductsRoute: ProductsRoute,
   SearchRoute: SearchRoute,
+  TrackRoute: TrackRoute,
   CategoryIdRoute: CategoryIdRoute,
   OrderSuccessIdRoute: OrderSuccessIdRoute,
   ProductIdRoute: ProductIdRoute,
@@ -667,3 +688,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
