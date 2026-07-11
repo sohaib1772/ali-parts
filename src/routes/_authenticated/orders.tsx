@@ -11,6 +11,7 @@ import { formatIQD, formatArabicDate } from "@/lib/format";
 import { statusLabel, statusColor, statusIcon } from "@/lib/order-status";
 import { isOrderUnseen, useOrderSeenMap } from "@/lib/order-updates";
 import { toast } from "sonner";
+import { readGuestOrders } from "@/lib/guest-cart";
 
 export const Route = createFileRoute("/_authenticated/orders")({
   component: OrdersPage,
@@ -18,7 +19,36 @@ export const Route = createFileRoute("/_authenticated/orders")({
 
 function OrdersPage() {
   const { userId } = useAuth();
-  const { data: orders = [] } = useQuery(ordersQuery(userId));
+  const { data: authedOrders = [] } = useQuery({ ...ordersQuery(userId), enabled: !!userId });
+  const guestQ = useQuery({
+    queryKey: ["guest-orders-list"],
+    enabled: !userId,
+    refetchInterval: 20000,
+    refetchOnWindowFocus: true,
+    queryFn: async () => {
+      const refs = readGuestOrders();
+      if (refs.length === 0) return [] as any[];
+      const results = await Promise.all(
+        refs.map(async (r) => {
+          try {
+            const { data, error } = await supabase.rpc("get_guest_order", {
+              p_order_number: r.order_number,
+              p_guest_token: r.guest_token,
+            });
+            if (error) return null;
+            return data as any;
+          } catch {
+            return null;
+          }
+        }),
+      );
+      return results.filter(Boolean).sort((a: any, b: any) =>
+        String(b.created_at).localeCompare(String(a.created_at)),
+      );
+    },
+  });
+  const orders: any[] = userId ? (authedOrders as any[]) : ((guestQ.data as any[]) ?? []);
+  const isGuest = !userId;
   const seen = useOrderSeenMap();
   const qc = useQueryClient();
   const [cancellingId, setCancellingId] = useState<string | null>(null);
@@ -30,6 +60,21 @@ function OrdersPage() {
       if (!statusRef.current.has(o.id)) statusRef.current.set(o.id, o.status);
     }
   }, [orders]);
+
+  // Toast on guest order status change while list is open.
+  useEffect(() => {
+    if (!isGuest) return;
+    for (const o of orders as any[]) {
+      const prev = statusRef.current.get(o.id);
+      if (prev && prev !== o.status) {
+        if (o.status === "cancelled") toast.error(`تم إلغاء الطلب ${o.order_number ?? ""}`);
+        else toast.success(`تحديث الطلب: ${statusLabel(o.status)}`);
+        setPulseId(o.id);
+        setTimeout(() => setPulseId((p) => (p === o.id ? null : p)), 3000);
+      }
+      statusRef.current.set(o.id, o.status);
+    }
+  }, [orders, isGuest]);
 
   const cancelOrder = async (e: React.MouseEvent, id: string) => {
     e.preventDefault();
@@ -87,7 +132,11 @@ function OrdersPage() {
               <Package className="size-10 text-muted-foreground" />
             </div>
             <h2 className="text-lg font-bold mb-2">لا توجد طلبات بعد</h2>
-            <p className="text-sm text-muted-foreground mb-6">ستظهر طلباتك هنا بعد إتمام أول عملية شراء</p>
+            <p className="text-sm text-muted-foreground mb-6">
+              {isGuest
+                ? "لم يتم إجراء أي طلب من هذا الجهاز بعد. سجّل الدخول لعرض طلبات حسابك."
+                : "ستظهر طلباتك هنا بعد إتمام أول عملية شراء"}
+            </p>
             <Link to="/" className="inline-flex px-6 py-3 rounded-2xl bg-gradient-gold text-navy font-bold shadow-gold">ابدأ التسوق</Link>
           </div>
         ) : (
@@ -102,8 +151,11 @@ function OrdersPage() {
             >
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xs font-mono text-muted-foreground">{o.order_number}</span>
-                {updated && (
+                {updated && !isGuest && (
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500 text-white">تحديث جديد</span>
+                )}
+                {isGuest && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-navy text-primary-foreground">ضيف</span>
                 )}
                 <span className={`ms-auto inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full ${statusColor(o.status)}`}>
                   <StatusIcon className="size-3" />
@@ -122,15 +174,26 @@ function OrdersPage() {
               </div>
               <OrderTracking status={o.status} pulse={pulseId === o.id} />
               <div className="mt-3 flex items-center gap-2">
-                <Link
-                  to="/orders/$id"
-                  params={{ id: o.id }}
-                  className="flex-1 h-9 rounded-xl bg-gradient-gold text-navy text-xs font-bold flex items-center justify-center gap-1.5 shadow-gold hover:brightness-105 transition"
-                >
-                  <Eye className="size-3.5" />
-                  عرض التفاصيل والتتبع
-                </Link>
-                {(o.status === "received" || o.status === "preparing") && (
+                {isGuest ? (
+                  <Link
+                    to="/track"
+                    search={{ o: o.order_number } as any}
+                    className="flex-1 h-9 rounded-xl bg-gradient-gold text-navy text-xs font-bold flex items-center justify-center gap-1.5 shadow-gold hover:brightness-105 transition"
+                  >
+                    <Eye className="size-3.5" />
+                    عرض التفاصيل والتتبع
+                  </Link>
+                ) : (
+                  <Link
+                    to="/orders/$id"
+                    params={{ id: o.id }}
+                    className="flex-1 h-9 rounded-xl bg-gradient-gold text-navy text-xs font-bold flex items-center justify-center gap-1.5 shadow-gold hover:brightness-105 transition"
+                  >
+                    <Eye className="size-3.5" />
+                    عرض التفاصيل والتتبع
+                  </Link>
+                )}
+                {!isGuest && (o.status === "received" || o.status === "preparing") && (
                   <button
                     onClick={(e) => cancelOrder(e, o.id)}
                     disabled={cancellingId === o.id}
