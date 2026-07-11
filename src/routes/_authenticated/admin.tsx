@@ -49,6 +49,21 @@ import { createStaff, updateStaff, deleteStaff, listStaff } from "@/lib/staff.fu
 import { broadcastPricesChanged } from "@/lib/price-sync";
 import { normalizePhone } from "@/lib/phone-auth";
 
+function getAdminDeviceId(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    const KEY = "admin_device_id";
+    let id = window.localStorage.getItem(KEY);
+    if (!id) {
+      id = (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      window.localStorage.setItem(KEY, id);
+    }
+    return id;
+  } catch {
+    return "";
+  }
+}
+
 const STATUSES = ["received", "preparing", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"] as const;
 
 /* ---------------- Block Log ---------------- */
@@ -359,7 +374,7 @@ function AdminOtpGate({ email, onVerified }: { email: string; onVerified: () => 
     }
     setVerifying(true);
     try {
-      await verifyFn({ data: { code, remember } });
+      await verifyFn({ data: { code, remember, device_id: getAdminDeviceId() } });
       toast.success("تم التحقق بنجاح");
       onVerified();
     } catch (e) {
@@ -482,7 +497,7 @@ function AdminPageInner() {
   const otpStatusFn = useServerFn(adminOtpStatus);
   const { data: otp, isLoading: otpLoading, refetch: refetchOtp } = useQuery({
     queryKey: ["admin-otp-status"],
-    queryFn: () => otpStatusFn(),
+    queryFn: () => otpStatusFn({ data: { device_id: getAdminDeviceId() } }),
     enabled: hasAnyAccess && !isLoading,
     staleTime: 60_000,
     refetchOnWindowFocus: false,

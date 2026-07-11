@@ -29,18 +29,23 @@ function maskEmail(e: string): string {
   return `${shown}${"*".repeat(Math.max(1, u.length - shown.length))}@${d}`;
 }
 
-export const adminOtpStatus = createServerFn({ method: "GET" })
+const StatusInput = z.object({ device_id: z.string().min(1).max(128).optional() });
+
+export const adminOtpStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((d: unknown) => StatusInput.parse(d ?? {}))
+  .handler(async ({ data, context }) => {
     const { isAdmin, isStaff } = await isAdminOrStaff(context);
     if (!isAdmin && !isStaff) {
       return { required: false, verified: true, email: null } as const;
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const deviceId = data.device_id ?? "";
     const { data: v } = await supabaseAdmin
       .from("admin_otp_verifications")
       .select("expires_at")
       .eq("user_id", context.userId)
+      .eq("device_id", deviceId)
       .maybeSingle();
     const verified = !!v && new Date(v.expires_at).getTime() > Date.now();
     const email = process.env.ADMIN_OTP_EMAIL ?? "";
@@ -150,6 +155,7 @@ export const requestAdminOtp = createServerFn({ method: "POST" })
 const VerifyInput = z.object({
   code: z.string().regex(/^\d{6}$/, "رمز غير صالح"),
   remember: z.boolean().optional(),
+  device_id: z.string().min(1).max(128),
 });
 
 export const verifyAdminOtp = createServerFn({ method: "POST" })
@@ -200,7 +206,10 @@ export const verifyAdminOtp = createServerFn({ method: "POST" })
       .eq("id", ch.id);
     await supabaseAdmin
       .from("admin_otp_verifications")
-      .upsert({ user_id: context.userId, verified_at: nowIso, expires_at });
+      .upsert(
+        { user_id: context.userId, device_id: data.device_id, verified_at: nowIso, expires_at },
+        { onConflict: "user_id,device_id" },
+      );
 
     return { ok: true, expiresAt: expires_at };
   });
