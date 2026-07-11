@@ -131,8 +131,15 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="ar" dir="rtl">
       <head>
         <HeadContent />
+        <style>{`html,body{margin:0;background:#0A192F;color:#fff;} #initial-boot-splash{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at top,#0f172a 0%,#0A192F 55%,#020617 100%);z-index:9999;font-family:system-ui,-apple-system,"Segoe UI",sans-serif} #initial-boot-splash img{width:120px;height:120px;border-radius:26px;border:2px solid rgba(201,162,39,.4);box-shadow:0 0 60px rgba(201,162,39,.35);background:#0f172a;object-fit:contain;padding:10px} #initial-boot-splash .t{margin-top:20px;font-size:24px;font-weight:800} #initial-boot-splash .s{margin-top:6px;font-size:12px;color:#C9A227} #initial-boot-splash .b{margin-top:24px;width:180px;height:3px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden;position:relative} #initial-boot-splash .b::after{content:"";position:absolute;inset:0;width:33%;background:linear-gradient(90deg,transparent,#C9A227,transparent);animation:ibs 1.4s ease-in-out infinite} @keyframes ibs{0%{transform:translateX(-100%)}100%{transform:translateX(320%)}}`}</style>
       </head>
       <body>
+        <div id="initial-boot-splash" aria-hidden="true">
+          <img src="/icon-512.png" alt="" />
+          <div className="t">مكتب علي شوفرليت</div>
+          <div className="s">قطع أصلية · العراق</div>
+          <div className="b"></div>
+        </div>
         {children}
         <Scripts />
       </body>
