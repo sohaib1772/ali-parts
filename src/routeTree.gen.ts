@@ -15,6 +15,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OffersRouteImport } from './routes/offers'
 import { Route as DealsRouteImport } from './routes/deals'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CartRouteImport } from './routes/cart'
 import { Route as BestSellersRouteImport } from './routes/best-sellers'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AboutRouteImport } from './routes/about'
@@ -64,6 +65,11 @@ const DealsRoute = DealsRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CartRoute = CartRouteImport.update({
+  id: '/cart',
+  path: '/cart',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BestSellersRoute = BestSellersRouteImport.update({
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/best-sellers': typeof BestSellersRoute
+  '/cart': typeof CartRoute
   '/contact': typeof ContactRoute
   '/deals': typeof DealsRoute
   '/offers': typeof OffersRoute
@@ -203,6 +210,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/best-sellers': typeof BestSellersRoute
+  '/cart': typeof CartRoute
   '/contact': typeof ContactRoute
   '/deals': typeof DealsRoute
   '/offers': typeof OffersRoute
@@ -232,6 +240,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/best-sellers': typeof BestSellersRoute
+  '/cart': typeof CartRoute
   '/contact': typeof ContactRoute
   '/deals': typeof DealsRoute
   '/offers': typeof OffersRoute
@@ -261,6 +270,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/auth'
     | '/best-sellers'
+    | '/cart'
     | '/contact'
     | '/deals'
     | '/offers'
@@ -288,6 +298,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/auth'
     | '/best-sellers'
+    | '/cart'
     | '/contact'
     | '/deals'
     | '/offers'
@@ -316,6 +327,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/auth'
     | '/best-sellers'
+    | '/cart'
     | '/contact'
     | '/deals'
     | '/offers'
@@ -345,6 +357,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
   BestSellersRoute: typeof BestSellersRoute
+  CartRoute: typeof CartRoute
   ContactRoute: typeof ContactRoute
   DealsRoute: typeof DealsRoute
   OffersRoute: typeof OffersRoute
@@ -398,6 +411,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cart': {
+      id: '/cart'
+      path: '/cart'
+      fullPath: '/cart'
+      preLoaderRoute: typeof CartRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/best-sellers': {
@@ -612,6 +632,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
   BestSellersRoute: BestSellersRoute,
+  CartRoute: CartRoute,
   ContactRoute: ContactRoute,
   DealsRoute: DealsRoute,
   OffersRoute: OffersRoute,
