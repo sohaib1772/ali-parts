@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
 import { CreditCard, Truck, MapPin, Loader2, Plus, Sparkles, StickyNote, AlertTriangle } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
+import { OrderSubmitSplash } from "@/components/order-submit-splash";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 import { addressesQuery, cartQuery, profileQuery } from "@/lib/queries";
@@ -72,7 +73,8 @@ function CheckoutPage() {
       qc.invalidateQueries({ queryKey: ["orders"] });
       qc.invalidateQueries({ queryKey: ["profile"] });
       toast.success("تم تأكيد الطلب بنجاح");
-      navigate({ to: "/order-success/$id", params: { id: orderId as string } });
+      // Keep splash visible until we've navigated to the success page.
+      await navigate({ to: "/order-success/$id", params: { id: orderId as string } });
     } catch (err: any) {
       const msg = err?.message || err?.error_description || err?.hint || "";
       // eslint-disable-next-line no-console
@@ -84,6 +86,7 @@ function CheckoutPage() {
 
   return (
     <PageShell title="إتمام الطلب">
+      {placing && <OrderSubmitSplash message="جاري إرسال طلبك..." />}
       <div className="px-4 pt-4 space-y-4">
         <Section title="عنوان التوصيل" icon={<MapPin className="size-4 text-gold" />}>
           {addresses.length === 0 ? (
