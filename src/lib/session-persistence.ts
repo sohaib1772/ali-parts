@@ -2,12 +2,14 @@ import { useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Preferences } from "@capacitor/preferences";
 import { App } from "@capacitor/app";
+import { SecureStorage } from "@aparajita/capacitor-secure-storage";
 import { supabase } from "@/integrations/supabase/client";
 import { useRouter } from "@tanstack/react-router";
 
-// Mirror Supabase session to Capacitor Preferences so that native app
-// restarts (where WebView localStorage may be cleared) still keep the user
-// signed in. Only ever cleared on explicit sign-out.
+// Mirror Supabase session to a hardware-backed secure store on native
+// (Keychain on iOS, EncryptedSharedPreferences / Keystore on Android) so
+// the refresh token survives WebView storage wipes and is protected from
+// other apps and casual on-device inspection. Cleared only on sign-out.
 function getStorageKey(): string | null {
   const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
   if (!url) return null;
@@ -17,6 +19,26 @@ function getStorageKey(): string | null {
   } catch {
     return null;
   }
+}
+
+async function secureGet(key: string): Promise<string | null> {
+  try {
+    const v = await SecureStorage.get(key);
+    return typeof v === "string" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+async function secureSet(key: string, value: string): Promise<void> {
+  try {
+    // sync=false keeps the item on this device only (no iCloud Keychain sync).
+    await SecureStorage.set(key, value, false, false);
+  } catch { /* ignore */ }
+}
+
+async function secureRemove(key: string): Promise<void> {
+  try { await SecureStorage.remove(key); } catch { /* ignore */ }
 }
 
 export function SessionPersistence() {
@@ -61,12 +83,24 @@ export function SessionPersistence() {
     }
     let cancelled = false;
 
-    // 1) Restore session from Preferences if localStorage doesn't have it.
+    // 1) Restore session from secure storage if localStorage doesn't have
+    //    it. Migrate any legacy plain-Preferences copy into secure storage
+    //    and delete the plaintext copy.
     (async () => {
       try {
+        // One-time migration: move any plaintext Preferences copy into
+        // the secure store, then delete it.
+        try {
+          const legacy = await Preferences.get({ key });
+          if (legacy.value) {
+            await secureSet(key, legacy.value);
+            await Preferences.remove({ key });
+          }
+        } catch { /* ignore */ }
+
         const local = window.localStorage.getItem(key);
         if (!local) {
-          const { value } = await Preferences.get({ key });
+          const value = await secureGet(key);
           if (cancelled || !value) return;
           window.localStorage.setItem(key, value);
           try {
@@ -80,21 +114,21 @@ export function SessionPersistence() {
             }
           } catch { /* ignore */ }
         } else {
-          // Ensure Preferences copy exists.
-          await Preferences.set({ key, value: local });
+          // Ensure secure copy exists.
+          await secureSet(key, local);
         }
       } catch { /* ignore */ }
     })();
 
-    // 2) Mirror future changes to Preferences.
+    // 2) Mirror future changes to secure storage.
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
       try {
         if (event === "SIGNED_OUT" || !session) {
-          await Preferences.remove({ key });
+          await secureRemove(key);
           return;
         }
         const value = window.localStorage.getItem(key);
-        if (value) await Preferences.set({ key, value });
+        if (value) await secureSet(key, value);
       } catch { /* ignore */ }
     });
 
