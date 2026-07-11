@@ -24,15 +24,21 @@
       <div class="bar"></div>
     </div>
     <script>
-      // Remove the boot splash once the React app has painted its own UI.
-      window.addEventListener('load', function () {
-        setTimeout(function () {
-          var el = document.getElementById('boot-splash');
-          if (!el) return;
+      (function () {
+        var el = document.getElementById('boot-splash');
+        var hidden = false;
+        function hide() {
+          if (hidden || !el) return;
+          hidden = true;
           el.style.opacity = '0';
           setTimeout(function () { el && el.remove(); }, 350);
-        }, 400);
-      });
+        }
+        // React calls this once it has painted its first UI so the loading
+        // layer stays on screen until the app is actually ready.
+        window.hideBootSplash = hide;
+        // Safety fallback: never block the app longer than 8 seconds.
+        setTimeout(hide, 8000);
+      })();
     </script>
   </body>
 </html>

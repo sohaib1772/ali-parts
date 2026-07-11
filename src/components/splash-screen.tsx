@@ -13,6 +13,11 @@ export function SplashScreen() {
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
+    // Dismiss the native Capacitor boot splash as soon as React has painted.
+    try {
+      const w = window as typeof window & { hideBootSplash?: () => void };
+      if (w.hideBootSplash) w.hideBootSplash();
+    } catch {}
     // Remove the pre-hydration boot splash rendered inline in <body> —
     // React has hydrated, so the real UI (and this SplashScreen) is up.
     try {
