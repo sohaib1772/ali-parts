@@ -196,10 +196,28 @@ function AuthCheckout({ userId }: { userId: string }) {
 }
 
 // ---------- GUEST FLOW ----------
+// Cache the snapshot so useSyncExternalStore gets a stable reference between
+// change notifications (readGuestCart returns a new array each call, which
+// would otherwise trigger an infinite re-render loop).
+let __guestCartSnapshot: GuestCartItem[] = [];
+let __guestCartSerialized = "";
+function refreshGuestCartSnapshot() {
+  const next = readGuestCart();
+  const serialized = JSON.stringify(next);
+  if (serialized !== __guestCartSerialized) {
+    __guestCartSerialized = serialized;
+    __guestCartSnapshot = next;
+  }
+  return __guestCartSnapshot;
+}
+const EMPTY_GUEST_CART: GuestCartItem[] = [];
 function useGuestCartLive(): GuestCartItem[] {
   return useSyncExternalStore(
     (cb) => {
-      const onChange = () => cb();
+      const onChange = () => {
+        refreshGuestCartSnapshot();
+        cb();
+      };
       window.addEventListener("guest-cart:changed", onChange);
       window.addEventListener("storage", onChange);
       return () => {
@@ -207,8 +225,8 @@ function useGuestCartLive(): GuestCartItem[] {
         window.removeEventListener("storage", onChange);
       };
     },
-    () => readGuestCart(),
-    () => [] as GuestCartItem[],
+    () => refreshGuestCartSnapshot(),
+    () => EMPTY_GUEST_CART,
   );
 }
 
