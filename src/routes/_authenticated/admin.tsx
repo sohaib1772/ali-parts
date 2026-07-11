@@ -359,7 +359,7 @@ function AdminOtpGate({ email, onVerified }: { email: string; onVerified: () => 
     }
     setVerifying(true);
     try {
-      await verifyFn({ data: { code, remember } });
+      await verifyFn({ data: { code, remember, device_id: getAdminDeviceId() } });
       toast.success("تم التحقق بنجاح");
       onVerified();
     } catch (e) {
@@ -482,7 +482,7 @@ function AdminPageInner() {
   const otpStatusFn = useServerFn(adminOtpStatus);
   const { data: otp, isLoading: otpLoading, refetch: refetchOtp } = useQuery({
     queryKey: ["admin-otp-status"],
-    queryFn: () => otpStatusFn(),
+    queryFn: () => otpStatusFn({ data: { device_id: getAdminDeviceId() } }),
     enabled: hasAnyAccess && !isLoading,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
