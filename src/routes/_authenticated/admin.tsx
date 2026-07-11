@@ -45,6 +45,7 @@ import { statusLabel, statusColor } from "@/lib/order-status";
 import { PrintableInvoice, InvoicePreviewDialog } from "@/components/printable-invoice";
 import { adminListUsers, adminSetUserBlocked, adminSetUserPassword } from "@/lib/admin.functions";
 import { adminOtpStatus, requestAdminOtp, verifyAdminOtp } from "@/lib/admin-otp.functions";
+import { listAdminOtpEvents } from "@/lib/admin-otp.functions";
 import { createStaff, updateStaff, deleteStaff, listStaff } from "@/lib/staff.functions";
 import { broadcastPricesChanged } from "@/lib/price-sync";
 import { normalizePhone } from "@/lib/phone-auth";
@@ -65,6 +66,80 @@ function getAdminDeviceId(): string {
 }
 
 const STATUSES = ["received", "preparing", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"] as const;
+
+/* ---------------- Admin OTP Events Log ---------------- */
+
+const OTP_EVENT_LABEL: Record<string, { text: string; tone: "ok" | "warn" | "err" | "info" }> = {
+  request: { text: "طلب رمز", tone: "info" },
+  request_rate_limited: { text: "طلب متكرر (حد المعدل)", tone: "warn" },
+  request_failed: { text: "فشل الإرسال", tone: "err" },
+  verify_success: { text: "تحقق ناجح", tone: "ok" },
+  verify_wrong_code: { text: "رمز خاطئ", tone: "warn" },
+  verify_no_active: { text: "لا يوجد رمز نشط", tone: "warn" },
+  verify_expired: { text: "رمز منتهي", tone: "warn" },
+  verify_max_attempts: { text: "تجاوز المحاولات", tone: "err" },
+  revoke: { text: "إلغاء الجلسة", tone: "info" },
+};
+
+function AdminOtpEventsLog() {
+  const listFn = useServerFn(listAdminOtpEvents);
+  const { data: rows = [], isLoading, refetch, isFetching } = useQuery({
+    queryKey: ["admin", "otp-events"],
+    queryFn: () => listFn({ data: { limit: 200 } }),
+  });
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-bold">سجل أحداث OTP للإدارة</h3>
+          <p className="text-[11px] text-muted-foreground">آخر 200 حدث. يشمل الطلبات، النجاح، الأخطاء، وتجاوز المحاولات.</p>
+        </div>
+        <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
+          {isFetching ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+          <span className="ms-1">تحديث</span>
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="py-8 text-center text-muted-foreground text-sm">جارٍ التحميل…</div>
+      ) : rows.length === 0 ? (
+        <div className="py-8 text-center text-muted-foreground text-sm">لا توجد أحداث بعد.</div>
+      ) : (
+        <div className="space-y-1.5">
+          {rows.map((r: any) => {
+            const label = OTP_EVENT_LABEL[r.event] ?? { text: r.event, tone: "info" as const };
+            const toneCls =
+              label.tone === "ok"
+                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+                : label.tone === "warn"
+                ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30"
+                : label.tone === "err"
+                ? "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30"
+                : "bg-muted text-foreground/80 border-border";
+            return (
+              <div key={r.id} className="rounded-lg border p-2.5 text-xs bg-card">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-medium ${toneCls}`}>
+                    {label.text}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground tabular-nums" dir="ltr">
+                    {new Date(r.created_at).toLocaleString("ar-IQ")}
+                  </span>
+                </div>
+                <div className="mt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+                  <div dir="ltr" className="truncate">user: {r.user_id ? r.user_id.slice(0, 8) : "—"}</div>
+                  <div dir="ltr" className="truncate">device: {r.device_id ? r.device_id.slice(0, 10) : "—"}</div>
+                  {r.detail && <div className="col-span-full truncate" dir="auto">تفاصيل: {r.detail}</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ---------------- Block Log ---------------- */
 
@@ -620,6 +695,9 @@ function AdminPageInner() {
             {isAdmin && (
               <TabsTrigger value="diagnostics" className="flex-col gap-1 py-2 text-[10px]"><Activity className="size-4" />تشخيص</TabsTrigger>
             )}
+            {isAdmin && (
+              <TabsTrigger value="otp-log" className="flex-col gap-1 py-2 text-[10px]"><KeyRound className="size-4" />سجل OTP</TabsTrigger>
+            )}
           </TabsList>
 
           {canProducts && <TabsContent value="products" className="mt-4"><ProductsAdmin /></TabsContent>}
@@ -633,6 +711,7 @@ function AdminPageInner() {
           {canProducts && <TabsContent value="stock" className="mt-4"><StockMovementsAdmin /></TabsContent>}
           {isAdmin && <TabsContent value="settings" className="mt-4"><SettingsAdmin /></TabsContent>}
           {isAdmin && <TabsContent value="diagnostics" className="mt-4"><DiagnosticsAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="otp-log" className="mt-4"><AdminOtpEventsLog /></TabsContent>}
         </Tabs>
       </div>
     </PageShell>

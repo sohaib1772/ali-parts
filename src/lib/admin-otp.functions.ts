@@ -29,6 +29,52 @@ function maskEmail(e: string): string {
   return `${shown}${"*".repeat(Math.max(1, u.length - shown.length))}@${d}`;
 }
 
+async function logOtpEvent(params: {
+  event:
+    | "request"
+    | "request_rate_limited"
+    | "request_failed"
+    | "verify_success"
+    | "verify_wrong_code"
+    | "verify_no_active"
+    | "verify_expired"
+    | "verify_max_attempts"
+    | "revoke";
+  user_id?: string | null;
+  device_id?: string | null;
+  detail?: string | null;
+}) {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("admin_otp_events").insert({
+      event: params.event,
+      user_id: params.user_id ?? null,
+      device_id: params.device_id ?? null,
+      detail: params.detail ?? null,
+    });
+  } catch (e) {
+    console.error("logOtpEvent failed", e);
+  }
+}
+
+export const listAdminOtpEvents = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ limit: z.number().int().min(1).max(200).optional() }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { isAdmin } = await isAdminOrStaff(context);
+    if (!isAdmin) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin
+      .from("admin_otp_events")
+      .select("id, event, user_id, device_id, detail, created_at")
+      .order("created_at", { ascending: false })
+      .limit(data.limit ?? 100);
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
 const StatusInput = z.object({ device_id: z.string().min(1).max(128).optional() });
 
 export const adminOtpStatus = createServerFn({ method: "POST" })
@@ -88,6 +134,11 @@ export const requestAdminOtp = createServerFn({ method: "POST" })
       const age = Date.now() - new Date(recent.created_at).getTime();
       if (age < 30_000) {
         const wait = Math.ceil((30_000 - age) / 1000);
+        await logOtpEvent({
+          event: "request_rate_limited",
+          user_id: context.userId,
+          detail: `wait ${wait}s`,
+        });
         throw new Error(`الرجاء الانتظار ${wait} ثانية قبل طلب رمز جديد`);
       }
     }
@@ -146,9 +197,15 @@ export const requestAdminOtp = createServerFn({ method: "POST" })
         const j = JSON.parse(text);
         detail = j?.message || j?.error || text;
       } catch {}
+      await logOtpEvent({
+        event: "request_failed",
+        user_id: context.userId,
+        detail: String(detail).slice(0, 500),
+      });
       throw new Error(`تعذر إرسال رمز التحقق: ${detail}`);
     }
 
+    await logOtpEvent({ event: "request", user_id: context.userId, detail: maskEmail(toEmail) });
     return { ok: true, email: maskEmail(toEmail), expiresAt: expires_at };
   });
 
@@ -175,8 +232,20 @@ export const verifyAdminOtp = createServerFn({ method: "POST" })
       .limit(1)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!ch) throw new Error("لا يوجد رمز نشط. اطلب رمزاً جديداً.");
+    if (!ch) {
+      await logOtpEvent({
+        event: "verify_no_active",
+        user_id: context.userId,
+        device_id: data.device_id,
+      });
+      throw new Error("لا يوجد رمز نشط. اطلب رمزاً جديداً.");
+    }
     if (new Date(ch.expires_at).getTime() < Date.now()) {
+      await logOtpEvent({
+        event: "verify_expired",
+        user_id: context.userId,
+        device_id: data.device_id,
+      });
       throw new Error("انتهت صلاحية الرمز. اطلب رمزاً جديداً.");
     }
     if ((ch.attempts ?? 0) >= MAX_ATTEMPTS) {
@@ -184,6 +253,12 @@ export const verifyAdminOtp = createServerFn({ method: "POST" })
         .from("admin_otp_challenges")
         .update({ consumed_at: new Date().toISOString() })
         .eq("id", ch.id);
+      await logOtpEvent({
+        event: "verify_max_attempts",
+        user_id: context.userId,
+        device_id: data.device_id,
+        detail: `attempts=${ch.attempts}`,
+      });
       throw new Error("عدد المحاولات تجاوز الحد. اطلب رمزاً جديداً.");
     }
 
@@ -193,6 +268,12 @@ export const verifyAdminOtp = createServerFn({ method: "POST" })
         .from("admin_otp_challenges")
         .update({ attempts: (ch.attempts ?? 0) + 1 })
         .eq("id", ch.id);
+      await logOtpEvent({
+        event: "verify_wrong_code",
+        user_id: context.userId,
+        device_id: data.device_id,
+        detail: `attempt=${(ch.attempts ?? 0) + 1}`,
+      });
       throw new Error("رمز غير صحيح");
     }
 
@@ -211,6 +292,12 @@ export const verifyAdminOtp = createServerFn({ method: "POST" })
         { onConflict: "user_id,device_id" },
       );
 
+    await logOtpEvent({
+      event: "verify_success",
+      user_id: context.userId,
+      device_id: data.device_id,
+      detail: data.remember ? "remember=30d" : "session=10m",
+    });
     return { ok: true, expiresAt: expires_at };
   });
 
@@ -219,5 +306,6 @@ export const revokeAdminOtp = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.from("admin_otp_verifications").delete().eq("user_id", context.userId);
+    await logOtpEvent({ event: "revoke", user_id: context.userId });
     return { ok: true };
   });
