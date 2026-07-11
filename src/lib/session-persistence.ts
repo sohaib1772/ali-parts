@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Preferences } from "@capacitor/preferences";
+import { App } from "@capacitor/app";
 import { supabase } from "@/integrations/supabase/client";
 import { useRouter } from "@tanstack/react-router";
 
@@ -21,9 +22,43 @@ function getStorageKey(): string | null {
 export function SessionPersistence() {
   const router = useRouter();
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
+    // Auto-refresh token when tab becomes visible again (web + native).
+    const refreshIfNeeded = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const session = data.session;
+        if (!session) return;
+        const expiresAt = (session.expires_at ?? 0) * 1000;
+        // Refresh proactively if session expires within the next 60 seconds.
+        if (expiresAt - Date.now() < 60_000) {
+          await supabase.auth.refreshSession();
+        }
+      } catch { /* ignore */ }
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") refreshIfNeeded();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    let appListenerHandle: { remove: () => Promise<void> } | null = null;
+    if (Capacitor.isNativePlatform()) {
+      App.addListener("appStateChange", ({ isActive }) => {
+        if (isActive) refreshIfNeeded();
+      }).then((h) => { appListenerHandle = h; }).catch(() => {});
+    }
+
+    if (!Capacitor.isNativePlatform()) {
+      return () => {
+        document.removeEventListener("visibilitychange", onVisibility);
+      };
+    }
     const key = getStorageKey();
-    if (!key) return;
+    if (!key) {
+      return () => {
+        document.removeEventListener("visibilitychange", onVisibility);
+        appListenerHandle?.remove().catch(() => {});
+      };
+    }
     let cancelled = false;
 
     // 1) Restore session from Preferences if localStorage doesn't have it.
@@ -66,6 +101,8 @@ export function SessionPersistence() {
     return () => {
       cancelled = true;
       sub.subscription.unsubscribe();
+      document.removeEventListener("visibilitychange", onVisibility);
+      appListenerHandle?.remove().catch(() => {});
     };
   }, [router]);
   return null;
