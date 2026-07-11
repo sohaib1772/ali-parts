@@ -11,7 +11,6 @@ import { useAdjustedPrice } from "@/lib/admin";
 import { computeShipping } from "@/lib/shipping";
 import { toast } from "sonner";
 import {
-  readGuestCart,
   getGuestCartSnapshot,
   removeGuestCartItem,
   updateGuestCartItem,
