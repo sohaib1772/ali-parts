@@ -328,6 +328,7 @@ function AdminOtpGate({ email, onVerified }: { email: string; onVerified: () => 
   const [sent, setSent] = useState(false);
   const [code, setCode] = useState("");
   const [cooldown, setCooldown] = useState(0);
+  const [remember, setRemember] = useState(false);
 
   const send = async () => {
     if (sending || cooldown > 0) return;
@@ -358,7 +359,7 @@ function AdminOtpGate({ email, onVerified }: { email: string; onVerified: () => 
     }
     setVerifying(true);
     try {
-      await verifyFn({ data: { code } });
+      await verifyFn({ data: { code, remember } });
       toast.success("تم التحقق بنجاح");
       onVerified();
     } catch (e) {
@@ -400,6 +401,15 @@ function AdminOtpGate({ email, onVerified }: { email: string; onVerified: () => 
               {verifying ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
               تأكيد الدخول
             </Button>
+            <label className="flex items-center gap-2 text-xs text-muted-foreground select-none cursor-pointer">
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+                className="size-4 accent-primary"
+              />
+              تذكّر هذا الجهاز لمدة 30 يوم
+            </label>
             <Button
               variant="ghost"
               size="sm"
@@ -412,7 +422,7 @@ function AdminOtpGate({ email, onVerified }: { email: string; onVerified: () => 
           </>
         )}
         <p className="text-[11px] text-muted-foreground">
-          الرمز صالح لمدة 10 دقائق. جلسة التحقق تدوم 8 ساعات.
+          الرمز صالح لمدة 10 دقائق. جلسة التحقق تدوم 10 دقائق، أو 30 يوم عند اختيار "تذكّر هذا الجهاز".
         </p>
       </div>
     </div>
