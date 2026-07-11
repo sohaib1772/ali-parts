@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, Heart, Package, MessageCircle, User } from "lucide-react";
+import { Home, Heart, Package, MessageCircle, User, LogIn, ShoppingBag, Tag } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/use-auth";
 import { ordersQuery } from "@/lib/queries";
 import { isOrderUnseen, useOrderSeenMap } from "@/lib/order-updates";
 
-const items = [
+const authedItems = [
   { to: "/", label: "الرئيسية", icon: Home },
   { to: "/favorites", label: "المفضلة", icon: Heart },
   { to: "/orders", label: "طلباتي", icon: Package },
@@ -15,10 +15,21 @@ const items = [
   { to: "/account", label: "الحساب", icon: User },
 ] as const;
 
+// Guests should never be silently redirected to /auth from the tab bar.
+// Show only public destinations plus an explicit "sign in" entry.
+const guestItems = [
+  { to: "/", label: "الرئيسية", icon: Home },
+  { to: "/products", label: "المنتجات", icon: ShoppingBag },
+  { to: "/offers", label: "العروض", icon: Tag },
+  { to: "/cart", label: "السلة", icon: Package },
+  { to: "/auth", label: "دخول", icon: LogIn },
+] as const;
+
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { userId } = useAuth();
   const { data: orders = [] } = useQuery(ordersQuery(userId));
+  const items = userId ? authedItems : guestItems;
   const seen = useOrderSeenMap();
   const qc = useQueryClient();
   useEffect(() => {
