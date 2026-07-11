@@ -1,8 +1,23 @@
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
-import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, PackageCheck, Package as PackageIcon, PackageOpen, Truck, MapPin, Home, XCircle, StickyNote, Receipt, RefreshCw, Headphones } from "lucide-react";
+import {
+  ArrowRight,
+  PackageCheck,
+  Package as PackageIcon,
+  PackageOpen,
+  Truck,
+  MapPin,
+  Home,
+  XCircle,
+  StickyNote,
+  Receipt,
+  RefreshCw,
+  Headphones,
+  Loader2,
+  Bell,
+} from "lucide-react";
 import { orderByIdQuery } from "@/lib/queries";
 import { formatIQD, formatArabicDate } from "@/lib/format";
 import { statusLabel } from "@/lib/order-status";
@@ -20,9 +35,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/lib/use-auth";
+import { findGuestTokenById, readGuestOrders } from "@/lib/guest-cart";
 
-export const Route = createFileRoute("/_authenticated/orders/$id")({
-  loader: ({ context, params }) => context.queryClient.ensureQueryData(orderByIdQuery(params.id)),
+export const Route = createFileRoute("/orders/$id")({
+  ssr: false,
   component: OrderDetail,
 });
 
@@ -49,17 +65,130 @@ function AddressRow({ label, value, mono, muted }: { label: string; value?: stri
 
 function OrderDetail() {
   const { id } = Route.useParams();
-  const { data } = useSuspenseQuery(orderByIdQuery(id));
-  const { order, items, customer } = data;
   const router = useRouter();
   const qc = useQueryClient();
+  const { userId, loading: authLoading } = useAuth();
+
+  // Guest fallback: locate stored token by order id.
+  const guestRef =
+    typeof window !== "undefined" ? readGuestOrders().find((r) => r.order_id === id) : null;
+  const guestToken = guestRef?.guest_token ?? findGuestTokenById(id);
+  const isGuest = !authLoading && !userId;
+
+  const authedQ = useQuery({ ...orderByIdQuery(id), enabled: !!userId });
+  const lastGuestStatus = useRef<string | null>(null);
+  const guestQ = useQuery({
+    queryKey: ["guest-order-detail", id, guestRef?.order_number, guestToken],
+    enabled: isGuest && !!guestToken && !!guestRef?.order_number,
+    refetchInterval: 20000,
+    refetchOnWindowFocus: true,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_guest_order", {
+        p_order_number: guestRef!.order_number,
+        p_guest_token: guestToken!,
+      });
+      if (error) throw error;
+      const raw = data as any;
+      const prev = lastGuestStatus.current;
+      if (prev && prev !== raw.status) {
+        if (raw.status === "cancelled") toast.error(`تم إلغاء الطلب ${raw.order_number ?? ""}`);
+        else
+          toast.success(`تحديث الطلب: ${statusLabel(raw.status)}`, {
+            icon: <Bell className="size-4 text-gold" />,
+          });
+      }
+      lastGuestStatus.current = raw.status;
+      return { order: raw, items: raw.items ?? [], customer: null as any };
+    },
+  });
+
+  const data: any = userId ? authedQ.data : guestQ.data;
+
+  // Hooks that must run in every render (rules of hooks) — declared before returns.
   const [previewOpen, setPreviewOpen] = useState(false);
   const [replaceOpen, setReplaceOpen] = useState(false);
   const [replaceItem, setReplaceItem] = useState<any>(null);
   const [replaceReason, setReplaceReason] = useState("");
   const [replaceSubmitting, setReplaceSubmitting] = useState(false);
   const [replaceDone, setReplaceDone] = useState(false);
-  const { userId } = useAuth();
+  const [cancelling, setCancelling] = useState(false);
+
+  useEffect(() => {
+    if (!userId) return;
+    const ch = supabase
+      .channel(`order-${id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${id}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["order", id] });
+          qc.invalidateQueries({ queryKey: ["orders"] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [id, qc, userId]);
+
+  useEffect(() => {
+    if (!userId || !data?.order) return;
+    markOrderSeen(data.order.id, data.order.updated_at ?? data.order.created_at);
+  }, [userId, data?.order?.id, data?.order?.updated_at, data?.order?.created_at]);
+
+  if (authLoading || (userId && authedQ.isLoading) || (isGuest && guestToken && guestQ.isLoading)) {
+    return (
+      <div className="min-h-screen grid place-items-center">
+        <Loader2 className="size-8 animate-spin text-gold" />
+      </div>
+    );
+  }
+
+  if (isGuest && !guestToken) {
+    return (
+      <div className="min-h-screen grid place-items-center px-6 text-center">
+        <div className="max-w-sm space-y-4">
+          <div className="mx-auto size-14 rounded-2xl bg-muted grid place-items-center">
+            <PackageIcon className="size-6 text-muted-foreground" />
+          </div>
+          <h2 className="text-lg font-bold">لم يتم العثور على الطلب على هذا الجهاز</h2>
+          <p className="text-sm text-muted-foreground">
+            طلبات الضيف تُحفظ محلياً في نفس الجهاز الذي أنشأت منه الطلب. سجّل الدخول لعرض جميع طلباتك.
+          </p>
+          <div className="flex flex-col gap-2">
+            <Link
+              to="/auth"
+              className="w-full h-11 rounded-xl bg-gradient-gold text-navy font-bold shadow-gold flex items-center justify-center"
+            >
+              تسجيل الدخول
+            </Link>
+            <Link to="/" className="text-sm text-gold font-bold">
+              العودة للرئيسية
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data?.order) {
+    return (
+      <div className="min-h-screen grid place-items-center px-6 text-center">
+        <div>
+          <h2 className="text-lg font-bold mb-2">تعذّر عرض الطلب</h2>
+          <Link to="/" className="text-gold font-bold text-sm">
+            العودة للرئيسية
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const { order, items, customer } = data;
+  const activeIdx = TIMELINE.findIndex((t) => t.key === order.status);
+  const cancelled = order.status === "cancelled";
+  const canCancel = !!userId && (order.status === "received" || order.status === "preparing");
+  const canReplace = !!userId && order.status === "delivered";
 
   const openReplace = (it: any) => {
     setReplaceItem(it);
@@ -91,33 +220,6 @@ function OrderDetail() {
     }
     setReplaceDone(true);
   };
-
-  useEffect(() => {
-    const ch = supabase
-      .channel(`order-${id}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${id}` },
-        () => {
-          qc.invalidateQueries({ queryKey: ["order", id] });
-          qc.invalidateQueries({ queryKey: ["orders"] });
-        },
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
-  }, [id, qc]);
-
-  useEffect(() => {
-    markOrderSeen(order.id, (order as any).updated_at ?? order.created_at);
-  }, [order.id, (order as any).updated_at, order.created_at]);
-
-  const activeIdx = TIMELINE.findIndex((t) => t.key === order.status);
-  const cancelled = order.status === "cancelled";
-  const canCancel = order.status === "received" || order.status === "preparing";
-  const canReplace = order.status === "delivered";
-  const [cancelling, setCancelling] = useState(false);
 
   const handleCancel = async () => {
     if (!confirm("هل تريد إلغاء هذا الطلب؟")) return;
@@ -163,7 +265,15 @@ function OrderDetail() {
           </div>
         ) : (
           <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
-            <div className="text-xs font-bold text-gold mb-4">حالة الطلب</div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-xs font-bold text-gold">حالة الطلب</div>
+              {isGuest && (
+                <div className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                  <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                  تحديث تلقائي
+                </div>
+              )}
+            </div>
             <div className="space-y-3">
               {TIMELINE.map((t, i) => {
                 const done = i <= activeIdx;
@@ -188,7 +298,7 @@ function OrderDetail() {
         <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
           <div className="text-xs font-bold text-gold mb-3">المنتجات</div>
           <div className="space-y-3">
-            {items.map((it) => (
+            {items.map((it: any) => (
               <div key={it.id} className="space-y-2">
               <div className="flex gap-3">
                 <div className="size-14 rounded-xl bg-muted overflow-hidden flex-shrink-0">
@@ -198,16 +308,16 @@ function OrderDetail() {
                   <div className="text-sm font-bold line-clamp-1">{it.name_ar}</div>
                   <div className="text-xs text-muted-foreground flex items-center gap-2">
                     <span>× {it.quantity}</span>
-                    {(it as any).side && (
+                    {it.side && (
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-navy text-primary-foreground text-[10px] font-black">
-                        {(it as any).side === "LH" ? "LH · يسار" : "RH · يمين"}
+                        {it.side === "LH" ? "LH · يسار" : it.side === "RH" ? "RH · يمين" : it.side}
                       </span>
                     )}
                   </div>
-                  {(it as any).note && (
+                  {it.note && (
                     <div className="mt-1 flex items-start gap-1 text-[11px] text-muted-foreground bg-muted/50 rounded-md p-1.5">
                       <StickyNote className="size-3 text-gold shrink-0 mt-0.5" />
-                      <span className="whitespace-pre-wrap">{(it as any).note}</span>
+                      <span className="whitespace-pre-wrap">{it.note}</span>
                     </div>
                   )}
                 </div>
@@ -228,44 +338,44 @@ function OrderDetail() {
           </div>
         </div>
 
-        {(order as any).notes && (
+        {order.notes && (
           <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
             <div className="flex items-center gap-2 mb-2">
               <StickyNote className="size-4 text-gold" />
               <span className="text-xs font-bold text-gold">ملاحظة الزبون على الطلب</span>
             </div>
-            <div className="text-sm whitespace-pre-wrap">{(order as any).notes}</div>
+            <div className="text-sm whitespace-pre-wrap">{order.notes}</div>
           </div>
         )}
 
         <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
           <div className="text-xs font-bold text-gold mb-3">عنوان التوصيل</div>
           <div className="space-y-2 text-sm">
-            <AddressRow label="التسمية" value={(order.address as any)?.label} />
-            <AddressRow label="الاسم الكامل" value={(order.address as any)?.full_name} />
-            <AddressRow label="رقم الهاتف" value={(order.address as any)?.phone} mono />
-            <AddressRow label="المحافظة" value={(order.address as any)?.city} />
-            <AddressRow label="المنطقة / القضاء" value={(order.address as any)?.area} />
-            <AddressRow label="الشارع / تفاصيل" value={(order.address as any)?.street} />
-            <AddressRow label="ملاحظات إضافية" value={(order.address as any)?.notes} muted />
+            <AddressRow label="التسمية" value={order.address?.label} />
+            <AddressRow label="الاسم الكامل" value={order.address?.full_name} />
+            <AddressRow label="رقم الهاتف" value={order.address?.phone} mono />
+            <AddressRow label="المحافظة" value={order.address?.city} />
+            <AddressRow label="المنطقة / القضاء" value={order.address?.area} />
+            <AddressRow label="الشارع / تفاصيل" value={order.address?.street} />
+            <AddressRow label="ملاحظات إضافية" value={order.address?.notes} muted />
           </div>
         </div>
 
         <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
           <div className="flex justify-between text-sm py-1"><span className="text-muted-foreground">المجموع الفرعي</span><span>{formatIQD(order.subtotal_iqd)}</span></div>
           <div className="flex justify-between text-sm py-1"><span className="text-muted-foreground">التوصيل</span><span>{formatIQD(order.shipping_iqd)}</span></div>
-          {Number((order as any).points_used ?? 0) > 0 && (
+          {Number(order.points_used ?? 0) > 0 && (
             <div className="flex justify-between text-sm py-1">
-              <span className="text-muted-foreground">خصم نقاط ({(order as any).points_used})</span>
-              <span className="text-success">- {formatIQD(Number((order as any).points_used) * 10)}</span>
+              <span className="text-muted-foreground">خصم نقاط ({order.points_used})</span>
+              <span className="text-success">- {formatIQD(Number(order.points_used) * 10)}</span>
             </div>
           )}
           <div className="border-t border-border mt-2 pt-3 flex justify-between items-baseline">
             <span className="font-bold">الإجمالي</span>
             <span className="text-xl font-black text-navy">{formatIQD(order.total_iqd)}</span>
           </div>
-          {Number((order as any).points_earned ?? 0) > 0 && (
-            <div className="mt-2 text-xs text-gold font-bold">🎉 كسبت {(order as any).points_earned} نقطة من هذا الطلب</div>
+          {Number(order.points_earned ?? 0) > 0 && (
+            <div className="mt-2 text-xs text-gold font-bold">🎉 كسبت {order.points_earned} نقطة من هذا الطلب</div>
           )}
         </div>
 
