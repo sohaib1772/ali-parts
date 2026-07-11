@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const VERIFICATION_TTL_SECONDS = 10 * 60; // 10m
+const REMEMBER_DEVICE_TTL_SECONDS = 30 * 24 * 60 * 60; // 30d
 const CHALLENGE_TTL_SECONDS = 10 * 60; // 10m
 const MAX_ATTEMPTS = 5;
 
@@ -146,7 +147,10 @@ export const requestAdminOtp = createServerFn({ method: "POST" })
     return { ok: true, email: maskEmail(toEmail), expiresAt: expires_at };
   });
 
-const VerifyInput = z.object({ code: z.string().regex(/^\d{6}$/, "رمز غير صالح") });
+const VerifyInput = z.object({
+  code: z.string().regex(/^\d{6}$/, "رمز غير صالح"),
+  remember: z.boolean().optional(),
+});
 
 export const verifyAdminOtp = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -188,7 +192,8 @@ export const verifyAdminOtp = createServerFn({ method: "POST" })
 
     // Consume challenge and create verification session
     const nowIso = new Date().toISOString();
-    const expires_at = new Date(Date.now() + VERIFICATION_TTL_SECONDS * 1000).toISOString();
+    const ttl = data.remember ? REMEMBER_DEVICE_TTL_SECONDS : VERIFICATION_TTL_SECONDS;
+    const expires_at = new Date(Date.now() + ttl * 1000).toISOString();
     await supabaseAdmin
       .from("admin_otp_challenges")
       .update({ consumed_at: nowIso })
