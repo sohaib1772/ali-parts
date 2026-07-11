@@ -24,7 +24,6 @@ async function resolvePostLoginPath(userId: string): Promise<"/admin" | "/"> {
 }
 
 export const Route = createFileRoute("/auth")({
-  ssr: false,
   head: () => ({
     meta: [
       { title: "تسجيل الدخول — Ali Parts" },

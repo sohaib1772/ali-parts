@@ -7,7 +7,6 @@ import { formatIQD, whatsappLink } from "@/lib/format";
 import type { Product } from "@/lib/queries";
 import { useSetting, useAdjustedPrice } from "@/lib/admin";
 import { WhatsappIcon } from "./icons";
-import { addGuestCartItem } from "@/lib/guest-cart";
 
 export function ProductCard({ product }: { product: Product }) {
   const qc = useQueryClient();
@@ -31,17 +30,8 @@ export function ProductCard({ product }: { product: Product }) {
   const addToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const { data: session } = await supabase.auth.getSession();
-    const userId = session.session?.user?.id ?? null;
-
-    if (!userId) {
-      // Guest cart in localStorage
-      addGuestCartItem({ product_id: product.id, quantity: 1, side: null });
-      window.dispatchEvent(new CustomEvent("cart:changed", { detail: { delta: 1, bump: true } }));
-      toast.success("تمت الإضافة إلى السلة");
-      return;
-    }
-
+    const userId = await requireAuth();
+    if (!userId) return;
     const { data: existing } = await supabase
       .from("cart_items")
       .select("id, quantity, side")

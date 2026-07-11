@@ -524,9 +524,7 @@ export type Database = {
           address: Json
           admin_reviewed: boolean
           created_at: string
-          guest_token: string | null
           id: string
-          is_guest: boolean
           notes: string | null
           order_number: string
           payment_method: string
@@ -538,15 +536,13 @@ export type Database = {
           subtotal_iqd: number
           total_iqd: number
           updated_at: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           address: Json
           admin_reviewed?: boolean
           created_at?: string
-          guest_token?: string | null
           id?: string
-          is_guest?: boolean
           notes?: string | null
           order_number?: string
           payment_method?: string
@@ -558,15 +554,13 @@ export type Database = {
           subtotal_iqd?: number
           total_iqd?: number
           updated_at?: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           address?: Json
           admin_reviewed?: boolean
           created_at?: string
-          guest_token?: string | null
           id?: string
-          is_guest?: boolean
           notes?: string | null
           order_number?: string
           payment_method?: string
@@ -578,7 +572,7 @@ export type Database = {
           subtotal_iqd?: number
           total_iqd?: number
           updated_at?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -1046,10 +1040,6 @@ export type Database = {
         Args: { _rate: number; _rounding: number; _usd: number }
         Returns: number
       }
-      get_guest_order: {
-        Args: { p_guest_token: string; p_order_number: string }
-        Returns: Json
-      }
       get_public_profiles: {
         Args: { _ids: string[] }
         Returns: {
@@ -1074,19 +1064,6 @@ export type Database = {
           p_metadata?: Json
         }
         Returns: string
-      }
-      place_guest_order: {
-        Args: {
-          p_address: Json
-          p_items: Json
-          p_notes: string
-          p_payment: string
-        }
-        Returns: {
-          guest_token: string
-          order_id: string
-          order_number: string
-        }[]
       }
       place_order: {
         Args: {

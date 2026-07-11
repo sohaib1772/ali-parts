@@ -85,7 +85,7 @@ function AccountPage() {
     { to: "/favorites", label: "المفضلة", icon: Heart },
     { to: "/addresses", label: "العناوين", icon: MapPin },
     { to: "/notifications", label: "الإشعارات", icon: Bell },
-    ...(userId ? [{ to: "/change-password" as const, label: "تغيير كلمة المرور", icon: Lock }] : []),
+    { to: "/change-password", label: "تغيير كلمة المرور", icon: Lock },
     { to: "/contact", label: "اتصل بنا", icon: MessageCircle },
     { to: "/about", label: "من نحن", icon: Info },
     { to: "/privacy", label: "سياسة الخصوصية", icon: Shield },
@@ -173,18 +173,16 @@ function AccountPage() {
           <VehicleBar onOpen={() => setPickerOpen(true)} />
         </div>
 
-        {userId && (
-          <div className="mt-4 bg-gradient-gold text-navy rounded-2xl p-4 shadow-gold flex items-center gap-3">
-            <div className="size-11 rounded-full bg-navy/10 grid place-items-center">
-              <Sparkles className="size-5" />
-            </div>
-            <div className="flex-1">
-              <div className="text-xs font-bold opacity-70">رصيد نقاطك</div>
-              <div className="text-2xl font-black leading-tight">{(profile as any)?.points_balance ?? 0} نقطة</div>
-              <div className="text-[10px] opacity-70">كل 100 نقطة = 1,000 دينار خصم عند الشراء</div>
-            </div>
+        <div className="mt-4 bg-gradient-gold text-navy rounded-2xl p-4 shadow-gold flex items-center gap-3">
+          <div className="size-11 rounded-full bg-navy/10 grid place-items-center">
+            <Sparkles className="size-5" />
           </div>
-        )}
+          <div className="flex-1">
+            <div className="text-xs font-bold opacity-70">رصيد نقاطك</div>
+            <div className="text-2xl font-black leading-tight">{(profile as any)?.points_balance ?? 0} نقطة</div>
+            <div className="text-[10px] opacity-70">كل 100 نقطة = 1,000 دينار خصم عند الشراء</div>
+          </div>
+        </div>
 
         <div className="mt-4 bg-card rounded-2xl border border-border shadow-card overflow-hidden">
           {adminAccessLoading && (
@@ -213,21 +211,12 @@ function AccountPage() {
           })}
         </div>
 
-        {userId ? (
-          <button
-            onClick={signOut}
-            className="w-full mt-4 h-12 rounded-2xl border border-destructive/40 text-destructive font-bold flex items-center justify-center gap-2 hover:bg-destructive/5 transition"
-          >
-            <LogOut className="size-4" /> تسجيل الخروج
-          </button>
-        ) : (
-          <Link
-            to="/auth"
-            className="w-full mt-4 h-12 rounded-2xl bg-gradient-gold text-navy font-bold flex items-center justify-center gap-2 shadow-gold"
-          >
-            تسجيل الدخول
-          </Link>
-        )}
+        <button
+          onClick={signOut}
+          className="w-full mt-4 h-12 rounded-2xl border border-destructive/40 text-destructive font-bold flex items-center justify-center gap-2 hover:bg-destructive/5 transition"
+        >
+          <LogOut className="size-4" /> تسجيل الخروج
+        </button>
       </div>
       <VehiclePicker open={pickerOpen} onOpenChange={setPickerOpen} />
     </PageShell>

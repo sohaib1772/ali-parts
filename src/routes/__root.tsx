@@ -3,7 +3,6 @@ import {
   Outlet,
   Link,
   createRootRouteWithContext,
-  redirect,
   useRouter,
   HeadContent,
   Scripts,
@@ -80,11 +79,6 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  beforeLoad: ({ location }) => {
-    if (location.pathname === "/index") {
-      throw redirect({ to: "/", replace: true });
-    }
-  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -133,11 +127,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="ar" dir="rtl" suppressHydrationWarning>
-      <head suppressHydrationWarning>
+    <html lang="ar" dir="rtl">
+      <head>
         <HeadContent />
       </head>
-      <body suppressHydrationWarning>
+      <body>
         {children}
         <Scripts />
       </body>
