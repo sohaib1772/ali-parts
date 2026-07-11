@@ -79,19 +79,13 @@ function OrderSuccess() {
           <div className="font-black text-2xl text-gold">{formatIQD(order.total_iqd)}</div>
         </div>
 
-        {userId ? (
-          <Link to="/orders/$id" params={{ id: order.id }} className="w-full h-12 rounded-2xl bg-gradient-gold text-navy font-black flex items-center justify-center gap-2 shadow-gold mb-3">
-            <Package className="size-4" /> تتبع الطلب
-          </Link>
-        ) : (
-          <Link
-            to="/track"
-            search={{ o: order.order_number } as any}
-            className="w-full h-12 rounded-2xl bg-gradient-gold text-navy font-black flex items-center justify-center gap-2 shadow-gold mb-3"
-          >
-            <Package className="size-4" /> تتبع الطلب
-          </Link>
-        )}
+        <Link
+          to="/orders/$id"
+          params={{ id: order.id }}
+          className="w-full h-12 rounded-2xl bg-gradient-gold text-navy font-black flex items-center justify-center gap-2 shadow-gold mb-3"
+        >
+          <Package className="size-4" /> تتبع الطلب
+        </Link>
         <Link to="/" className="text-sm text-gold font-bold">العودة للرئيسية</Link>
       </div>
     </div>
