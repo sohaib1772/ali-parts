@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const VERIFICATION_TTL_SECONDS = 8 * 60 * 60; // 8h
+const VERIFICATION_TTL_SECONDS = 10 * 60; // 10m
 const CHALLENGE_TTL_SECONDS = 10 * 60; // 10m
 const MAX_ATTEMPTS = 5;
 
