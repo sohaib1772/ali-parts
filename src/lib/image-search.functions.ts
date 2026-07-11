@@ -1,11 +1,60 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-const Input = z.object({ imageDataUrl: z.string().min(20) });
+// Reject anything that isn't a small-ish base64 image data URL. The client
+// compresses to ~512px JPEG q0.6 (well under 400KB after base64), so 800KB
+// is a comfortable ceiling that blocks abuse payloads.
+const MAX_DATA_URL_BYTES = 800_000;
+const Input = z.object({
+  imageDataUrl: z
+    .string()
+    .min(20)
+    .max(MAX_DATA_URL_BYTES, "الصورة كبيرة جداً")
+    .regex(/^data:image\/(jpeg|jpg|png|webp);base64,/i, "صيغة صورة غير مدعومة"),
+});
+
+// Lightweight in-memory per-IP rate limit to prevent cost-abuse of the paid
+// AI gateway. Not a hard security boundary (worker instances don't share
+// memory), but stops trivial scripted flooding without requiring login on
+// this public storefront feature.
+const RL_WINDOW_MS = 60_000; // 1 minute
+const RL_MAX = 8;            // 8 image analyses per IP per minute
+const rlHits = new Map<string, number[]>();
+function rateLimit(ip: string): boolean {
+  const now = Date.now();
+  const arr = (rlHits.get(ip) ?? []).filter((t) => now - t < RL_WINDOW_MS);
+  if (arr.length >= RL_MAX) {
+    rlHits.set(ip, arr);
+    return false;
+  }
+  arr.push(now);
+  rlHits.set(ip, arr);
+  // Opportunistic GC to keep the map bounded.
+  if (rlHits.size > 5000) {
+    for (const [k, v] of rlHits) {
+      const kept = v.filter((t) => now - t < RL_WINDOW_MS);
+      if (kept.length === 0) rlHits.delete(k);
+      else rlHits.set(k, kept);
+    }
+  }
+  return true;
+}
 
 export const analyzeProductImage = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }) => {
+    // Per-IP rate limit against cost-abuse of the paid AI gateway.
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const req = getRequest();
+    const ip =
+      req.headers.get("cf-connecting-ip") ??
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      req.headers.get("x-real-ip") ??
+      "unknown";
+    if (!rateLimit(ip)) {
+      throw new Error("تم تجاوز الحد المسموح، حاول بعد قليل");
+    }
+
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("Missing LOVABLE_API_KEY");
 
