@@ -91,16 +91,19 @@ export type Database = {
       }
       admin_otp_verifications: {
         Row: {
+          device_id: string
           expires_at: string
           user_id: string
           verified_at: string
         }
         Insert: {
+          device_id?: string
           expires_at: string
           user_id: string
           verified_at?: string
         }
         Update: {
+          device_id?: string
           expires_at?: string
           user_id?: string
           verified_at?: string
