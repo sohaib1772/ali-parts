@@ -110,8 +110,16 @@ function AuthPage() {
           options: { emailRedirectTo: window.location.origin, data: { full_name: fullName, phone: "+" + normalized } },
         });
         if (error) throw error;
-        // Go straight to the app; the root's onAuthStateChange refreshes state.
-        const to = data.user?.id ? await resolvePostLoginPath(data.user.id) : "/";
+        // Ensure the user is signed in immediately (no second login step).
+        // If the returned response didn't include an active session (older
+        // configs, HIBP flows, etc.), sign in with the same credentials now.
+        let uid = data.user?.id ?? null;
+        if (!data.session) {
+          const signIn = await supabase.auth.signInWithPassword({ email: loginEmail, password });
+          if (signIn.error) throw signIn.error;
+          uid = signIn.data.user?.id ?? uid;
+        }
+        const to = uid ? await resolvePostLoginPath(uid) : "/";
         navigate({ to, replace: true });
       } else {
         let res = await supabase.auth.signInWithPassword({ email: loginEmail, password });
