@@ -89,6 +89,39 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_otp_events: {
+        Row: {
+          created_at: string
+          detail: string | null
+          device_id: string | null
+          event: string
+          id: string
+          ip: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          device_id?: string | null
+          event: string
+          id?: string
+          ip?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          device_id?: string | null
+          event?: string
+          id?: string
+          ip?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       admin_otp_verifications: {
         Row: {
           device_id: string
