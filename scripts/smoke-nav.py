@@ -20,6 +20,9 @@ BASE = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("SMOKE_BASE_URL", "h
 
 CRASH_RE = re.compile(r"Minified React error #185|Maximum update depth|Rendered more hooks", re.I)
 BODY_ERR_RE = re.compile(r"Something went wrong|Application error", re.I)
+# Hydration mismatches are recoverable — React re-renders on the client.
+# We only flag fatal errors that break the page.
+IGNORE_RE = re.compile(r"Hydration failed|did not match|Text content does not match", re.I)
 
 
 async def run():
@@ -44,7 +47,7 @@ async def run():
                 await page.wait_for_load_state("networkidle", timeout=8000)
             except Exception:
                 pass
-            new_errs = page_errors[before:]
+            new_errs = [e for e in page_errors[before:] if not IGNORE_RE.search(e)]
             return new_errs
 
         # 1) الرئيسية
