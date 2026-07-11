@@ -13,6 +13,16 @@ export function SplashScreen() {
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
+    // Remove the pre-hydration boot splash rendered inline in <body> —
+    // React has hydrated, so the real UI (and this SplashScreen) is up.
+    try {
+      const boot = document.getElementById("initial-boot-splash");
+      if (boot) {
+        boot.style.transition = "opacity .25s ease";
+        boot.style.opacity = "0";
+        setTimeout(() => boot.remove(), 260);
+      }
+    } catch {}
     let alreadyShown = false;
     try {
       alreadyShown = !!window.sessionStorage.getItem(SESSION_KEY);
