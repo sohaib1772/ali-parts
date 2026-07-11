@@ -49,6 +49,21 @@ import { createStaff, updateStaff, deleteStaff, listStaff } from "@/lib/staff.fu
 import { broadcastPricesChanged } from "@/lib/price-sync";
 import { normalizePhone } from "@/lib/phone-auth";
 
+function getAdminDeviceId(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    const KEY = "admin_device_id";
+    let id = window.localStorage.getItem(KEY);
+    if (!id) {
+      id = (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      window.localStorage.setItem(KEY, id);
+    }
+    return id;
+  } catch {
+    return "";
+  }
+}
+
 const STATUSES = ["received", "preparing", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"] as const;
 
 /* ---------------- Block Log ---------------- */
