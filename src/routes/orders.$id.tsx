@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/lib/use-auth";
 
-export const Route = createFileRoute("/_authenticated/orders/$id")({
+export const Route = createFileRoute("/orders/$id")({
   loader: ({ context, params }) => context.queryClient.ensureQueryData(orderByIdQuery(params.id)),
   component: OrderDetail,
 });
