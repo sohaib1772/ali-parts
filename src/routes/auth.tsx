@@ -7,6 +7,7 @@ import { ArrowRight, Loader2, Phone, Lock, User as UserIcon, Sparkles, Eye, EyeO
 import { useSetting } from "@/lib/admin";
 import { whatsappLink } from "@/lib/format";
 import { normalizePhone, phoneToEmail, phoneToEmailLegacy } from "@/lib/phone-auth";
+import { sessionRestorePromise } from "@/lib/session-bootstrap";
 
 // Fast admin-redirect check. Fails soft: if the check errors or the user
 // isn't an admin/staff, we send them straight to "/" without waiting.
@@ -67,12 +68,17 @@ function AuthPage() {
 
   // If already signed in, bounce out immediately — no toast, no intermediate UI.
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
+    (async () => {
+      // Wait for native session restore before deciding to keep the user
+      // on this page — otherwise a returning signed-in user would see the
+      // login form flash for a moment on cold launch.
+      await sessionRestorePromise;
+      const { data } = await supabase.auth.getSession();
       const uid = data.session?.user?.id;
       if (!uid) return;
       const to = await resolvePostLoginPath(uid);
       navigate({ to, replace: true });
-    });
+    })();
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
