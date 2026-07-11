@@ -174,25 +174,14 @@ function OrdersPage() {
               </div>
               <OrderTracking status={o.status} pulse={pulseId === o.id} />
               <div className="mt-3 flex items-center gap-2">
-                {isGuest ? (
-                  <Link
-                    to="/track"
-                    search={{ o: o.order_number } as any}
-                    className="flex-1 h-9 rounded-xl bg-gradient-gold text-navy text-xs font-bold flex items-center justify-center gap-1.5 shadow-gold hover:brightness-105 transition"
-                  >
-                    <Eye className="size-3.5" />
-                    عرض التفاصيل والتتبع
-                  </Link>
-                ) : (
-                  <Link
-                    to="/orders/$id"
-                    params={{ id: o.id }}
-                    className="flex-1 h-9 rounded-xl bg-gradient-gold text-navy text-xs font-bold flex items-center justify-center gap-1.5 shadow-gold hover:brightness-105 transition"
-                  >
-                    <Eye className="size-3.5" />
-                    عرض التفاصيل والتتبع
-                  </Link>
-                )}
+                <Link
+                  to="/orders/$id"
+                  params={{ id: o.id }}
+                  className="flex-1 h-9 rounded-xl bg-gradient-gold text-navy text-xs font-bold flex items-center justify-center gap-1.5 shadow-gold hover:brightness-105 transition"
+                >
+                  <Eye className="size-3.5" />
+                  عرض التفاصيل والتتبع
+                </Link>
                 {!isGuest && (o.status === "received" || o.status === "preparing") && (
                   <button
                     onClick={(e) => cancelOrder(e, o.id)}
