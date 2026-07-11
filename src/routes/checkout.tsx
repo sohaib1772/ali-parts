@@ -268,6 +268,7 @@ function GuestCheckout() {
       const row = Array.isArray(data) ? data[0] : data;
       if (!row?.order_id) throw new Error("لم يُنشأ الطلب");
       saveGuestOrder({
+        order_id: row.order_id as string,
         order_number: row.order_number,
         guest_token: row.guest_token,
         created_at: new Date().toISOString(),
