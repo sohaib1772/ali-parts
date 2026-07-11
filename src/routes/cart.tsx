@@ -22,6 +22,7 @@ export const Route = createFileRoute("/cart")({
   component: CartPage,
 });
 
+const EMPTY_GUEST_CART: GuestCartItem[] = [];
 function useGuestCart(): GuestCartItem[] {
   return useSyncExternalStore(
     (cb) => {
@@ -34,7 +35,7 @@ function useGuestCart(): GuestCartItem[] {
       };
     },
     () => getGuestCartSnapshot(),
-    () => [] as GuestCartItem[],
+    () => EMPTY_GUEST_CART,
   );
 }
 
