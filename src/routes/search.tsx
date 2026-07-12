@@ -19,8 +19,8 @@ export const Route = createFileRoute("/search")({
   validateSearch: searchSchema,
   head: () => ({ meta: [{ title: "البحث — Ali Parts" }] }),
   component: SearchPage,
-  pendingMs: 0,
-  pendingMinMs: 200,
+  pendingMs: 400,
+  pendingMinMs: 0,
   pendingComponent: SearchPending,
 });
 
