@@ -173,6 +173,7 @@ export const productsInfiniteQuery = (condition?: "new" | "used" | null) =>
 export const productByIdQuery = (id: string) =>
   queryOptions({
     queryKey: ["product", id],
+    staleTime: 2 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("products").select("*").eq("id", id).single();
       if (error) throw error;
