@@ -2280,6 +2280,194 @@ function InvoiceActions({ order, items, customer }: { order: any; items: any[]; 
   );
 }
 
+/* ---------------- External API Connector ---------------- */
+
+function ExternalApiSettings() {
+  const qc = useQueryClient();
+  const getConfig = useServerFn(getExternalApiConfig);
+  const testFn = useServerFn(testExternalApi);
+  const { data: config, isLoading } = useQuery({
+    queryKey: ["app_settings", "external_api"],
+    queryFn: () => getConfig(),
+  });
+
+  const [baseUrl, setBaseUrl] = useState("");
+  const [keyHeader, setKeyHeader] = useState("Authorization");
+  const [endpoints, setEndpoints] = useState<ExternalApiEndpoint[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<{ endpointId: string; ok: boolean; message: string } | null>(null);
+
+  useEffect(() => {
+    if (config) {
+      setBaseUrl(config.baseUrl);
+      setKeyHeader(config.keyHeader || "Authorization");
+      setEndpoints(config.endpoints || []);
+    }
+  }, [config]);
+
+  const addEndpoint = () => {
+    setEndpoints((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), name: "", method: "GET", path: "" },
+    ]);
+  };
+
+  const updateEndpoint = (id: string, patch: Partial<ExternalApiEndpoint>) => {
+    setEndpoints((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+  };
+
+  const removeEndpoint = (id: string) => {
+    setEndpoints((prev) => prev.filter((e) => e.id !== id));
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const rows = [
+        { key: "external_api_base_url", value: baseUrl.trim() },
+        { key: "external_api_key_header", value: keyHeader.trim() || "Authorization" },
+        { key: "external_api_endpoints", value: JSON.stringify(endpoints) },
+      ];
+      const { error } = await supabase
+        .from("app_settings")
+        .upsert(rows.map((r) => ({ ...r, updated_at: new Date().toISOString() })));
+      if (error) throw error;
+      toast.success("تم حفظ إعدادات API الخارجي");
+      qc.invalidateQueries({ queryKey: ["app_settings"] });
+      qc.invalidateQueries({ queryKey: ["app_settings", "external_api"] });
+    } catch (e: any) {
+      toast.error(e.message ?? "حدث خطأ");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const testEndpoint = async (id: string) => {
+    setTesting(id);
+    setTestResult(null);
+    try {
+      const result = await testFn({ data: { endpointId: id } });
+      setTestResult({
+        endpointId: id,
+        ok: result.ok,
+        message: result.ok ? `نجاح (${result.status})` : `فشل (${result.status})`,
+      });
+    } catch (e: any) {
+      setTestResult({ endpointId: id, ok: false, message: e.message ?? "فشل الاتصال" });
+    } finally {
+      setTesting(null);
+    }
+  };
+
+  if (isLoading) return <div className="text-center text-xs text-muted-foreground py-4">جاري التحميل…</div>;
+
+  return (
+    <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-3">
+      <div className="text-sm font-bold text-gold flex items-center gap-2">
+        <Webhook className="size-4" /> ربط API خارجي
+      </div>
+      <Field label="Base URL">
+        <Input
+          value={baseUrl}
+          onChange={(e) => setBaseUrl(e.target.value)}
+          placeholder="https://api.example.com/v1"
+          dir="ltr"
+        />
+      </Field>
+      <Field label="API Key Header">
+        <Input
+          value={keyHeader}
+          onChange={(e) => setKeyHeader(e.target.value)}
+          placeholder="Authorization أو X-API-Key"
+          dir="ltr"
+        />
+        <p className="text-xs text-muted-foreground mt-1">
+          إذا كان Header = Authorization سيرسل تلقائياً كـ Bearer Token.
+        </p>
+      </Field>
+
+      <div className="space-y-2">
+        <div className="text-xs font-bold">الـ Endpoints</div>
+        {endpoints.length === 0 && (
+          <div className="text-xs text-muted-foreground">لا توجد endpoints مضافة.</div>
+        )}
+        {endpoints.map((ep) => (
+          <div key={ep.id} className="grid grid-cols-12 gap-2 items-center">
+            <div className="col-span-3">
+              <Input
+                value={ep.name}
+                onChange={(e) => updateEndpoint(ep.id, { name: e.target.value })}
+                placeholder="اسم"
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="col-span-2">
+              <Select
+                value={ep.method}
+                onValueChange={(v) => updateEndpoint(ep.id, { method: v as ExternalApiEndpoint["method"] })}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {["GET", "POST", "PUT", "DELETE", "PATCH"].map((m) => (
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-5">
+              <Input
+                value={ep.path}
+                onChange={(e) => updateEndpoint(ep.id, { path: e.target.value })}
+                placeholder="/endpoint"
+                dir="ltr"
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="col-span-2 flex gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 px-2"
+                onClick={() => testEndpoint(ep.id)}
+                disabled={testing === ep.id}
+              >
+                {testing === ep.id ? <Loader2 className="size-3 animate-spin" /> : <Activity className="size-3" />}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 px-2 text-destructive"
+                onClick={() => removeEndpoint(ep.id)}
+              >
+                <Trash2 className="size-3" />
+              </Button>
+            </div>
+            {testResult?.endpointId === ep.id && (
+              <div className={`col-span-12 text-xs ${testResult.ok ? "text-emerald-600" : "text-destructive"}`}>
+                {testResult.message}
+              </div>
+            )}
+          </div>
+        ))}
+        <Button size="sm" variant="secondary" onClick={addEndpoint} className="gap-1">
+          <Plus className="size-3" /> إضافة endpoint
+        </Button>
+      </div>
+
+      <p className="text-[11px] text-muted-foreground">
+        مفتاح API يُخزّن بشكل آمن في Secrets باسم <code>EXTERNAL_API_KEY</code>. اطلب من المطوّر إضافته قبل الاختبار.
+      </p>
+
+      <Button className="w-full" onClick={save} disabled={saving}>
+        {saving ? "جاري الحفظ..." : "حفظ إعدادات API"}
+      </Button>
+    </div>
+  );
+}
+
 /* ---------------- Settings ---------------- */
 
 function SettingsAdmin() {
