@@ -80,6 +80,7 @@ export function ProductCard({ product }: { product: Product }) {
     <Link
       to="/product/$id"
       params={{ id: product.id }}
+      preload="viewport"
       className="group relative flex flex-col rounded-2xl bg-card border border-border/60 shadow-card overflow-hidden hover:shadow-luxe transition-all duration-300"
     >
       <div className="relative aspect-square bg-muted overflow-hidden">
