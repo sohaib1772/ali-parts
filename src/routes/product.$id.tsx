@@ -43,7 +43,7 @@ export const Route = createFileRoute("/product/$id")({
 
 function ProductPending() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-[100dvh] overflow-y-auto overflow-x-hidden bg-background">
       <div className="px-4 pt-4">
         <Skeleton className="w-full aspect-square rounded-3xl" />
         <div className="flex gap-2 mt-3">
