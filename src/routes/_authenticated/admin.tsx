@@ -2325,6 +2325,16 @@ function ExternalApiSettings() {
   };
 
   const save = async () => {
+    const errs = validateExternalApiConfig({
+      baseUrl,
+      keyHeader,
+      apiKey,
+      endpoints,
+    });
+    if (errs.length > 0) {
+      toast.error(errs[0].message);
+      return;
+    }
     setSaving(true);
     try {
       const rows = [
