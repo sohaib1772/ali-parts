@@ -67,18 +67,56 @@ function normalizeAr(s: string): string {
     .trim();
 }
 
+function useGovernorateFrequency() {
+  const [freq, setFreq] = useState<Record<string, number>>({});
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("gov-frequency");
+      if (raw) setFreq(JSON.parse(raw));
+    } catch {}
+  }, []);
+  const bump = (g: string) => {
+    setFreq((prev) => {
+      const next = { ...prev, [g]: (prev[g] ?? 0) + 1 };
+      try {
+        localStorage.setItem("gov-frequency", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+  return { freq, bump };
+}
+
 function GovernoratePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
+  const { freq, bump } = useGovernorateFrequency();
   const filtered = useMemo(() => {
-    const s = normalizeAr(q);
-    if (!s) return IRAQ_GOVERNORATES;
-    return IRAQ_GOVERNORATES.filter((g) => {
-      if (normalizeAr(g).includes(s)) return true;
+    const s = normalizeAr(q).trim();
+    if (!s) {
+      return [...IRAQ_GOVERNORATES].sort((a, b) => (freq[b] ?? 0) - (freq[a] ?? 0));
+    }
+    const score = (g: string): number => {
+      const ng = normalizeAr(g);
+      const f = freq[g] ?? 0;
+      if (ng === s) return 1000 + f * 10;
+      if (ng.startsWith(s)) return 500 + f * 10;
+      if (ng.includes(s)) return 300 + f * 10;
       const aliases = GOV_ALIASES[g] ?? [];
-      return aliases.some((a) => normalizeAr(a).includes(s));
-    });
-  }, [q]);
+      let aliasScore = 0;
+      for (const a of aliases) {
+        const na = normalizeAr(a);
+        if (na === s) aliasScore = Math.max(aliasScore, 200);
+        else if (na.startsWith(s)) aliasScore = Math.max(aliasScore, 150);
+        else if (na.includes(s)) aliasScore = Math.max(aliasScore, 100);
+      }
+      return aliasScore ? aliasScore + f * 10 : 0;
+    };
+    return IRAQ_GOVERNORATES.map((g) => ({ g, s: score(g) }))
+      .filter((x) => x.s > 0)
+      .sort((a, b) => b.s - a.s || a.g.localeCompare(b.g, "ar"))
+      .map((x) => x.g);
+  }, [q, freq]);
   useEffect(() => {
     if (!open) setQ("");
   }, [open]);
