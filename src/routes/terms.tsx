@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageShell } from "@/components/page-shell";
 import { useSetting } from "@/lib/admin";
 import { WHATSAPP_NUMBER, formatIraqiWhatsAppNumber, whatsappLink } from "@/lib/format";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, AlertTriangle } from "lucide-react";
 
 export const Route = createFileRoute("/terms")({
   head: () => ({
@@ -18,10 +18,13 @@ export const Route = createFileRoute("/terms")({
 
 function TermsPage() {
   const storeName = useSetting("store_name", "Ali Parts");
-  const ownerName = useSetting("store_owner", storeName);
-  const address = useSetting("store_address", "");
-  const supportEmail = useSetting("store_email", "");
-  const waNumber = formatIraqiWhatsAppNumber(useSetting("whatsapp_number", WHATSAPP_NUMBER));
+  const ownerName = useSetting("store_owner", "").trim();
+  const address = useSetting("store_address", "").trim();
+  const supportEmail = useSetting("store_email", "").trim();
+  const rawWa = useSetting("whatsapp_number", "").trim();
+  const waNumber = rawWa ? formatIraqiWhatsAppNumber(rawWa) : formatIraqiWhatsAppNumber(WHATSAPP_NUMBER);
+  const hasWa = Boolean(rawWa);
+  const missing = !ownerName || !address || !supportEmail || !hasWa;
   const today = new Date().toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
 
   return (
@@ -39,7 +42,14 @@ function TermsPage() {
               <li>"التطبيق": تطبيق {storeName} على الجوال والويب.</li>
               <li>"المستخدم": أي شخص ينشئ حساباً أو يستخدم التطبيق.</li>
               <li>"الطلب": أي عملية شراء يتم تقديمها عبر التطبيق.</li>
-              <li>"المشغّل": {ownerName}، المالك القانوني والمشغّل للتطبيق.</li>
+              <li>
+                "المشغّل":{" "}
+                {ownerName ? (
+                  <>{ownerName}، المالك القانوني والمشغّل للتطبيق.</>
+                ) : (
+                  <span className="text-muted-foreground">— لم يتم تحديد الجهة المسؤولة بعد —</span>
+                )}
+              </li>
             </ul>
           </Section>
 
@@ -134,20 +144,42 @@ function TermsPage() {
 
           <Section title="١٣. التواصل">
             <p>لأي استفسار أو شكوى قانونية:</p>
+            {missing && (
+              <div className="mt-2 flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200 p-3 text-xs">
+                <AlertTriangle className="size-4 shrink-0 mt-0.5" />
+                <span>لم يتم تعبئة كامل بيانات المالك بعد. يرجى تحديث المعلومات من لوحة الإدارة (الإعدادات: اسم الجهة، العنوان، البريد الإلكتروني، رقم واتساب).</span>
+              </div>
+            )}
             <ul className="list-disc pr-6 space-y-1 mt-2">
-              <li>الجهة المسؤولة: {ownerName}</li>
-              {address && <li>العنوان: {address}</li>}
-              {supportEmail && <li>البريد الإلكتروني: <a className="text-gold underline" href={`mailto:${supportEmail}`}>{supportEmail}</a></li>}
-              <li>واتساب: <span dir="ltr">+{waNumber}</span></li>
+              <li>الجهة المسؤولة: {ownerName || <span className="text-muted-foreground">— لم يتم تحديدها بعد —</span>}</li>
+              <li>العنوان: {address || <span className="text-muted-foreground">— لم يتم تحديده بعد —</span>}</li>
+              <li>
+                البريد الإلكتروني:{" "}
+                {supportEmail ? (
+                  <a className="text-gold underline" href={`mailto:${supportEmail}`}>{supportEmail}</a>
+                ) : (
+                  <span className="text-muted-foreground">— لم يتم تحديده بعد —</span>
+                )}
+              </li>
+              <li>
+                واتساب:{" "}
+                {hasWa ? (
+                  <span dir="ltr">+{waNumber}</span>
+                ) : (
+                  <span className="text-muted-foreground">— لم يتم تحديده بعد —</span>
+                )}
+              </li>
             </ul>
-            <a
-              href={whatsappLink("لدي استفسار قانوني", waNumber)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 inline-flex items-center gap-2 bg-navy text-primary-foreground text-xs font-bold px-4 py-2 rounded-xl"
-            >
-              <MessageCircle className="size-3.5" /> تواصل عبر واتساب
-            </a>
+            {hasWa && (
+              <a
+                href={whatsappLink("لدي استفسار قانوني", waNumber)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center gap-2 bg-navy text-primary-foreground text-xs font-bold px-4 py-2 rounded-xl"
+              >
+                <MessageCircle className="size-3.5" /> تواصل عبر واتساب
+              </a>
+            )}
           </Section>
         </div>
       </div>
