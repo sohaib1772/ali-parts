@@ -166,6 +166,22 @@
   h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
 }
 
+/* Native app shell: viewport is locked, only page content scrolls. */
+@layer base {
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    touch-action: manipulation;
+  }
+}
+
 @utility bg-gradient-navy { background-image: var(--gradient-navy); }
 @utility bg-gradient-gold { background-image: var(--gradient-gold); }
 @utility bg-gradient-hero { background-image: var(--gradient-hero); }
