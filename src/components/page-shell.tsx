@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useRouterState } from "@tanstack/react-router";
 import { BottomNav } from "./bottom-nav";
 import { AppHeader } from "./app-header";
 
@@ -22,19 +23,33 @@ export function PageShell({
   showHeader?: boolean;
   showNav?: boolean;
 }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
-    <div className="min-h-[100dvh] bg-muted/30 flex justify-center overflow-x-hidden">
+    <div className="fixed inset-0 bg-muted/30 flex justify-center overflow-hidden">
       <div
-        className="relative w-full max-w-md min-h-[100dvh] bg-background flex flex-col md:shadow-2xl md:border-x md:border-border/40"
+        className="relative w-full max-w-md h-full bg-background flex flex-col md:shadow-2xl md:border-x md:border-border/40"
         style={{ paddingTop: showHeader ? undefined : "env(safe-area-inset-top)" }}
       >
-        {showHeader && <AppHeader title={title} />}
+        {showHeader && (
+          <div className="shrink-0">
+            <AppHeader title={title} />
+          </div>
+        )}
         <main
-          className={`flex-1 w-full ${showNav ? "pb-[calc(6rem+env(safe-area-inset-bottom))]" : "pb-[env(safe-area-inset-bottom)]"}`}
+          key={pathname}
+          className="flex-1 w-full overflow-y-auto overflow-x-hidden overscroll-contain animate-fade-in"
+          style={{
+            WebkitOverflowScrolling: "touch",
+            paddingBottom: showNav ? undefined : "env(safe-area-inset-bottom)",
+          } as React.CSSProperties}
         >
           {children}
         </main>
-        {showNav && <BottomNav />}
+        {showNav && (
+          <div className="shrink-0">
+            <BottomNav />
+          </div>
+        )}
       </div>
     </div>
   );
