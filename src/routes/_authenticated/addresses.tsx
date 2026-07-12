@@ -1,12 +1,103 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { MapPin, Plus, Trash2, Check, Pencil } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { MapPin, Plus, Trash2, Check, Pencil, ChevronDown, Search, X } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { addressesQuery } from "@/lib/queries";
 import { useAuth } from "@/lib/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+const IRAQ_GOVERNORATES = [
+  "بغداد",
+  "البصرة",
+  "نينوى",
+  "أربيل",
+  "النجف",
+  "كربلاء",
+  "بابل",
+  "ذي قار",
+  "ديالى",
+  "الأنبار",
+  "صلاح الدين",
+  "كركوك",
+  "واسط",
+  "ميسان",
+  "المثنى",
+  "القادسية",
+  "دهوك",
+  "السليمانية",
+  "حلبجة",
+];
+
+function GovernoratePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const filtered = useMemo(() => {
+    const s = q.trim();
+    if (!s) return IRAQ_GOVERNORATES;
+    return IRAQ_GOVERNORATES.filter((g) => g.includes(s));
+  }, [q]);
+  useEffect(() => {
+    if (!open) setQ("");
+  }, [open]);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="h-11 w-full px-4 rounded-xl bg-card border border-border text-sm outline-none focus:border-gold flex items-center justify-between text-right"
+      >
+        <span className={value ? "" : "text-muted-foreground"}>{value || "المحافظة"}</span>
+        <ChevronDown className="size-4 text-muted-foreground" />
+      </button>
+      {open && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center" onClick={() => setOpen(false)}>
+          <div
+            className="w-full max-w-md bg-background rounded-t-3xl sm:rounded-2xl max-h-[80vh] flex flex-col animate-in slide-in-from-bottom"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 p-4 border-b border-border">
+              <div className="font-bold flex-1">اختر المحافظة</div>
+              <button type="button" onClick={() => setOpen(false)} className="size-8 rounded-full bg-muted grid place-items-center">
+                <X className="size-4" />
+              </button>
+            </div>
+            <div className="p-3 border-b border-border">
+              <div className="relative">
+                <Search className="size-4 text-muted-foreground absolute top-1/2 -translate-y-1/2 right-3" />
+                <input
+                  autoFocus
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="ابحث عن محافظة..."
+                  className="h-11 w-full pr-10 pl-4 rounded-xl bg-card border border-border text-sm outline-none focus:border-gold"
+                />
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2">
+              {filtered.length === 0 ? (
+                <div className="text-center text-sm text-muted-foreground py-8">لا توجد نتائج</div>
+              ) : (
+                filtered.map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => { onChange(g); setOpen(false); }}
+                    className={`w-full text-right px-4 py-3 rounded-xl hover:bg-muted transition flex items-center justify-between ${value === g ? "bg-gold/10 text-gold font-bold" : ""}`}
+                  >
+                    <span>{g}</span>
+                    {value === g && <Check className="size-4" />}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/addresses")({
   component: AddressesPage,
@@ -144,7 +235,7 @@ function AddressForm({
   return (
     <form onSubmit={save} className="bg-card rounded-2xl border border-border p-4 shadow-card space-y-2">
       {input("full_name", "الاسم")}
-      {input("city", "المحافظة")}
+      <GovernoratePicker value={f.city} onChange={(v) => setF({ ...f, city: v })} />
       {input("area", "المنطقة")}
       {input("street", "أقرب نقطة دالة", false)}
       {input("phone", "الرقم الأول", true, "tel")}
