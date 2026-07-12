@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { ChevronLeft, LogOut, MapPin, Heart, Package, Bell, Info, Shield, MessageCircle, ShieldCheck, Sparkles, Lock, Camera, Loader2, Pencil, Check, X } from "lucide-react";
+import { ChevronLeft, LogOut, MapPin, Heart, Package, Bell, Info, Shield, ScrollText, MessageCircle, ShieldCheck, Sparkles, Lock, Camera, Loader2, Pencil, Check, X } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { VehicleBar, VehiclePicker } from "@/components/vehicle-picker";
 import { supabase } from "@/integrations/supabase/client";
@@ -89,6 +89,7 @@ function AccountPage() {
     { to: "/contact", label: "اتصل بنا", icon: MessageCircle },
     { to: "/about", label: "من نحن", icon: Info },
     { to: "/privacy", label: "سياسة الخصوصية", icon: Shield },
+    { to: "/terms", label: "الشروط والأحكام", icon: ScrollText },
   ] as const;
 
   return (
