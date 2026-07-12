@@ -23,6 +23,7 @@ async function loadConfig(ctx: { supabase: any }): Promise<ExternalApiConfig> {
     .in("key", [
       EXTERNAL_API_SETTING_KEYS.baseUrl,
       EXTERNAL_API_SETTING_KEYS.keyHeader,
+      EXTERNAL_API_SETTING_KEYS.apiKey,
       EXTERNAL_API_SETTING_KEYS.endpoints,
     ]);
   if (error) throw new Error(error.message);
@@ -40,7 +41,7 @@ async function executeExternalApiCall(
   const endpoint = config.endpoints.find((e) => e.id === endpointId);
   if (!endpoint) throw new Error("Endpoint not found");
 
-  const apiKey = process.env.EXTERNAL_API_KEY;
+  const apiKey = config.apiKey || process.env.EXTERNAL_API_KEY || "";
   if (!apiKey) throw new Error("API key not configured");
 
   const url = new URL(endpoint.path, config.baseUrl);

@@ -2293,6 +2293,8 @@ function ExternalApiSettings() {
 
   const [baseUrl, setBaseUrl] = useState("");
   const [keyHeader, setKeyHeader] = useState("Authorization");
+  const [apiKey, setApiKey] = useState("");
+  const [showKey, setShowKey] = useState(false);
   const [endpoints, setEndpoints] = useState<ExternalApiEndpoint[]>([]);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState<string | null>(null);
@@ -2302,6 +2304,7 @@ function ExternalApiSettings() {
     if (config) {
       setBaseUrl(config.baseUrl);
       setKeyHeader(config.keyHeader || "Authorization");
+      setApiKey(config.apiKey || "");
       setEndpoints(config.endpoints || []);
     }
   }, [config]);
@@ -2327,6 +2330,7 @@ function ExternalApiSettings() {
       const rows = [
         { key: "external_api_base_url", value: baseUrl.trim() },
         { key: "external_api_key_header", value: keyHeader.trim() || "Authorization" },
+        { key: "external_api_key", value: apiKey.trim() },
         { key: "external_api_endpoints", value: JSON.stringify(endpoints) },
       ];
       const { error } = await supabase
@@ -2384,6 +2388,25 @@ function ExternalApiSettings() {
         />
         <p className="text-xs text-muted-foreground mt-1">
           إذا كان Header = Authorization سيرسل تلقائياً كـ Bearer Token.
+        </p>
+      </Field>
+
+      <Field label="مفتاح API (API Key)">
+        <div className="flex gap-2">
+          <Input
+            type={showKey ? "text" : "password"}
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            placeholder="ألصق مفتاح API هنا"
+            dir="ltr"
+            className="flex-1"
+          />
+          <Button type="button" size="sm" variant="outline" onClick={() => setShowKey((v) => !v)}>
+            {showKey ? "إخفاء" : "إظهار"}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          يُخزَّن المفتاح في قاعدة البيانات (app_settings). لا تشاركه مع أحد.
         </p>
       </Field>
 
@@ -2456,10 +2479,6 @@ function ExternalApiSettings() {
           <Plus className="size-3" /> إضافة endpoint
         </Button>
       </div>
-
-      <p className="text-[11px] text-muted-foreground">
-        مفتاح API يُخزّن بشكل آمن في Secrets باسم <code>EXTERNAL_API_KEY</code>. اطلب من المطوّر إضافته قبل الاختبار.
-      </p>
 
       <Button className="w-full" onClick={save} disabled={saving}>
         {saving ? "جاري الحفظ..." : "حفظ إعدادات API"}
