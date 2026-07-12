@@ -2299,6 +2299,8 @@ function ExternalApiSettings() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ endpointId: string; ok: boolean; message: string } | null>(null);
+  const [connTesting, setConnTesting] = useState(false);
+  const [connResult, setConnResult] = useState<{ ok: boolean; status?: number; endpoint?: string; message: string; body?: string } | null>(null);
 
   useEffect(() => {
     if (config) {
@@ -2371,6 +2373,35 @@ function ExternalApiSettings() {
       setTestResult({ endpointId: id, ok: false, message: e.message ?? "فشل الاتصال" });
     } finally {
       setTesting(null);
+    }
+  };
+
+  const testConnection = async () => {
+    setConnResult(null);
+    const first = endpoints[0];
+    if (!first) {
+      setConnResult({ ok: false, message: "أضف endpoint واحدًا على الأقل ثم احفظ الإعدادات." });
+      return;
+    }
+    if (!config || config.baseUrl.trim() !== baseUrl.trim() || config.apiKey.trim() !== apiKey.trim() || JSON.stringify(config.endpoints) !== JSON.stringify(endpoints)) {
+      setConnResult({ ok: false, message: "احفظ الإعدادات أولاً قبل الاختبار." });
+      return;
+    }
+    setConnTesting(true);
+    try {
+      const r = await testFn({ data: { endpointId: first.id } });
+      const preview = (r.body || "").slice(0, 240);
+      setConnResult({
+        ok: r.ok,
+        status: r.status,
+        endpoint: `${first.method} ${first.path}`,
+        message: r.ok ? "تم الاتصال بنجاح" : "فشل الاتصال",
+        body: preview,
+      });
+    } catch (e: any) {
+      setConnResult({ ok: false, message: e?.message ?? "خطأ غير متوقع" });
+    } finally {
+      setConnTesting(false);
     }
   };
 
@@ -2488,6 +2519,44 @@ function ExternalApiSettings() {
         <Button size="sm" variant="secondary" onClick={addEndpoint} className="gap-1">
           <Plus className="size-3" /> إضافة endpoint
         </Button>
+      </div>
+
+      <div className="rounded-xl border border-border bg-background/60 p-3 space-y-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full gap-2"
+          onClick={testConnection}
+          disabled={connTesting}
+        >
+          {connTesting ? <Loader2 className="size-4 animate-spin" /> : <Activity className="size-4" />}
+          {connTesting ? "جاري الاختبار..." : "اختبار الاتصال"}
+        </Button>
+        <p className="text-[11px] text-muted-foreground">
+          يُجرَّب أول endpoint من السيرفر باستخدام Base URL ومفتاح API المحفوظين.
+        </p>
+        {connResult && (
+          <div
+            className={`rounded-lg border p-2 text-xs space-y-1 ${
+              connResult.ok
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                : "border-destructive/40 bg-destructive/10 text-destructive"
+            }`}
+          >
+            <div className="font-bold flex items-center gap-1">
+              {connResult.ok ? "✓" : "✕"} {connResult.message}
+              {connResult.status != null && <span className="opacity-70">— HTTP {connResult.status}</span>}
+            </div>
+            {connResult.endpoint && (
+              <div dir="ltr" className="font-mono opacity-80">{connResult.endpoint}</div>
+            )}
+            {connResult.body && (
+              <pre dir="ltr" className="mt-1 max-h-32 overflow-auto rounded bg-black/5 dark:bg-white/5 p-1.5 font-mono text-[10px] whitespace-pre-wrap break-all">
+                {connResult.body}
+              </pre>
+            )}
+          </div>
+        )}
       </div>
 
       <Button className="w-full" onClick={save} disabled={saving}>
