@@ -30,13 +30,54 @@ const IRAQ_GOVERNORATES = [
   "حلبجة",
 ];
 
+// Aliases / common alt spellings so search is forgiving
+const GOV_ALIASES: Record<string, string[]> = {
+  "بغداد": ["baghdad", "العاصمة"],
+  "البصرة": ["basra", "basrah", "بصرة"],
+  "نينوى": ["nineveh", "mosul", "الموصل", "موصل"],
+  "أربيل": ["erbil", "arbil", "hawler", "اربيل", "هولير"],
+  "النجف": ["najaf", "نجف"],
+  "كربلاء": ["karbala"],
+  "بابل": ["babil", "babylon", "hilla", "الحلة", "حلة"],
+  "ذي قار": ["thi qar", "dhi qar", "ناصرية", "الناصرية", "ذيقار"],
+  "ديالى": ["diyala", "baquba", "بعقوبة"],
+  "الأنبار": ["anbar", "الرمادي", "ramadi", "انبار"],
+  "صلاح الدين": ["salah al-din", "salahaddin", "تكريت", "tikrit"],
+  "كركوك": ["kirkuk"],
+  "واسط": ["wasit", "الكوت", "kut"],
+  "ميسان": ["maysan", "missan", "العمارة", "amara"],
+  "المثنى": ["muthanna", "السماوة", "samawah", "مثنى"],
+  "القادسية": ["qadisiyah", "diwaniyah", "الديوانية", "قادسية"],
+  "دهوك": ["duhok", "dohuk"],
+  "السليمانية": ["sulaymaniyah", "sulaimani", "سليمانية"],
+  "حلبجة": ["halabja"],
+};
+
+function normalizeAr(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[\u064B-\u0652\u0670]/g, "") // diacritics
+    .replace(/[إأآا]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ؤ/g, "و")
+    .replace(/ئ/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/گ/g, "ك")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function GovernoratePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const filtered = useMemo(() => {
-    const s = q.trim();
+    const s = normalizeAr(q);
     if (!s) return IRAQ_GOVERNORATES;
-    return IRAQ_GOVERNORATES.filter((g) => g.includes(s));
+    return IRAQ_GOVERNORATES.filter((g) => {
+      if (normalizeAr(g).includes(s)) return true;
+      const aliases = GOV_ALIASES[g] ?? [];
+      return aliases.some((a) => normalizeAr(a).includes(s));
+    });
   }, [q]);
   useEffect(() => {
     if (!open) setQ("");
