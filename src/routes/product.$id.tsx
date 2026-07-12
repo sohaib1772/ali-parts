@@ -299,7 +299,7 @@ function ProductPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-32">
+    <div className="h-[100dvh] overflow-y-auto overflow-x-hidden overscroll-contain bg-background pb-32" style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
       <div className="relative bg-card">
         <button onClick={goBack} aria-label="رجوع" className="absolute top-4 start-4 z-20 size-10 rounded-full bg-white/90 shadow-card grid place-items-center">
           <ArrowRight className="size-5" />
