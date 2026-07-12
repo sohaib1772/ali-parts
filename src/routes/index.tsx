@@ -21,6 +21,7 @@ import {
 import type { Banner, Product } from "@/lib/queries";
 import { formatIQD } from "@/lib/format";
 import { useAdjustedPrice } from "@/lib/admin";
+import { thumbUrl } from "@/lib/image-url";
 import { useCachedVideo } from "@/lib/use-cached-video";
 
 export const Route = createFileRoute("/")({
@@ -256,7 +257,7 @@ function CategoryIcon({ category, index }: { category: { id: string; name_ar: st
   if (category.image_url) {
     return (
       <img
-        src={category.image_url}
+        src={thumbUrl(category.image_url, { width: 240, quality: 70 })}
         alt={category.name_ar}
         className="w-full h-full object-cover transition-transform group-hover:scale-105"
         loading="lazy"
@@ -364,7 +365,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
     <div className="relative overflow-hidden rounded-3xl bg-gradient-hero text-primary-foreground shadow-luxe aspect-[16/10]">
       {current.image_url && (
         <img
-          src={current.image_url}
+          src={thumbUrl(current.image_url, { width: 1200, quality: 75 })}
           alt={current.title_ar ?? ""}
           decoding="async"
           fetchPriority="low"
@@ -592,6 +593,7 @@ function LimitedOffers({ deals }: { deals: Product[] }) {
 
 function OfferCard({ product }: { product: Product }) {
   const img = product.images?.[0];
+  const imgThumb = thumbUrl(img, { width: 500, quality: 65 });
   const adjust = useAdjustedPrice();
   return (
     <Link
@@ -602,7 +604,7 @@ function OfferCard({ product }: { product: Product }) {
       <div className="relative aspect-square bg-muted overflow-hidden">
         {img ? (
           <img
-            src={img}
+            src={imgThumb}
             alt={product.name_ar}
             loading="lazy"
             decoding="async"
