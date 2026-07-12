@@ -2663,6 +2663,7 @@ function SettingsAdmin() {
         </div>
         <p className="text-xs text-muted-foreground">اترك الاسم فارغاً لإخفاء الخيار من صفحة الدفع.</p>
       </div>
+      <ExternalApiSettings />
       <Button className="w-full" onClick={save} disabled={saving}>
         {saving ? "جاري الحفظ..." : "حفظ"}
       </Button>
