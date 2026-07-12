@@ -2909,7 +2909,7 @@ async function resizeImageFile(file: File, size: number): Promise<File> {
   }
 }
 
-function ImageUploader({ images, onChange, max = 6, resizeTo }: { images: string[]; onChange: (imgs: string[]) => void; max?: number; resizeTo?: number }) {
+function ImageUploader({ images, onChange, max = 6, resizeTo, onUploadingChange }: { images: string[]; onChange: (imgs: string[]) => void; max?: number; resizeTo?: number; onUploadingChange?: (uploading: boolean) => void }) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [done, setDone] = useState(0);
@@ -2919,6 +2919,7 @@ function ImageUploader({ images, onChange, max = 6, resizeTo }: { images: string
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setUploading(true);
+    onUploadingChange?.(true);
     const list = Array.from(files).slice(0, max - images.length);
     setTotal(list.length);
     setDone(0);
@@ -2939,6 +2940,7 @@ function ImageUploader({ images, onChange, max = 6, resizeTo }: { images: string
       toast.error(e.message ?? "فشل رفع الصور");
     } finally {
       setUploading(false);
+      onUploadingChange?.(false);
       setProgress(0);
       setDone(0);
       setTotal(0);
