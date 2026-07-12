@@ -50,7 +50,7 @@ import { createStaff, updateStaff, deleteStaff, listStaff } from "@/lib/staff.fu
 import { broadcastPricesChanged } from "@/lib/price-sync";
 import { normalizePhone } from "@/lib/phone-auth";
 import { getExternalApiConfig, testExternalApi } from "@/lib/external-api.functions";
-import type { ExternalApiEndpoint } from "@/lib/external-api";
+import { validateExternalApiConfig, type ExternalApiEndpoint } from "@/lib/external-api";
 
 function getAdminDeviceId(): string {
   if (typeof window === "undefined") return "";
@@ -2325,6 +2325,16 @@ function ExternalApiSettings() {
   };
 
   const save = async () => {
+    const errs = validateExternalApiConfig({
+      baseUrl,
+      keyHeader,
+      apiKey,
+      endpoints,
+    });
+    if (errs.length > 0) {
+      toast.error(errs[0].message);
+      return;
+    }
     setSaving(true);
     try {
       const rows = [
