@@ -2299,6 +2299,8 @@ function ExternalApiSettings() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ endpointId: string; ok: boolean; message: string } | null>(null);
+  const [connTesting, setConnTesting] = useState(false);
+  const [connResult, setConnResult] = useState<{ ok: boolean; status?: number; endpoint?: string; message: string; body?: string } | null>(null);
 
   useEffect(() => {
     if (config) {
@@ -2371,6 +2373,35 @@ function ExternalApiSettings() {
       setTestResult({ endpointId: id, ok: false, message: e.message ?? "فشل الاتصال" });
     } finally {
       setTesting(null);
+    }
+  };
+
+  const testConnection = async () => {
+    setConnResult(null);
+    const first = endpoints[0];
+    if (!first) {
+      setConnResult({ ok: false, message: "أضف endpoint واحدًا على الأقل ثم احفظ الإعدادات." });
+      return;
+    }
+    if (!config || config.baseUrl.trim() !== baseUrl.trim() || config.apiKey.trim() !== apiKey.trim() || JSON.stringify(config.endpoints) !== JSON.stringify(endpoints)) {
+      setConnResult({ ok: false, message: "احفظ الإعدادات أولاً قبل الاختبار." });
+      return;
+    }
+    setConnTesting(true);
+    try {
+      const r = await testFn({ data: { endpointId: first.id } });
+      const preview = (r.body || "").slice(0, 240);
+      setConnResult({
+        ok: r.ok,
+        status: r.status,
+        endpoint: `${first.method} ${first.path}`,
+        message: r.ok ? "تم الاتصال بنجاح" : "فشل الاتصال",
+        body: preview,
+      });
+    } catch (e: any) {
+      setConnResult({ ok: false, message: e?.message ?? "خطأ غير متوقع" });
+    } finally {
+      setConnTesting(false);
     }
   };
 
