@@ -159,10 +159,10 @@ function GovernoratePicker({ value, onChange }: { value: string; onChange: (v: s
                 <div className="text-center text-sm text-muted-foreground py-8">لا توجد نتائج</div>
               ) : (
                 filtered.map((g) => (
-                  <button
+                    <button
                     key={g}
                     type="button"
-                    onClick={() => { onChange(g); setOpen(false); }}
+                    onClick={() => { onChange(g); bump(g); setOpen(false); }}
                     className={`w-full text-right px-4 py-3 rounded-xl hover:bg-muted transition flex items-center justify-between ${value === g ? "bg-gold/10 text-gold font-bold" : ""}`}
                   >
                     <span>{g}</span>
