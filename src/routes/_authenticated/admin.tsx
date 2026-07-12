@@ -1207,6 +1207,7 @@ function ProductsAdmin() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<ProductForm>(emptyProduct);
   const [saving, setSaving] = useState(false);
+  const [imgUploading, setImgUploading] = useState(false);
   const [search, setSearch] = useState("");
   const [deleteProduct, setDeleteProduct] = useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -1276,6 +1277,10 @@ function ProductsAdmin() {
   const save = async () => {
     if (!form.name_ar.trim() || !form.price_usd) {
       toast.error("الاسم والسعر بالدولار مطلوبان");
+      return;
+    }
+    if (imgUploading) {
+      toast.error("انتظر حتى اكتمال رفع الصور");
       return;
     }
     setSaving(true);
@@ -1392,7 +1397,7 @@ function ProductsAdmin() {
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{form.id ? "تعديل منتج" : "إضافة منتج جديد"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <ImageUploader images={form.images} onChange={(imgs) => setForm({ ...form, images: imgs })} />
+            <ImageUploader images={form.images} onChange={(imgs) => setForm({ ...form, images: imgs })} onUploadingChange={setImgUploading} />
             <Field label="الاسم بالعربي *">
               <Input value={form.name_ar} onChange={(e) => setForm({ ...form, name_ar: e.target.value })} />
             </Field>
@@ -1521,8 +1526,8 @@ function ProductsAdmin() {
                 />
               </Field>
             )}
-            <Button className="w-full" onClick={save} disabled={saving}>
-              {saving ? "جاري الحفظ..." : "حفظ"}
+            <Button className="w-full" onClick={save} disabled={saving || imgUploading}>
+              {imgUploading ? "جاري رفع الصور..." : saving ? "جاري الحفظ..." : "حفظ"}
             </Button>
           </div>
         </DialogContent>
