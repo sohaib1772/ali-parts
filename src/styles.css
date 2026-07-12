@@ -166,6 +166,22 @@
   h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
 }
 
+/* Native app shell: viewport is locked, only page content scrolls. */
+@layer base {
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    touch-action: manipulation;
+  }
+}
+
 @utility bg-gradient-navy { background-image: var(--gradient-navy); }
 @utility bg-gradient-gold { background-image: var(--gradient-gold); }
 @utility bg-gradient-hero { background-image: var(--gradient-hero); }
@@ -218,7 +234,12 @@
 .print-only.pdf-capture { display: block !important; position: fixed; inset: 0; z-index: -1; background: #fff; width: 210mm; }
 @media print {
   @page { size: A4; margin: 14mm; }
-  html, body { background: white !important; }
+  html, body {
+    background: white !important;
+    position: static !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
   .no-print { display: none !important; }
   /* By default hide all printable invoices; show only the one flagged with .pdf-capture */
   .print-only { display: none !important; }
