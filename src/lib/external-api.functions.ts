@@ -65,12 +65,14 @@ async function executeExternalApiCall(
     body: endpoint.method !== "GET" && body ? JSON.stringify(body) : undefined,
   });
 
-  let responseBody: unknown;
+  let responseBody: string | Record<string, unknown> | null = null;
   const contentType = response.headers.get("content-type") || "";
   try {
-    responseBody = contentType.includes("application/json")
-      ? await response.json()
-      : await response.text();
+    if (contentType.includes("application/json")) {
+      responseBody = (await response.json()) as Record<string, unknown>;
+    } else {
+      responseBody = await response.text();
+    }
   } catch {
     responseBody = null;
   }
