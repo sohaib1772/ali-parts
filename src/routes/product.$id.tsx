@@ -24,8 +24,10 @@ export const Route = createFileRoute("/product/$id")({
     meta: [{ title: `المنتج · Ali Parts` }, { name: "description", content: `تفاصيل المنتج ${params.id}` }],
   }),
   component: ProductPage,
-  pendingMs: 0,
-  pendingMinMs: 200,
+  // Only show the skeleton if data actually takes a moment; when the router
+  // preloaded on intent the navigation should feel instant.
+  pendingMs: 400,
+  pendingMinMs: 0,
   pendingComponent: ProductPending,
   errorComponent: ({ reset }) => {
     const router = useRouter();
