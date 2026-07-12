@@ -6,11 +6,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatIQD, whatsappLink } from "@/lib/format";
 import type { Product } from "@/lib/queries";
 import { useSetting, useAdjustedPrice } from "@/lib/admin";
+import { thumbUrl } from "@/lib/image-url";
 import { WhatsappIcon } from "./icons";
 
 export function ProductCard({ product }: { product: Product }) {
   const qc = useQueryClient();
   const img = product.images?.[0];
+  const imgThumb = thumbUrl(img, { width: 500, quality: 65 });
   const waNumber = useSetting("whatsapp_number");
   const adjust = useAdjustedPrice();
   const stockQty = (product as any).stock_qty ?? 0;
@@ -83,7 +85,7 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="relative aspect-square bg-muted overflow-hidden">
         {img ? (
           <img
-            src={img}
+            src={imgThumb}
             alt={product.name_ar}
             loading="lazy"
             decoding="async"
