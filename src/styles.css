@@ -234,7 +234,12 @@
 .print-only.pdf-capture { display: block !important; position: fixed; inset: 0; z-index: -1; background: #fff; width: 210mm; }
 @media print {
   @page { size: A4; margin: 14mm; }
-  html, body { background: white !important; }
+  html, body {
+    background: white !important;
+    position: static !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
   .no-print { display: none !important; }
   /* By default hide all printable invoices; show only the one flagged with .pdf-capture */
   .print-only { display: none !important; }
