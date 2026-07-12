@@ -68,8 +68,8 @@ export function BottomNav() {
     isOrderUnseen(seen, o.id, o.updated_at, o.created_at),
   ).length;
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-border/60 bg-card/95 backdrop-blur-lg pb-[env(safe-area-inset-bottom)] shadow-luxe">
-      <div className="mx-auto max-w-md grid grid-cols-5">
+    <nav className="sticky bottom-0 inset-x-0 z-40 border-t border-border/60 bg-card/95 backdrop-blur-lg pb-[env(safe-area-inset-bottom)] shadow-luxe">
+      <div className="w-full grid grid-cols-5">
         {items.map((it) => {
           const active = pathname === it.to || (it.to !== "/" && pathname.startsWith(it.to));
           const Icon = it.icon;
