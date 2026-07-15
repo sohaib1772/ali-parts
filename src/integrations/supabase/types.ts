@@ -7,10 +7,30 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -560,9 +580,7 @@ export type Database = {
           address: Json
           admin_reviewed: boolean
           created_at: string
-          guest_token: string | null
           id: string
-          is_guest: boolean
           notes: string | null
           order_number: string
           payment_method: string
@@ -574,15 +592,13 @@ export type Database = {
           subtotal_iqd: number
           total_iqd: number
           updated_at: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           address: Json
           admin_reviewed?: boolean
           created_at?: string
-          guest_token?: string | null
           id?: string
-          is_guest?: boolean
           notes?: string | null
           order_number?: string
           payment_method?: string
@@ -594,15 +610,13 @@ export type Database = {
           subtotal_iqd?: number
           total_iqd?: number
           updated_at?: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           address?: Json
           admin_reviewed?: boolean
           created_at?: string
-          guest_token?: string | null
           id?: string
-          is_guest?: boolean
           notes?: string | null
           order_number?: string
           payment_method?: string
@@ -614,7 +628,7 @@ export type Database = {
           subtotal_iqd?: number
           total_iqd?: number
           updated_at?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -1074,17 +1088,15 @@ export type Database = {
         Args: { p_product_id: string; p_quantity?: number; p_side?: string }
         Returns: undefined
       }
+      admin_otp_verified: { Args: { p_device_id: string }; Returns: boolean }
       admin_set_user_blocked: {
         Args: { p_blocked: boolean; p_reason?: string; p_user_id: string }
         Returns: undefined
       }
+      cancel_my_order: { Args: { p_order_id: string }; Returns: undefined }
       compute_iqd_from_usd: {
         Args: { _rate: number; _rounding: number; _usd: number }
         Returns: number
-      }
-      get_guest_order: {
-        Args: { p_guest_token: string; p_order_number: string }
-        Returns: Json
       }
       get_public_profiles: {
         Args: { _ids: string[] }
@@ -1110,19 +1122,6 @@ export type Database = {
           p_metadata?: Json
         }
         Returns: string
-      }
-      place_guest_order: {
-        Args: {
-          p_address: Json
-          p_items: Json
-          p_notes: string
-          p_payment: string
-        }
-        Returns: {
-          guest_token: string
-          order_id: string
-          order_number: string
-        }[]
       }
       place_order: {
         Args: {
@@ -1277,6 +1276,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["admin", "user"],
@@ -1299,3 +1301,4 @@ export const Constants = {
     },
   },
 } as const
+

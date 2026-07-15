@@ -36,7 +36,7 @@ function OrdersPage() {
     e.stopPropagation();
     if (!confirm("هل تريد إلغاء هذا الطلب؟")) return;
     setCancellingId(id);
-    const { error } = await supabase.rpc("cancel_my_order" as any, { p_order_id: id });
+    const { error } = await supabase.rpc("cancel_my_order", { p_order_id: id });
     setCancellingId(null);
     if (error) {
       toast.error(error.message || "تعذّر إلغاء الطلب");

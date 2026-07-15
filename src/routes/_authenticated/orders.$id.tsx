@@ -122,7 +122,7 @@ function OrderDetail() {
   const handleCancel = async () => {
     if (!confirm("هل تريد إلغاء هذا الطلب؟")) return;
     setCancelling(true);
-    const { error } = await supabase.rpc("cancel_my_order" as any, { p_order_id: order.id });
+    const { error } = await supabase.rpc("cancel_my_order", { p_order_id: order.id });
     setCancelling(false);
     if (error) {
       toast.error(error.message || "تعذّر إلغاء الطلب");
