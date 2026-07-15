@@ -111,7 +111,7 @@ function OrderDetail() {
 
   useEffect(() => {
     markOrderSeen(order.id, (order as any).updated_at ?? order.created_at);
-  }, [order.id, (order as any).updated_at, order.created_at]);
+  }, [order]);
 
   const activeIdx = TIMELINE.findIndex((t) => t.key === order.status);
   const cancelled = order.status === "cancelled";

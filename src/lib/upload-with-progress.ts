@@ -42,44 +42,54 @@ function uploadViaSignedUrl(
   file: File,
   onProgress?: (pct: number) => void,
 ): Promise<void> {
-  return new Promise(async (resolve, reject) => {
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .createSignedUploadUrl(key);
-    if (error || !data?.signedUrl) {
-      reject(error ?? new Error("createSignedUploadUrl failed"));
-      return;
-    }
+  return new Promise<void>((resolve, reject) => {
+    // Non-async executor: the async work runs in an IIFE whose try/catch guarantees the
+    // promise ALWAYS settles. Previously the executor was `async`, so a throw from
+    // createSignedUploadUrl (or xhr setup) was swallowed and the promise hung forever.
+    void (async () => {
+      try {
+        const { data, error } = await supabase.storage
+          .from(bucket)
+          .createSignedUploadUrl(key);
+        if (error || !data?.signedUrl) {
+          reject(error ?? new Error("createSignedUploadUrl failed"));
+          return;
+        }
 
-    const xhr = new XMLHttpRequest();
-    // Watchdog: if nothing progresses for 30s, abort so we can fall back.
-    let lastTick = Date.now();
-    const watchdog = window.setInterval(() => {
-      if (Date.now() - lastTick > 30_000) {
-        try { xhr.abort(); } catch {}
-      }
-    }, 5_000);
-    const cleanup = () => window.clearInterval(watchdog);
+        const xhr = new XMLHttpRequest();
+        // Watchdog: if nothing progresses for 30s, abort so we can fall back.
+        let lastTick = Date.now();
+        const watchdog = window.setInterval(() => {
+          if (Date.now() - lastTick > 30_000) {
+            try { xhr.abort(); } catch {}
+          }
+        }, 5_000);
+        const cleanup = () => window.clearInterval(watchdog);
 
-    xhr.open("PUT", data.signedUrl);
-    if (file.type) xhr.setRequestHeader("Content-Type", file.type);
-    xhr.upload.onprogress = (e) => {
-      lastTick = Date.now();
-      if (e.lengthComputable && onProgress) {
-        onProgress(e.loaded / e.total);
+        xhr.open("PUT", data.signedUrl);
+        if (file.type) xhr.setRequestHeader("Content-Type", file.type);
+        xhr.upload.onprogress = (e) => {
+          lastTick = Date.now();
+          if (e.lengthComputable && onProgress) {
+            onProgress(e.loaded / e.total);
+          }
+        };
+        xhr.onload = () => {
+          cleanup();
+          if (xhr.status >= 200 && xhr.status < 300) {
+            onProgress?.(1);
+            resolve();
+          } else {
+            reject(new Error(xhr.responseText || `Upload failed (${xhr.status})`));
+          }
+        };
+        xhr.onerror = () => { cleanup(); reject(new Error("network error")); };
+        xhr.onabort = () => { cleanup(); reject(new Error("aborted")); };
+        xhr.ontimeout = () => { cleanup(); reject(new Error("timeout")); };
+        xhr.send(file);
+      } catch (err) {
+        reject(err);
       }
-    };
-    xhr.onload = () => {
-      cleanup();
-      if (xhr.status >= 200 && xhr.status < 300) {
-        onProgress?.(1);
-        resolve();
-      } else {
-        reject(new Error(xhr.responseText || `Upload failed (${xhr.status})`));
-      }
-    };
-    xhr.onerror = () => { cleanup(); reject(new Error("network error")); };
-    xhr.onabort = () => { cleanup(); reject(new Error("aborted")); };
-    xhr.send(file);
+    })();
   });
 }

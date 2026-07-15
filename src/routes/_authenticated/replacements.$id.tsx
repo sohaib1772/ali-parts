@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Clock, Search, ThumbsUp, ThumbsDown, CheckCircle2, PackageX, Repeat, FileText, StickyNote, Paperclip, ImageIcon, FileIcon, Upload, X, Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
@@ -240,7 +240,12 @@ function AttachmentsSection({ request }: { request: any }) {
     { name: string; size: number; progress: number; status: "uploading" | "done" | "error" }[]
   >([]);
 
-  const paths: string[] = Array.isArray(request.attachments) ? request.attachments : [];
+  // Memoized so the reference is stable across renders (a fresh `[]` every render would make
+  // the signed-urls effect below re-run each render — and re-setUrls — in a loop).
+  const paths = useMemo<string[]>(
+    () => (Array.isArray(request.attachments) ? request.attachments : []),
+    [request.attachments],
+  );
   const isOwner = userId === request.user_id;
   const canUpload = isOwner && paths.length < MAX_ATTACHMENTS;
 
@@ -264,7 +269,7 @@ function AttachmentsSection({ request }: { request: any }) {
     return () => {
       cancelled = true;
     };
-  }, [paths.join("|")]);
+  }, [paths]);
 
   const handlePick = () => inputRef.current?.click();
 

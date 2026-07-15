@@ -29,17 +29,21 @@ export const Route = createFileRoute("/product/$id")({
   pendingMs: 400,
   pendingMinMs: 0,
   pendingComponent: ProductPending,
-  errorComponent: ({ reset }) => {
-    const router = useRouter();
-    return (
-      <div className="p-8 text-center">
-        <p className="mb-4">حدث خطأ في تحميل المنتج</p>
-        <button onClick={() => { router.invalidate(); reset(); }} className="px-4 py-2 rounded-xl bg-navy text-primary-foreground">إعادة المحاولة</button>
-      </div>
-    );
-  },
+  errorComponent: ({ reset }) => <ProductErrorFallback reset={reset} />,
   notFoundComponent: () => <div className="p-8 text-center">المنتج غير موجود</div>,
 });
+
+// A real (capitalized) component, so the useRouter hook is called legitimately —
+// errorComponent is a plain object property, not a component, so hooks can't run there.
+function ProductErrorFallback({ reset }: { reset: () => void }) {
+  const router = useRouter();
+  return (
+    <div className="p-8 text-center">
+      <p className="mb-4">حدث خطأ في تحميل المنتج</p>
+      <button onClick={() => { router.invalidate(); reset(); }} className="px-4 py-2 rounded-xl bg-navy text-primary-foreground">إعادة المحاولة</button>
+    </div>
+  );
+}
 
 function ProductPending() {
   return (
