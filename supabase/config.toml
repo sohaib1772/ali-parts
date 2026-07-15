@@ -1,1 +1,7 @@
 project_id = "nqdsvubimpftjfygzisx"
+
+# Local dev only: the analytics (logflare) container cannot pass health checks on
+# Windows without exposing the Docker daemon on tcp://localhost:2375. The app does not
+# use analytics, so disable it so `supabase start` can bring up the core stack.
+[analytics]
+enabled = false

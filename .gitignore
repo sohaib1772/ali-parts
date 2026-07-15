@@ -37,3 +37,6 @@ dist-ssr
 
 # stray duplicate clone
 ali-parts-pro/
+
+supabase/.temp/
+supabase/.branches/
