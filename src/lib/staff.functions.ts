@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdminOtp } from "@/integrations/supabase/require-admin-otp";
 import { normalizePhone, phoneToEmail } from "@/lib/phone-auth";
 
 async function assertAdmin(ctx: { supabase: any; userId: string }) {
@@ -38,6 +39,7 @@ export const createStaff = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => CreateInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    await requireAdminOtp(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const normalized = normalizePhone(data.phone);
@@ -82,6 +84,7 @@ export const updateStaff = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => UpdateInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    await requireAdminOtp(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     if (data.password) {
@@ -127,6 +130,7 @@ export const deleteStaff = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => IdInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    await requireAdminOtp(context);
     if (data.user_id === context.userId) throw new Error("لا يمكنك حذف حسابك.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -151,6 +155,7 @@ export const listStaff = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context);
+    await requireAdminOtp(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: staff, error } = await supabaseAdmin

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdminOtp } from "@/integrations/supabase/require-admin-otp";
 
 async function assertAdmin(ctx: { supabase: any; userId: string }) {
   const { data, error } = await ctx.supabase.rpc("has_role", {
@@ -36,6 +37,7 @@ export const previewBulkPriceUpdate = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => PreviewInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    await requireAdminOtp(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: products, error } = await supabaseAdmin
       .from("products")
@@ -65,6 +67,7 @@ export const applyBulkPriceUpdate = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ApplyInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    await requireAdminOtp(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: products, error } = await supabaseAdmin
@@ -118,6 +121,7 @@ export const listPriceBackups = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context);
+    await requireAdminOtp(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("price_update_backups")
@@ -141,6 +145,7 @@ export const restorePriceBackup = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => RestoreInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    await requireAdminOtp(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: backup, error } = await supabaseAdmin
       .from("price_update_backups")

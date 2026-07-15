@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdminOtp } from "@/integrations/supabase/require-admin-otp";
 import {
   type ExternalApiConfig,
   type ExternalApiEndpoint,
@@ -89,6 +90,7 @@ export const getExternalApiConfig = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context);
+    await requireAdminOtp(context);
     return await loadConfig(context);
   });
 
@@ -103,6 +105,7 @@ export const callExternalApi = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => CallInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    await requireAdminOtp(context);
     const config = await loadConfig(context);
     return await executeExternalApiCall(config, data.endpointId, data.body, data.query);
   });
@@ -116,6 +119,7 @@ export const testExternalApi = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => TestInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    await requireAdminOtp(context);
     const config = await loadConfig(context);
     return await executeExternalApiCall(config, data.endpointId);
   });

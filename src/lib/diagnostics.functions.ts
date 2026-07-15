@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdminOtp } from "@/integrations/supabase/require-admin-otp";
 
 export type CheckStatus = "ok" | "warn" | "fail";
 export type Check = { id: string; label: string; status: CheckStatus; detail: string };
@@ -18,6 +19,7 @@ export const runDiagnostics = createServerFn({ method: "POST" })
       _role: "admin",
     });
     if (!isAdmin) throw new Error("Forbidden");
+    await requireAdminOtp(context);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 

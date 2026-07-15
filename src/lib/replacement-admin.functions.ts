@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdminOtp } from "@/integrations/supabase/require-admin-otp";
 
 const VALID_STATUSES = ["pending", "in_review", "approved", "rejected", "resolved"] as const;
 type Status = (typeof VALID_STATUSES)[number];
@@ -15,6 +16,7 @@ export const adminUpdateReplacementStatus = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
     if (!isAdmin) throw new Error("Forbidden");
+    await requireAdminOtp(context);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendReplacementPush } = await import("./web-push.server");

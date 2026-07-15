@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdminOtp } from "@/integrations/supabase/require-admin-otp";
 
 export const broadcastBannerPush = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -13,6 +14,7 @@ export const broadcastBannerPush = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
     if (!isAdmin) throw new Error("Forbidden");
+    await requireAdminOtp(context);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendBroadcastPush } = await import("./web-push.server");

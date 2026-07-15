@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdminOtp } from "@/integrations/supabase/require-admin-otp";
 
 async function assertAdmin(ctx: { supabase: any; userId: string }) {
   const { data, error } = await ctx.supabase.rpc("has_role", {
@@ -35,6 +36,7 @@ export const adminSetUserPassword = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => SetPasswordInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    await requireAdminOtp(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.user_id, {
       password: data.password,
@@ -48,6 +50,7 @@ export const adminSetUserBlocked = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => SetBlockedInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    await requireAdminOtp(context);
     if (data.user_id === context.userId) throw new Error("لا يمكنك حظر حسابك الإداري.");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -84,6 +87,7 @@ export const adminListUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context);
+    await requireAdminOtp(context);
     return await listUsersImpl(context);
   });
 
@@ -91,6 +95,7 @@ export const moderatorListUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertModerator(context);
+    await requireAdminOtp(context);
     return await listUsersImpl(context);
   });
 
