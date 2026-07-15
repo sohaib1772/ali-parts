@@ -36,10 +36,10 @@ function OrdersPage() {
     e.stopPropagation();
     if (!confirm("هل تريد إلغاء هذا الطلب؟")) return;
     setCancellingId(id);
-    const { error } = await supabase.from("orders").update({ status: "cancelled" }).eq("id", id);
+    const { error } = await supabase.rpc("cancel_my_order" as any, { p_order_id: id });
     setCancellingId(null);
     if (error) {
-      toast.error("تعذّر إلغاء الطلب");
+      toast.error(error.message || "تعذّر إلغاء الطلب");
     } else {
       toast.success("تم إلغاء الطلب");
       qc.invalidateQueries({ queryKey: ["orders", userId] });
