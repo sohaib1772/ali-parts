@@ -383,7 +383,7 @@ export function InvoicePreviewDialog({
         <DialogHeader className="px-4 py-3 border-b border-border bg-gradient-navy text-primary-foreground">
           <div className="flex items-center justify-between gap-3">
             <DialogTitle className="text-sm font-black text-gold flex items-center gap-2">
-              <img src={LOGO_URL} alt="" className="size-7 rounded-md bg-black object-contain" />
+              <img src={LOGO_URL} alt="" className="size-7 rounded-md bg-black object-contain" onError={(e) => { e.currentTarget.style.display = "none"; }} />
               معاينة الفاتورة
             </DialogTitle>
             <div className="flex items-center gap-2">
@@ -490,12 +490,12 @@ function InvoiceBody({ order, items, customer }: { order: any; items: any[]; cus
   return (
     <div style={{ maxWidth: "780px", margin: "0 auto", padding: "0", color: "#0a1a3a", background: "#ffffff", position: "relative", overflow: "hidden" }}>
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", opacity: 0.05, zIndex: 0 }}>
-        <img src={LOGO_URL} alt="" style={{ width: "520px", height: "520px", objectFit: "contain" }} />
+        <img src={LOGO_URL} alt="" style={{ width: "520px", height: "520px", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
       </div>
       <div style={{ position: "relative", zIndex: 1, background: "linear-gradient(135deg, #0a1a3a 0%, #142451 55%, #0a1a3a 100%)", color: "#f5c96a", padding: "18px 22px", borderBottom: "4px solid #c9a24a", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
           <div style={{ width: "82px", height: "82px", borderRadius: "12px", background: "#000", padding: "4px", boxShadow: "0 6px 18px rgba(0,0,0,0.35)", display: "grid", placeItems: "center" }}>
-            <img src={LOGO_URL} alt="Ali Chevrolet" crossOrigin="anonymous" style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "8px" }} />
+            <img src={LOGO_URL} alt="Ali Chevrolet" crossOrigin="anonymous" style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "8px" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
           </div>
           <div>
             <div style={{ fontSize: "24px", fontWeight: 900, letterSpacing: "0.02em", color: "#ffffff" }}>ALI CHEVROLET</div>

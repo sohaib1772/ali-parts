@@ -18,10 +18,12 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-10 rounded-md px-8",
-        icon: "h-9 w-9",
+        // Native-app tap targets: >=44px (Apple) for primary controls.
+        // sm stays compact (36px) for dense/secondary toolbars but no longer tiny.
+        default: "h-11 px-4 py-2",
+        sm: "h-9 rounded-md px-3 text-xs",
+        lg: "h-12 rounded-md px-8",
+        icon: "size-11",
       },
     },
     defaultVariants: {
