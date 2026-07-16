@@ -2675,14 +2675,14 @@ function SettingsAdmin() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 md:grid md:grid-cols-2 md:gap-x-4 md:gap-y-4 md:space-y-0 md:items-start">
       <Field label="اسم المتجر">
         <Input value={nameVal} onChange={(e) => setName(e.target.value)} placeholder="Ali Parts" />
       </Field>
       <Field label="الشعار الفرعي (تحت الاسم)">
         <Input value={taglineVal} onChange={(e) => setTagline(e.target.value)} placeholder="قطع أصلية · العراق" />
       </Field>
-      <div>
+      <div className="md:col-span-2">
         <Label className="text-xs mb-1 block">شعار المتجر (لوگو)</Label>
         <ImageUploader
           images={logoVal ? [logoVal] : []}
@@ -2730,7 +2730,7 @@ function SettingsAdmin() {
           inputMode="numeric"
         />
       </Field>
-      <div>
+      <div className="md:col-span-2">
         <Label className="text-xs mb-1 block">صورة واجهة المحل</Label>
         <ImageUploader
           images={frontImageVal ? [frontImageVal] : []}
@@ -2739,10 +2739,12 @@ function SettingsAdmin() {
         />
         <p className="text-xs text-muted-foreground mt-1">تظهر في صفحة من نحن.</p>
       </div>
-      <Field label="نبذة عن المتجر (يظهر في من نحن)">
-        <Textarea value={aboutVal} onChange={(e) => setAbout(e.target.value)} rows={4} placeholder="متجر متخصص في بيع قطع غيار..." />
-      </Field>
-      <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-2">
+      <div className="md:col-span-2">
+        <Field label="نبذة عن المتجر (يظهر في من نحن)">
+          <Textarea value={aboutVal} onChange={(e) => setAbout(e.target.value)} rows={4} placeholder="متجر متخصص في بيع قطع غيار..." />
+        </Field>
+      </div>
+      <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-2 md:col-span-2">
         <div className="text-sm font-bold text-gold">تعديل السعر العام (د.ع)</div>
         <Input
           type="number"
@@ -2758,9 +2760,9 @@ function SettingsAdmin() {
           الأسعار الأصلية المحفوظة في قاعدة البيانات.
         </p>
       </div>
-      <ExchangeRateSettings />
-      <VideoCacheSettings />
-      <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-3">
+      <div className="md:col-span-2"><ExchangeRateSettings /></div>
+      <div className="md:col-span-2"><VideoCacheSettings /></div>
+      <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-3 md:col-span-2">
         <div className="text-sm font-bold text-gold flex items-center gap-2">
           <Package className="size-4" /> إعدادات شركات التوصيل
         </div>
@@ -2782,8 +2784,8 @@ function SettingsAdmin() {
         </div>
         <p className="text-xs text-muted-foreground">اترك الاسم فارغاً لإخفاء الخيار من صفحة الدفع.</p>
       </div>
-      <ExternalApiSettings />
-      <Button className="w-full" onClick={save} disabled={saving}>
+      <div className="md:col-span-2"><ExternalApiSettings /></div>
+      <Button className="w-full md:col-span-2" onClick={save} disabled={saving}>
         {saving ? "جاري الحفظ..." : "حفظ"}
       </Button>
     </div>
