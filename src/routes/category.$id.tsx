@@ -22,7 +22,7 @@ function CategoryPage() {
   const filtered = filterProductsByVehicle(products, vehicle);
 
   return (
-    <PageShell title={cat?.name_ar ?? "التصنيف"}>
+    <PageShell wide title={cat?.name_ar ?? "التصنيف"}>
       <div className="px-4 pt-4">
         {vehicle && (
           <div className="text-xs text-gold font-semibold mb-2">
@@ -33,7 +33,7 @@ function CategoryPage() {
         {filtered.length === 0 ? (
           <div className="text-center text-muted-foreground py-16 text-sm">لا توجد منتجات متوافقة مع مركبتك في هذا التصنيف</div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {filtered.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
         )}

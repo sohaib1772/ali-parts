@@ -86,7 +86,7 @@ function AllProductsPage() {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage, isFetchNextPageError, autoLoadAll]);
 
   return (
-    <PageShell title="المنتجات">
+    <PageShell wide title="المنتجات">
       <div className="px-4 pt-3">
         <Link to="/" className="inline-flex items-center gap-1 text-xs text-muted-foreground mb-3">
           <ChevronLeft className="size-3.5 rotate-180" /> الرئيسية
@@ -125,7 +125,7 @@ function AllProductsPage() {
         </div>
 
         {isPending ? (
-          <div className="grid grid-cols-2 gap-3 pb-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pb-8">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="rounded-2xl bg-muted h-64 animate-pulse" />
             ))}
@@ -151,7 +151,7 @@ function AllProductsPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3 pb-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pb-8">
               {products.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}

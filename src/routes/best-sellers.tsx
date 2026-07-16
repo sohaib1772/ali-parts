@@ -24,7 +24,7 @@ function BestSellersPage() {
   const others = products.filter((p) => (p.sales_count ?? 0) === 0);
 
   return (
-    <PageShell title="الأكثر مبيعاً">
+    <PageShell wide title="الأكثر مبيعاً">
       <div className="px-4 pt-3">
         <Link to="/" className="inline-flex items-center gap-1 text-xs text-muted-foreground mb-3">
           <ChevronLeft className="size-3.5 rotate-180" /> الرئيسية
@@ -45,7 +45,7 @@ function BestSellersPage() {
               <TrendingUp className="size-4 text-gold" />
               <h2 className="text-sm font-extrabold">الأعلى مبيعاً ({sold.length})</h2>
             </div>
-            <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
               {sold.map((p, i) => (
                 <div key={p.id} className="relative">
                   {i < 3 && (
@@ -66,7 +66,7 @@ function BestSellersPage() {
         {others.length > 0 && (
           <>
             <h2 className="text-sm font-extrabold mb-3">منتجات أخرى</h2>
-            <div className="grid grid-cols-2 gap-3 pb-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pb-8">
               {others.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}

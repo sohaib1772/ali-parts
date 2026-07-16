@@ -15,7 +15,7 @@ function FavoritesPage() {
   const { data: favs = [] } = useQuery(favoritesQuery(userId));
 
   return (
-    <PageShell title="المفضلة">
+    <PageShell wide title="المفضلة">
       <div className="px-4 pt-4">
         {favs.length === 0 ? (
           <div className="py-20 text-center">
@@ -27,7 +27,7 @@ function FavoritesPage() {
             <Link to="/" className="inline-flex px-6 py-3 rounded-2xl bg-gradient-gold text-navy font-bold shadow-gold">تصفح المنتجات</Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {favs.map((f: any) => f.product && <ProductCard key={f.id} product={f.product} />)}
           </div>
         )}
