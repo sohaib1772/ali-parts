@@ -1400,19 +1400,23 @@ function ProductsAdmin() {
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] overflow-y-auto md:max-w-2xl lg:max-w-3xl">
           <DialogHeader><DialogTitle>{form.id ? "تعديل منتج" : "إضافة منتج جديد"}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <ImageUploader images={form.images} onChange={(imgs) => setForm({ ...form, images: imgs })} onUploadingChange={setImgUploading} />
+          <div className="space-y-3 md:grid md:grid-cols-2 md:gap-x-4 md:gap-y-3 md:space-y-0 md:items-start">
+            <div className="md:col-span-2">
+              <ImageUploader images={form.images} onChange={(imgs) => setForm({ ...form, images: imgs })} onUploadingChange={setImgUploading} />
+            </div>
             <Field label="الاسم بالعربي *">
               <Input value={form.name_ar} onChange={(e) => setForm({ ...form, name_ar: e.target.value })} />
             </Field>
             <Field label="الاسم بالإنجليزي">
               <Input value={form.name_en} onChange={(e) => setForm({ ...form, name_en: e.target.value })} />
             </Field>
-            <Field label="الوصف">
-              <Textarea value={form.description_ar} onChange={(e) => setForm({ ...form, description_ar: e.target.value })} rows={3} />
-            </Field>
+            <div className="md:col-span-2">
+              <Field label="الوصف">
+                <Textarea value={form.description_ar} onChange={(e) => setForm({ ...form, description_ar: e.target.value })} rows={3} />
+              </Field>
+            </div>
             <Field label="رقم القطعة (OEM)">
               <Input value={form.oem_number} onChange={(e) => setForm({ ...form, oem_number: e.target.value })} />
             </Field>
@@ -1439,7 +1443,7 @@ function ProductsAdmin() {
             <Field label="كلفة التوصيل لهذا المنتج (د.ع)">
               <Input type="number" value={form.shipping_iqd} onChange={(e) => setForm({ ...form, shipping_iqd: e.target.value })} inputMode="numeric" dir="ltr" placeholder="0" />
             </Field>
-            <div className="rounded-xl border border-border p-3 space-y-3 bg-muted/20">
+            <div className="rounded-xl border border-border p-3 space-y-3 bg-muted/20 md:col-span-2">
               <div className="text-xs font-bold text-gold">إعدادات التوصيل</div>
               <div className="flex items-center justify-between">
                 <div>
@@ -1475,12 +1479,14 @@ function ProductsAdmin() {
               </Select>
             </Field>
 
-            <CompatibleModelsField
-              models={carModels}
-              selected={form.compatible_models}
-              savedVehicle={savedVehicle}
-              onChange={(ids) => setForm({ ...form, compatible_models: ids })}
-            />
+            <div className="md:col-span-2">
+              <CompatibleModelsField
+                models={carModels}
+                selected={form.compatible_models}
+                savedVehicle={savedVehicle}
+                onChange={(ids) => setForm({ ...form, compatible_models: ids })}
+              />
+            </div>
 
             <div className="flex items-center justify-between py-1">
               <Label>متوفر</Label>
@@ -1532,7 +1538,7 @@ function ProductsAdmin() {
                 />
               </Field>
             )}
-            <Button className="w-full" onClick={save} disabled={saving || imgUploading}>
+            <Button className="w-full md:col-span-2" onClick={save} disabled={saving || imgUploading}>
               {imgUploading ? "جاري رفع الصور..." : saving ? "جاري الحفظ..." : "حفظ"}
             </Button>
           </div>
