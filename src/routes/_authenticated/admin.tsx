@@ -652,8 +652,14 @@ function AdminPageInner() {
           ? "replacements"
           : "block-log";
 
+  // Tab triggers: phone = icon-over-tiny-text chip (unchanged); md+ = full-width
+  // sidebar row (icon + label side by side). Content fills the widened panel.
+  const tabTriggerCls =
+    "flex-col gap-1 py-2 text-[10px] md:flex-row md:justify-start md:gap-2 md:text-sm md:py-2.5 md:px-3 md:w-full";
+  const tabContentCls = "mt-4 md:mt-0 md:flex-1 md:min-w-0";
+
   return (
-    <PageShell title="لوحة الإدارة">
+    <PageShell wide title="لوحة الإدارة">
       <div className="px-4 pt-3 pb-6">
         <PermissionsBadge
           isAdmin={isAdmin}
@@ -662,58 +668,58 @@ function AdminPageInner() {
           canReplacements={canReplacements}
           canBlock={canBlock}
         />
-        <Tabs defaultValue={defaultTab}>
-          <TabsList className="w-full grid grid-cols-4 h-auto gap-1">
+        <Tabs defaultValue={defaultTab} className="md:flex md:flex-row md:gap-4 md:items-start">
+          <TabsList className="w-full grid grid-cols-4 h-auto gap-1 md:flex md:flex-col md:w-52 md:shrink-0 md:items-stretch md:gap-1 md:sticky md:top-4 md:self-start">
             {canProducts && (
-              <TabsTrigger value="products" className="flex-col gap-1 py-2 text-[10px]"><Package className="size-4" />منتجات</TabsTrigger>
+              <TabsTrigger value="products" className={tabTriggerCls}><Package className="size-4" />منتجات</TabsTrigger>
             )}
             {isAdmin && (
-              <TabsTrigger value="banners" className="flex-col gap-1 py-2 text-[10px]"><ImageIcon className="size-4" />عروض</TabsTrigger>
+              <TabsTrigger value="banners" className={tabTriggerCls}><ImageIcon className="size-4" />عروض</TabsTrigger>
             )}
             {isAdmin && (
-              <TabsTrigger value="taxonomy" className="flex-col gap-1 py-2 text-[10px]"><Tags className="size-4" />تصنيفات</TabsTrigger>
+              <TabsTrigger value="taxonomy" className={tabTriggerCls}><Tags className="size-4" />تصنيفات</TabsTrigger>
             )}
             {canOrders && (
-              <TabsTrigger value="orders" className="flex-col gap-1 py-2 text-[10px]"><ClipboardList className="size-4" />طلبات</TabsTrigger>
+              <TabsTrigger value="orders" className={tabTriggerCls}><ClipboardList className="size-4" />طلبات</TabsTrigger>
             )}
             {canReplacements && (
-              <TabsTrigger value="replacements" className="flex-col gap-1 py-2 text-[10px]"><Repeat className="size-4" />استبدال</TabsTrigger>
+              <TabsTrigger value="replacements" className={tabTriggerCls}><Repeat className="size-4" />استبدال</TabsTrigger>
             )}
             {isAdmin && (
-              <TabsTrigger value="users" className="flex-col gap-1 py-2 text-[10px]"><UsersIcon className="size-4" />مستخدمون</TabsTrigger>
+              <TabsTrigger value="users" className={tabTriggerCls}><UsersIcon className="size-4" />مستخدمون</TabsTrigger>
             )}
             {isAdmin && (
-              <TabsTrigger value="staff" className="flex-col gap-1 py-2 text-[10px]"><ShieldCheck className="size-4" />موظفون</TabsTrigger>
+              <TabsTrigger value="staff" className={tabTriggerCls}><ShieldCheck className="size-4" />موظفون</TabsTrigger>
             )}
             {canBlock && (
-              <TabsTrigger value="block-log" className="flex-col gap-1 py-2 text-[10px]"><History className="size-4" />سجل الحظر</TabsTrigger>
+              <TabsTrigger value="block-log" className={tabTriggerCls}><History className="size-4" />سجل الحظر</TabsTrigger>
             )}
             {canProducts && (
-              <TabsTrigger value="stock" className="flex-col gap-1 py-2 text-[10px]"><Boxes className="size-4" />سجل المخزون</TabsTrigger>
+              <TabsTrigger value="stock" className={tabTriggerCls}><Boxes className="size-4" />سجل المخزون</TabsTrigger>
             )}
             {isAdmin && (
-              <TabsTrigger value="settings" className="flex-col gap-1 py-2 text-[10px]"><SettingsIcon className="size-4" />إعدادات</TabsTrigger>
+              <TabsTrigger value="settings" className={tabTriggerCls}><SettingsIcon className="size-4" />إعدادات</TabsTrigger>
             )}
             {isAdmin && (
-              <TabsTrigger value="diagnostics" className="flex-col gap-1 py-2 text-[10px]"><Activity className="size-4" />تشخيص</TabsTrigger>
+              <TabsTrigger value="diagnostics" className={tabTriggerCls}><Activity className="size-4" />تشخيص</TabsTrigger>
             )}
             {isAdmin && (
-              <TabsTrigger value="otp-log" className="flex-col gap-1 py-2 text-[10px]"><KeyRound className="size-4" />سجل OTP</TabsTrigger>
+              <TabsTrigger value="otp-log" className={tabTriggerCls}><KeyRound className="size-4" />سجل OTP</TabsTrigger>
             )}
           </TabsList>
 
-          {canProducts && <TabsContent value="products" className="mt-4"><ProductsAdmin /></TabsContent>}
-          {isAdmin && <TabsContent value="banners" className="mt-4"><BannersAdmin /></TabsContent>}
-          {isAdmin && <TabsContent value="taxonomy" className="mt-4"><TaxonomyAdmin /></TabsContent>}
-          {canOrders && <TabsContent value="orders" className="mt-4"><OrdersAdmin /></TabsContent>}
-          {canReplacements && <TabsContent value="replacements" className="mt-4"><ReplacementsAdmin /></TabsContent>}
-          {isAdmin && <TabsContent value="users" className="mt-4"><UsersAdmin /></TabsContent>}
-          {isAdmin && <TabsContent value="staff" className="mt-4"><StaffAdmin /></TabsContent>}
-          {canBlock && <TabsContent value="block-log" className="mt-4"><BlockLogAdmin /></TabsContent>}
-          {canProducts && <TabsContent value="stock" className="mt-4"><StockMovementsAdmin /></TabsContent>}
-          {isAdmin && <TabsContent value="settings" className="mt-4"><SettingsAdmin /></TabsContent>}
-          {isAdmin && <TabsContent value="diagnostics" className="mt-4"><DiagnosticsAdmin /></TabsContent>}
-          {isAdmin && <TabsContent value="otp-log" className="mt-4"><AdminOtpEventsLog /></TabsContent>}
+          {canProducts && <TabsContent value="products" className={tabContentCls}><ProductsAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="banners" className={tabContentCls}><BannersAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="taxonomy" className={tabContentCls}><TaxonomyAdmin /></TabsContent>}
+          {canOrders && <TabsContent value="orders" className={tabContentCls}><OrdersAdmin /></TabsContent>}
+          {canReplacements && <TabsContent value="replacements" className={tabContentCls}><ReplacementsAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="users" className={tabContentCls}><UsersAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="staff" className={tabContentCls}><StaffAdmin /></TabsContent>}
+          {canBlock && <TabsContent value="block-log" className={tabContentCls}><BlockLogAdmin /></TabsContent>}
+          {canProducts && <TabsContent value="stock" className={tabContentCls}><StockMovementsAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="settings" className={tabContentCls}><SettingsAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="diagnostics" className={tabContentCls}><DiagnosticsAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="otp-log" className={tabContentCls}><AdminOtpEventsLog /></TabsContent>}
         </Tabs>
       </div>
     </PageShell>
