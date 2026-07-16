@@ -1042,9 +1042,9 @@ function StaffAdmin() {
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="md:max-w-2xl">
           <DialogHeader><DialogTitle>{editing ? "تعديل موظف" : "إضافة موظف"}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-3 md:grid md:grid-cols-2 md:gap-x-4 md:gap-y-3 md:space-y-0 md:items-start">
             <Field label="الاسم الكامل">
               <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="مثال: أحمد علي" />
             </Field>
@@ -1064,7 +1064,7 @@ function StaffAdmin() {
             <Field label={editing ? "كلمة السر (اتركها فارغة لعدم التغيير)" : "كلمة السر"}>
               <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="6 أحرف على الأقل" />
             </Field>
-            <div>
+            <div className="md:col-span-2">
               <Label className="text-xs mb-2 block">الصلاحيات</Label>
               <div className="space-y-2">
                 <PermRow label="إدارة الطلبات" desc="عرض وتعديل حالة الطلبات وطباعة الفواتير" checked={form.can_orders} onChange={(v) => setForm({ ...form, can_orders: v })} />
@@ -1073,7 +1073,7 @@ function StaffAdmin() {
                 <PermRow label="حظر المستخدمين من التعليق" desc="حظر ورفع الحظر عن المستخدمين المسيئين وعرض سجل الحظر" checked={form.can_block} onChange={(v) => setForm({ ...form, can_block: v })} />
               </div>
             </div>
-            <Button className="w-full" onClick={save} disabled={busy}>
+            <Button className="w-full md:col-span-2" onClick={save} disabled={busy}>
               {busy ? <Loader2 className="size-4 animate-spin" /> : (editing ? "حفظ التعديلات" : "إضافة الموظف")}
             </Button>
           </div>
