@@ -125,7 +125,7 @@ function GovernoratePicker({ value, onChange }: { value: string; onChange: (v: s
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="h-11 w-full px-4 rounded-xl bg-card border border-border text-sm outline-none focus:border-gold flex items-center justify-between text-right"
+        className="h-11 w-full px-4 rounded-xl bg-card border border-border text-sm outline-none focus:border-gold flex items-center justify-between text-start"
       >
         <span className={value ? "" : "text-muted-foreground"}>{value || "المحافظة"}</span>
         <ChevronDown className="size-4 text-muted-foreground" />
@@ -150,7 +150,7 @@ function GovernoratePicker({ value, onChange }: { value: string; onChange: (v: s
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="ابحث عن محافظة..."
-                  className="h-11 w-full pr-10 pl-4 rounded-xl bg-card border border-border text-sm outline-none focus:border-gold"
+                  className="h-11 w-full ps-10 pe-4 rounded-xl bg-card border border-border text-sm outline-none focus:border-gold"
                 />
               </div>
             </div>
@@ -163,7 +163,7 @@ function GovernoratePicker({ value, onChange }: { value: string; onChange: (v: s
                     key={g}
                     type="button"
                     onClick={() => { onChange(g); bump(g); setOpen(false); }}
-                    className={`w-full text-right px-4 py-3 rounded-xl hover:bg-muted transition flex items-center justify-between ${value === g ? "bg-gold/10 text-gold font-bold" : ""}`}
+                    className={`w-full text-start px-4 py-3 rounded-xl hover:bg-muted transition flex items-center justify-between ${value === g ? "bg-gold/10 text-gold font-bold" : ""}`}
                   >
                     <span>{g}</span>
                     {value === g && <Check className="size-4" />}

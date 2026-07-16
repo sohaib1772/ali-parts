@@ -39,7 +39,7 @@ function PrivacyPage() {
           </p>
 
           <Section title="١. البيانات التي نجمعها">
-            <ul className="list-disc pr-6 space-y-1">
+            <ul className="list-disc ps-6 space-y-1">
               <li>بيانات الحساب: الاسم الكامل، البريد الإلكتروني، رقم الهاتف، الصورة الشخصية (اختيارية).</li>
               <li>بيانات الطلب والتوصيل: العنوان، المحافظة، ملاحظات التوصيل، تاريخ الطلبات.</li>
               <li>بيانات السيارة (اختيارية): الشركة المصنّعة، الموديل، وسنة الصنع لعرض القطع المتوافقة.</li>
@@ -50,7 +50,7 @@ function PrivacyPage() {
           </Section>
 
           <Section title="٢. كيفية استخدام البيانات">
-            <ul className="list-disc pr-6 space-y-1">
+            <ul className="list-disc ps-6 space-y-1">
               <li>معالجة الطلبات، تجهيزها، وتوصيلها.</li>
               <li>التواصل معك بخصوص الطلب عبر الهاتف أو واتساب.</li>
               <li>عرض تاريخ طلباتك ومنتجاتك المفضلة داخل حسابك.</li>
@@ -62,7 +62,7 @@ function PrivacyPage() {
 
           <Section title="٣. مشاركة البيانات">
             <p>لا نبيع بياناتك ولا نؤجّرها لأي طرف. نشاركها فقط في الحدود اللازمة مع:</p>
-            <ul className="list-disc pr-6 space-y-1 mt-2">
+            <ul className="list-disc ps-6 space-y-1 mt-2">
               <li>مندوبي التوصيل داخل العراق لإتمام إيصال الطلب.</li>
               <li>مزودي البنية التحتية السحابية (استضافة قاعدة البيانات والإشعارات) الملتزمين بمعايير حماية بيانات دولية.</li>
               <li>الجهات الحكومية أو القضائية عند وجود طلب قانوني رسمي.</li>
@@ -85,7 +85,7 @@ function PrivacyPage() {
           </Section>
 
           <Section title="٦. حقوقك">
-            <ul className="list-disc pr-6 space-y-1">
+            <ul className="list-disc ps-6 space-y-1">
               <li>الوصول إلى بياناتك وتعديلها من صفحة الحساب.</li>
               <li>طلب حذف حسابك وكامل بياناتك.</li>
               <li>سحب موافقتك على الإشعارات في أي وقت.</li>
@@ -101,7 +101,7 @@ function PrivacyPage() {
           </Section>
 
           <Section title="٨. الأذونات على الجهاز">
-            <ul className="list-disc pr-6 space-y-1">
+            <ul className="list-disc ps-6 space-y-1">
               <li>الكاميرا والصور: لرفع صورة شخصية أو صور طلبات الاستبدال (اختياري).</li>
               <li>الإشعارات: لإعلامك بحالة الطلب والعروض (اختياري).</li>
               <li>الإنترنت: مطلوب لعمل التطبيق.</li>
@@ -131,7 +131,7 @@ function PrivacyPage() {
                 <span>لم يتم تعبئة كامل بيانات المالك بعد. يرجى تحديث المعلومات من لوحة الإدارة (الإعدادات: اسم الجهة، العنوان، البريد الإلكتروني، رقم واتساب).</span>
               </div>
             )}
-            <ul className="list-disc pr-6 space-y-1 mt-2">
+            <ul className="list-disc ps-6 space-y-1 mt-2">
               <li>الجهة المسؤولة: {ownerName || <span className="text-muted-foreground">— لم يتم تحديدها بعد —</span>}</li>
               <li>العنوان: {address || <span className="text-muted-foreground">— لم يتم تحديده بعد —</span>}</li>
               <li>

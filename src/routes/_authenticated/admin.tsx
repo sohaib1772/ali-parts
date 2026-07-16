@@ -1955,7 +1955,7 @@ function OrdersAdmin() {
             <div className="text-[11px] text-muted-foreground">آخر 24 ساعة</div>
             <div className="text-lg font-black text-navy">{count24} طلب جديد</div>
           </div>
-          <div className="text-left">
+          <div className="text-end">
             <div className="text-[11px] text-muted-foreground">إجمالي</div>
             <div className="text-sm font-bold text-navy">{new Intl.NumberFormat("ar-IQ").format(sum24)} د.ع</div>
           </div>

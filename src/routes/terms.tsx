@@ -38,7 +38,7 @@ function TermsPage() {
           </p>
 
           <Section title="١. تعريفات">
-            <ul className="list-disc pr-6 space-y-1">
+            <ul className="list-disc ps-6 space-y-1">
               <li>"التطبيق": تطبيق {storeName} على الجوال والويب.</li>
               <li>"المستخدم": أي شخص ينشئ حساباً أو يستخدم التطبيق.</li>
               <li>"الطلب": أي عملية شراء يتم تقديمها عبر التطبيق.</li>
@@ -54,7 +54,7 @@ function TermsPage() {
           </Section>
 
           <Section title="٢. استخدام التطبيق">
-            <ul className="list-disc pr-6 space-y-1">
+            <ul className="list-disc ps-6 space-y-1">
               <li>يجب أن تكون بعمر (18) عاماً أو أكثر لإنشاء حساب.</li>
               <li>تلتزم بتقديم بيانات صحيحة ودقيقة عن هويتك وعنوانك.</li>
               <li>يُمنع استخدام التطبيق لأي غرض غير قانوني أو مخالف لسياسات Apple App Store أو Google Play.</li>
@@ -64,7 +64,7 @@ function TermsPage() {
           </Section>
 
           <Section title="٣. الطلبات والأسعار">
-            <ul className="list-disc pr-6 space-y-1">
+            <ul className="list-disc ps-6 space-y-1">
               <li>جميع الأسعار بالدينار العراقي وتشمل ما هو مذكور في صفحة المنتج.</li>
               <li>الأسعار قابلة للتغيير في أي وقت دون إشعار مسبق، ويُعتمد السعر المعروض وقت تأكيد الطلب.</li>
               <li>توفر المنتجات مرتبط بالمخزون؛ نحتفظ بحق إلغاء الطلب أو تعديله عند نفاد المنتج.</li>
@@ -73,7 +73,7 @@ function TermsPage() {
           </Section>
 
           <Section title="٤. الدفع والتوصيل">
-            <ul className="list-disc pr-6 space-y-1">
+            <ul className="list-disc ps-6 space-y-1">
               <li>الدفع يتم عند الاستلام نقداً بالدينار العراقي.</li>
               <li>مدة التوصيل وقيمته تختلف حسب المحافظة كما هو موضّح في صفحة الشحن.</li>
               <li>على المستخدم التأكد من صحة العنوان ورقم الهاتف؛ لا يتحمل المشغّل ثمن التوصيل عن طلب فاشل بسبب بيانات خاطئة.</li>
@@ -82,7 +82,7 @@ function TermsPage() {
           </Section>
 
           <Section title="٥. الاستبدال والإرجاع">
-            <ul className="list-disc pr-6 space-y-1">
+            <ul className="list-disc ps-6 space-y-1">
               <li>يمكن استبدال أو إرجاع القطعة خلال (3) أيام من تاريخ الاستلام بشرط أن تكون في حالتها الأصلية، غير مركّبة وغير مستخدمة، وبكامل تغليفها.</li>
               <li>لا يشمل الاستبدال القطع الكهربائية بعد فك التغليف، أو القطع المطلوبة خصيصاً حسب طلب المستخدم.</li>
               <li>القطعة المعيبة من المصنع تُستبدل مجاناً بعد الفحص.</li>
@@ -98,7 +98,7 @@ function TermsPage() {
           </Section>
 
           <Section title="٧. الملكية الفكرية">
-            <ul className="list-disc pr-6 space-y-1">
+            <ul className="list-disc ps-6 space-y-1">
               <li>جميع محتويات التطبيق (الشعار، النصوص، الصور، التصميم، الكود) ملك للمشغّل ومحمية بموجب قوانين حقوق النشر.</li>
               <li>يُمنع نسخ أو إعادة استخدام أي محتوى من التطبيق دون إذن كتابي مسبق.</li>
               <li>أسماء العلامات التجارية (Chevrolet, GMC, Cadillac وغيرها) هي علامات مسجلة لأصحابها، ونستخدمها لأغراض وصف توافق القطع فقط، دون أي ادعاء بالانتماء أو الرعاية الرسمية من قِبل هذه الشركات.</li>
@@ -114,7 +114,7 @@ function TermsPage() {
           </Section>
 
           <Section title="٩. حدود المسؤولية">
-            <ul className="list-disc pr-6 space-y-1">
+            <ul className="list-disc ps-6 space-y-1">
               <li>يُقدَّم التطبيق "كما هو" دون أي ضمانات ضمنية بخصوص استمرارية الخدمة أو خلوّها من الأخطاء.</li>
               <li>لا يتحمل المشغّل أي مسؤولية عن الأضرار غير المباشرة أو التبعية الناجمة عن استخدام التطبيق.</li>
               <li>الحد الأقصى لمسؤولية المشغّل تجاه أي طلب هو قيمة الطلب المدفوعة.</li>
@@ -150,7 +150,7 @@ function TermsPage() {
                 <span>لم يتم تعبئة كامل بيانات المالك بعد. يرجى تحديث المعلومات من لوحة الإدارة (الإعدادات: اسم الجهة، العنوان، البريد الإلكتروني، رقم واتساب).</span>
               </div>
             )}
-            <ul className="list-disc pr-6 space-y-1 mt-2">
+            <ul className="list-disc ps-6 space-y-1 mt-2">
               <li>الجهة المسؤولة: {ownerName || <span className="text-muted-foreground">— لم يتم تحديدها بعد —</span>}</li>
               <li>العنوان: {address || <span className="text-muted-foreground">— لم يتم تحديده بعد —</span>}</li>
               <li>
