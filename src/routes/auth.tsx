@@ -180,7 +180,7 @@ function AuthPage() {
       <div className="relative w-full max-w-[420px]">
         <Link
           to="/"
-          className="absolute -top-14 right-0 inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-gold transition-colors"
+          className="absolute -top-14 start-0 inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-gold transition-colors"
         >
           <ArrowRight className="size-3.5" /> العودة للرئيسية
         </Link>

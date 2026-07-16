@@ -172,7 +172,7 @@ function ReplacementDetail() {
         <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
           <div className="text-xs font-bold text-gold mb-4">سجل الحالات</div>
           <div className="relative">
-            <div className="absolute right-5 top-2 bottom-2 w-px bg-border" aria-hidden />
+            <div className="absolute start-5 top-2 bottom-2 w-px bg-border" aria-hidden />
             <div className="space-y-4">
               {log.map((entry: any, i: number) => {
                 const em = STATUS_META[entry.status as StatusKey];

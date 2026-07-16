@@ -144,7 +144,7 @@ function GovernoratePicker({ value, onChange }: { value: string; onChange: (v: s
             </div>
             <div className="p-3 border-b border-border">
               <div className="relative">
-                <Search className="size-4 text-muted-foreground absolute top-1/2 -translate-y-1/2 right-3" />
+                <Search className="size-4 text-muted-foreground absolute top-1/2 -translate-y-1/2 start-3" />
                 <input
                   autoFocus
                   value={q}

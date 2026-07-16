@@ -86,7 +86,7 @@ export function BottomNav() {
               <div className="relative">
                 <Icon className={`size-5 transition-colors ${active ? "text-gold" : "text-muted-foreground"}`} strokeWidth={active ? 2.4 : 1.8} />
                 {showBadge && (
-                  <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold grid place-items-center shadow">
+                  <span className="absolute -top-1.5 -start-1.5 min-w-4 h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold grid place-items-center shadow">
                     {unseenCount > 9 ? "9+" : unseenCount}
                   </span>
                 )}
