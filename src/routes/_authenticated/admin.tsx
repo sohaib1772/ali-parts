@@ -360,7 +360,7 @@ function BlockLogAdmin() {
       ) : !filtered.length ? (
         <div className="text-center text-sm text-muted-foreground py-8">لا نتائج مطابقة للتصفية</div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
       {filtered.map((e: any) => {
         const isBlock = e.action === "block";
         const n = matchNotif(e.user_id, e.created_at);
@@ -819,7 +819,7 @@ function UsersAdmin() {
       ) : filtered.length === 0 ? (
         <div className="text-center text-sm text-muted-foreground py-8">لا يوجد مستخدمون مطابقون</div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
           {filtered.map((u) => {
             const displayPhone = u.profile_phone || u.phone;
             return (
@@ -1018,7 +1018,7 @@ function StaffAdmin() {
       ) : rows.length === 0 ? (
         <div className="text-center text-sm text-muted-foreground py-6">لا يوجد موظفون حتى الآن.</div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
           {rows.map((r) => (
             <div key={r.user_id} className="bg-card border border-border rounded-2xl p-3 flex items-center gap-3">
               <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center">
@@ -1374,7 +1374,7 @@ function ProductsAdmin() {
       ) : filteredProducts.length === 0 ? (
         <div className="text-center text-sm text-muted-foreground py-8">لا توجد منتجات بعد</div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-3 md:space-y-0">
           {filteredProducts.map((p: any) => (
             <div key={p.id} className="bg-card border border-border rounded-2xl p-3 flex gap-3 items-center">
               <div className="size-14 rounded-xl bg-muted overflow-hidden shrink-0">
@@ -1631,6 +1631,7 @@ function BannersAdmin() {
           <Plus className="size-4 me-1" /> إضافة عرض
         </Button>
       </div>
+      <div className="space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
       {banners.map((b) => (
         <div key={b.id} className="bg-card border border-border rounded-2xl overflow-hidden">
           {(b as any).video_url ? (
@@ -1652,6 +1653,7 @@ function BannersAdmin() {
           </div>
         </div>
       ))}
+      </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
@@ -1812,7 +1814,7 @@ function TaxonomyAdmin() {
           <h3 className="font-bold">التصنيفات</h3>
           <Button size="sm" onClick={addCategory}><Plus className="size-4 me-1" /> جديد</Button>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
           {categories.map((c) => (
             <div key={c.id} className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
               <div className="size-12 rounded-lg bg-muted overflow-hidden shrink-0 flex items-center justify-center">
@@ -1852,7 +1854,7 @@ function TaxonomyAdmin() {
           <h3 className="font-bold">الماركات</h3>
           <Button size="sm" onClick={addBrand}><Plus className="size-4 me-1" /> جديد</Button>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
           {brands.map((b) => (
             <div key={b.id} className="bg-card border border-border rounded-xl p-3 flex items-center gap-2">
               <span className="flex-1 text-sm font-semibold">{b.name_ar}</span>
@@ -2003,9 +2005,11 @@ function OrdersAdmin() {
       {filtered.length === 0 ? (
         <div className="text-center text-sm text-muted-foreground py-8">لا توجد طلبات ضمن هذه الفترة</div>
       ) : (
-        filtered.map((o: any) => (
-          <OrderAdminCard key={o.id} order={o} onStatusChange={updateStatus} onDelete={openDeleteSingle} />
-        ))
+        <div className="space-y-2 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
+          {filtered.map((o: any) => (
+            <OrderAdminCard key={o.id} order={o} onStatusChange={updateStatus} onDelete={openDeleteSingle} />
+          ))}
+        </div>
       )}
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent dir="rtl" className="max-w-sm">
@@ -3244,16 +3248,18 @@ function ReplacementsAdmin() {
           <div className="text-sm text-muted-foreground">لا توجد طلبات استبدال</div>
         </div>
       ) : (
-        filtered.map((r) => (
-          <ReplacementCard
-            key={r.id}
-            row={r}
-            profile={profileMap.get(r.user_id)}
-            onStatusChange={changeStatus}
-            onSaveNotes={saveNotes}
-            onDelete={() => setConfirmDeleteId(r.id)}
-          />
-        ))
+        <div className="space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
+          {filtered.map((r) => (
+            <ReplacementCard
+              key={r.id}
+              row={r}
+              profile={profileMap.get(r.user_id)}
+              onStatusChange={changeStatus}
+              onSaveNotes={saveNotes}
+              onDelete={() => setConfirmDeleteId(r.id)}
+            />
+          ))}
+        </div>
       )}
 
       <AlertDialog open={!!confirmDeleteId} onOpenChange={(o) => !o && setConfirmDeleteId(null)}>
@@ -3500,7 +3506,7 @@ function StockMovementsAdmin() {
           لا توجد حركات مخزون
         </div>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-2 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
           {filtered.map((r) => {
             const positive = r.delta > 0;
             return (
