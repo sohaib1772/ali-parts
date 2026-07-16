@@ -63,7 +63,7 @@ function HomePage() {
   const filteredBestSellers = filterProductsByVehicle(bestSellers, effectiveVehicle);
 
   return (
-    <PageShell>
+    <PageShell wide>
       <div className="px-4 mt-3">
         <VehicleBar onOpen={() => setPickerOpen(true)} />
       </div>
@@ -73,7 +73,7 @@ function HomePage() {
 
       {/* Categories — square illustrated cards */}
       <Section title="الأقسام" icon={<CircleDot className="size-4 text-gold" />}>
-        <div className="grid grid-cols-3 gap-3 px-4">
+        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 px-4">
           {categories.map((c, i) => (
             <Link
               key={c.id}
@@ -104,7 +104,7 @@ function HomePage() {
             </div>
           </div>
         )}
-        <div className="grid grid-cols-2 gap-3 px-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 px-4">
           {filteredFeatured.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
@@ -123,7 +123,7 @@ function HomePage() {
           icon={<Flame className="size-4 text-destructive" />}
           href="/best-sellers"
         >
-          <div className="grid grid-cols-2 gap-3 px-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 px-4">
             {filteredBestSellers.slice(0, 6).map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
@@ -192,7 +192,7 @@ function AllProductsInfinite() {
 
   return (
     <Section title="جميع المنتجات" icon={<Sparkles className="size-4 text-gold" />}>
-      <div className="grid grid-cols-2 gap-3 px-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 px-4">
         {products.map((p) => (
           <ProductCard key={p.id} product={p} />
         ))}
