@@ -147,8 +147,9 @@ function CartPage() {
   }
 
   return (
-    <PageShell title="السلة">
-      <div className="px-4 pt-4 pb-6 space-y-3">
+    <PageShell wide title="السلة">
+      <div className="px-4 pt-4 pb-6 space-y-3 md:space-y-0 md:grid md:grid-cols-[1fr_20rem] md:gap-4 md:items-start">
+        <div className="space-y-3">
         {items.map((it: any) => (
           <div key={it.id} className={`relative bg-card rounded-2xl border border-border p-3 shadow-card flex gap-3 transition ${pendingIds[it.id] ? "opacity-60 pointer-events-none" : ""}`}>
             {pendingIds[it.id] && (
@@ -193,7 +194,9 @@ function CartPage() {
             </div>
           </div>
         ))}
+        </div>
 
+        <div className="space-y-3 md:sticky md:top-4">
         <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
           <div className="flex justify-between text-sm mb-2"><span className="text-muted-foreground">المجموع الفرعي</span><span className="font-bold">{formatIQD(total)}</span></div>
           <div className="flex justify-between text-sm mb-3"><span className="text-muted-foreground">التوصيل</span><span className="font-bold">{shippingCost > 0 ? formatIQD(shippingCost) : "مجاني"}</span></div>
@@ -206,6 +209,7 @@ function CartPage() {
         <button onClick={() => navigate({ to: "/checkout" })} className="w-full h-14 rounded-2xl bg-gradient-gold text-navy font-black shadow-gold hover:brightness-105 transition">
           متابعة الدفع
         </button>
+        </div>
       </div>
     </PageShell>
   );
