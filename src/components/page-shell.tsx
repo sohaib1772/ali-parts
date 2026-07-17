@@ -30,7 +30,7 @@ export function PageShell({
   return (
     <div className="fixed inset-0 bg-muted/30 flex items-center justify-center overflow-hidden">
       <div
-        className={`relative w-full max-w-md bg-background flex flex-col h-full md:h-[calc(100vh-2rem)] md:max-h-[900px] md:my-4 md:rounded-[2rem] md:shadow-2xl md:border md:border-border/40 md:overflow-hidden${wide ? " md:max-w-3xl lg:max-w-5xl" : ""}`}
+        className={`relative w-full max-w-md bg-background flex flex-col h-full md:h-[calc(100vh-2rem)] md:my-4 md:rounded-[2rem] md:shadow-2xl md:border md:border-border/40 md:overflow-hidden${wide ? " md:max-w-3xl lg:max-w-5xl" : ""}`}
         style={{ paddingTop: showHeader ? undefined : "env(safe-area-inset-top)" }}
       >
         {showHeader && (
