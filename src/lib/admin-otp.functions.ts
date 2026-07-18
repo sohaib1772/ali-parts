@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { adminOtpEnabled } from "@/integrations/supabase/require-admin-otp";
 
 const VERIFICATION_TTL_SECONDS = 10 * 60; // 10m
 const REMEMBER_DEVICE_TTL_SECONDS = 30 * 24 * 60 * 60; // 30d
@@ -81,6 +82,11 @@ export const adminOtpStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => StatusInput.parse(d ?? {}))
   .handler(async ({ data, context }) => {
+    // OTP disabled (default): the client never renders the OTP gate. Admin
+    // authorization is still enforced server-side on every privileged function.
+    if (!adminOtpEnabled()) {
+      return { required: false, verified: true, email: null } as const;
+    }
     const { isAdmin, isStaff } = await isAdminOrStaff(context);
     if (!isAdmin && !isStaff) {
       return { required: false, verified: true, email: null } as const;
