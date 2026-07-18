@@ -1,12 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
-import { ArrowRight, Loader2, Phone, Lock, User as UserIcon, Sparkles, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { useSetting } from "@/lib/admin";
-import { whatsappLink } from "@/lib/format";
-import { normalizePhone, phoneToEmail, phoneToEmailLegacy } from "@/lib/phone-auth";
 import { sessionRestorePromise } from "@/lib/session-bootstrap";
 
 // Fast admin-redirect check. Fails soft: if the check errors or the user
@@ -25,10 +22,13 @@ async function resolvePostLoginPath(userId: string): Promise<"/admin" | "/"> {
 }
 
 export const Route = createFileRoute("/auth")({
+  // Client-only: the Google OAuth return (?code=…) is exchanged for a session
+  // in the browser (PKCE). Rendering this on the server would race hydration.
+  ssr: false,
   head: () => ({
     meta: [
       { title: "تسجيل الدخول — Ali Parts" },
-      { name: "description", content: "سجّل الدخول أو أنشئ حسابك في Ali Parts للاستفادة من كل الميزات." },
+      { name: "description", content: "سجّل الدخول إلى Ali Parts عبر حساب Google للاستفادة من كل الميزات." },
     ],
   }),
   component: AuthPage,
@@ -37,137 +37,49 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const storeName = useSetting("store_name", "Ali Parts");
-  const storeTagline = useSetting("store_tagline", "قطع أصلية · العراق");
-  const storeLogo = useSetting("store_logo", "");
-  const whatsappNumber = useSetting("whatsapp_number");
-  const [mode, setMode] = useState<"login" | "signup">("login");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigatedRef = useRef(false);
 
-  const arabicAuthError = (err: unknown): string => {
-    const msg = err instanceof Error ? err.message : String(err ?? "");
-    const m = msg.toLowerCase();
-    if (m.includes("invalid login") || m.includes("invalid credentials") || m.includes("invalid_credentials"))
-      return "رقم الهاتف أو كلمة المرور غير صحيحة";
-    if (m.includes("password should be at least") || m.includes("password is too short"))
-      return "كلمة المرور قصيرة جداً — يجب أن تكون 6 خانات على الأقل";
-    if (m.includes("weak password") || m.includes("weak_password") || m.includes("pwned"))
-      return "كلمة المرور ضعيفة جداً وشائعة الاستخدام. اختر كلمة أقوى (اخلط أحرف وأرقام ورموز، مثال: Ali@2026#77)";
-    if (m.includes("user already registered") || m.includes("already registered") || m.includes("user_already_exists"))
-      return "هذا الحساب مسجّل مسبقاً — سجّل الدخول بدل الإنشاء";
-    if (m.includes("email not confirmed"))
-      return "الحساب غير مفعّل بعد. تواصل مع الإدارة.";
-    if (m.includes("rate limit") || m.includes("too many"))
-      return "محاولات كثيرة — انتظر قليلاً وحاول مرة أخرى";
-    if (m.includes("network") || m.includes("failed to fetch"))
-      return "تعذر الاتصال بالإنترنت — تحقق من الشبكة";
-    return "تعذر إتمام العملية، يرجى المحاولة مرة أخرى";
-  };
-
-  // If already signed in, bounce out immediately — no toast, no intermediate UI.
+  // Land the user in the app once a session exists — this covers BOTH an
+  // already-signed-in visitor AND the return leg of the Google OAuth redirect
+  // (detectSessionInUrl exchanges the ?code=… and fires onAuthStateChange).
   useEffect(() => {
+    let mounted = true;
+    const goIfSession = async (userId: string | undefined) => {
+      if (!userId || navigatedRef.current || !mounted) return;
+      navigatedRef.current = true;
+      const to = await resolvePostLoginPath(userId);
+      navigate({ to, replace: true });
+    };
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+      void goIfSession(session?.user?.id);
+    });
     (async () => {
-      // Wait for native session restore before deciding to keep the user
-      // on this page — otherwise a returning signed-in user would see the
-      // login form flash for a moment on cold launch.
       await sessionRestorePromise;
       const { data } = await supabase.auth.getSession();
-      const uid = data.session?.user?.id;
-      if (!uid) return;
-      const to = await resolvePostLoginPath(uid);
-      navigate({ to, replace: true });
+      void goIfSession(data.session?.user?.id);
     })();
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
   }, [navigate]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (loading) return;
-    const raw = phone.trim();
-    // Admin backdoor: username login (no phone normalization)
-    if (mode === "login" && raw.toLowerCase() === "aliskoda") {
-      setLoading(true);
-      try {
-        const { error } = await supabase.auth.signInWithPassword({ email: "aliskoda@admin.local", password });
-        if (error) throw error;
-        navigate({ to: "/admin", replace: true });
-      } catch (err) {
-        toast.error(arabicAuthError(err));
-        setLoading(false);
-      }
-      return;
-    }
-    const normalized = normalizePhone(raw);
-    if (!normalized) {
-      toast.error("رقم الهاتف غير صحيح — مثال: 07XX XXX XXXX");
-      return;
-    }
-    const loginEmail = phoneToEmail(normalized);
-    setLoading(true);
-    try {
-      if (mode === "signup") {
-        if (password.length < 6) {
-          throw new Error("password should be at least 6");
-        }
-        const { data, error } = await supabase.auth.signUp({
-          email: loginEmail,
-          password,
-          options: { emailRedirectTo: window.location.origin, data: { full_name: fullName, phone: "+" + normalized } },
-        });
-        if (error) throw error;
-        // Ensure the user is signed in immediately (no second login step).
-        // If the returned response didn't include an active session (older
-        // configs, HIBP flows, etc.), sign in with the same credentials now.
-        let uid = data.user?.id ?? null;
-        if (!data.session) {
-          const signIn = await supabase.auth.signInWithPassword({ email: loginEmail, password });
-          if (signIn.error) throw signIn.error;
-          uid = signIn.data.user?.id ?? uid;
-        }
-        const to = uid ? await resolvePostLoginPath(uid) : "/";
-        navigate({ to, replace: true });
-      } else {
-        let res = await supabase.auth.signInWithPassword({ email: loginEmail, password });
-        if (res.error) {
-          // Legacy accounts created with the old domain
-          const legacy = await supabase.auth.signInWithPassword({ email: phoneToEmailLegacy(normalized), password });
-          if (legacy.error) throw res.error;
-          res = legacy;
-        }
-        const uid = res.data.user?.id;
-        const to = uid ? await resolvePostLoginPath(uid) : "/";
-        navigate({ to, replace: true });
-      }
-    } catch (err) {
-      toast.error(arabicAuthError(err));
-      setLoading(false);
-    }
-  };
 
   const handleGoogle = async () => {
     if (loading) return;
     setLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (result.error) { toast.error("تعذّر تسجيل الدخول"); setLoading(false); return; }
-    if (result.redirected) return;
-    // Session is already set by the helper; resolve destination and go.
-    const { data } = await supabase.auth.getSession();
-    const uid = data.session?.user?.id;
-    const to = uid ? await resolvePostLoginPath(uid) : "/";
-    navigate({ to, replace: true });
-  };
-
-  const handleApple = async () => {
-    if (loading) return;
-    setLoading(true);
-    const result = await lovable.auth.signInWithOAuth("apple", { redirect_uri: window.location.origin });
-    if (result.error) { toast.error("تعذّر تسجيل الدخول عبر Apple"); setLoading(false); return; }
-    if (result.redirected) return;
-    const { data } = await supabase.auth.getSession();
-    const uid = data.session?.user?.id;
-    const to = uid ? await resolvePostLoginPath(uid) : "/";
-    navigate({ to, replace: true });
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        // Return to /auth; this component picks up the session and routes on.
+        redirectTo: window.location.origin + "/auth",
+      },
+    });
+    if (error) {
+      toast.error("تعذّر تسجيل الدخول عبر Google — حاول مرة أخرى");
+      setLoading(false);
+    }
+    // On success the browser navigates to Google; nothing else to do here.
   };
 
   return (
@@ -191,104 +103,25 @@ function AuthPage() {
 
           {/* Headline */}
           <div className="text-center mb-8">
-            <h2 className="font-luxury text-2xl font-semibold mb-2">
-              {mode === "login" ? "تسجيل الدخول" : "إنشاء حساب"}
-            </h2>
-            <p className="font-body-lux text-sm text-white/50">
-              {mode === "login" ? "شوفرليت — قطع غيار سيارات مستعمل و جديد" : "شوفرليت — قطع غيار سيارات مستعمل و جديد"}
-            </p>
+            <h2 className="font-luxury text-2xl font-semibold mb-2">مرحباً بك في {storeName}</h2>
+            <p className="font-body-lux text-sm text-white/50">شوفرليت — قطع غيار سيارات مستعمل و جديد</p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {mode === "signup" && (
-              <LuxuryField
-                icon={<UserIcon className="size-4" />}
-                placeholder="الاسم الكامل"
-                value={fullName}
-                onChange={setFullName}
-              />
-            )}
-            <LuxuryField
-              icon={<Phone className="size-4" />}
-              placeholder="رقم الهاتف (07XX XXX XXXX)"
-              type="tel"
-              required
-              value={phone}
-              onChange={setPhone}
-            />
-            <LuxuryField
-              icon={<Lock className="size-4" />}
-              placeholder="كلمة المرور (6 خانات على الأقل)"
-              type="password"
-              required
-              value={password}
-              onChange={setPassword}
-            />
-
-            {mode === "login" && (
-              <a
-                href={whatsappLink(
-                  `السلام عليكم، نسيت كلمة المرور لحسابي في المتجر.\nرقم هاتفي: ${phone || "(الرجاء تدوين رقمك)"}\nأرجو المساعدة بإعادة تعيينها.`,
-                  whatsappNumber,
-                )}
-                target="_blank"
-                rel="noreferrer"
-                className="block text-center text-xs text-gold/90 hover:text-gold font-body-lux -mt-1"
-              >
-                نسيت كلمة المرور؟ تواصل معنا عبر واتساب
-              </a>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-gold to-amber-500 p-px shadow-[0_0_24px_rgba(201,162,39,0.25)] active:scale-[0.98] transition-transform disabled:opacity-50"
-            >
-              <div className="relative flex items-center justify-center gap-2 rounded-[15px] bg-[#0f172a] py-4 transition-colors group-hover:bg-transparent">
-                {loading ? <Loader2 className="size-4 animate-spin text-white" /> : <Sparkles className="size-4 text-gold" />}
-                <span className="font-body-lux font-bold text-white">
-                  {mode === "login" ? "دخول المتجر" : "إنشاء حساب"}
-                </span>
-              </div>
-            </button>
-          </form>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-6">
-            <div className="h-px flex-1 bg-white/10" />
-            <span className="font-body-lux text-[11px] text-white/40 uppercase tracking-widest">أو</span>
-            <div className="h-px flex-1 bg-white/10" />
-          </div>
-
-          {/* Google */}
+          {/* Google — the single sign-in action */}
           <button
             onClick={handleGoogle}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 py-3.5 transition disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white text-[#1f2937] hover:bg-white/90 py-4 font-bold transition disabled:opacity-50"
           >
-            <GoogleG />
-            <span className="font-body-lux text-sm font-medium">المتابعة عبر Google</span>
+            {loading ? <Loader2 className="size-5 animate-spin text-gold" /> : <GoogleG />}
+            <span className="font-body-lux text-sm">المتابعة مع Google</span>
           </button>
 
-          {/* Apple */}
-          <button
-            onClick={handleApple}
-            disabled={loading}
-            className="mt-3 w-full flex items-center justify-center gap-3 rounded-2xl border border-white/10 bg-black hover:bg-black/80 py-3.5 transition disabled:opacity-50"
-          >
-            <AppleLogo />
-            <span className="font-body-lux text-sm font-medium text-white">المتابعة عبر Apple</span>
-          </button>
-
-          {/* Toggle mode */}
-          <button
-            onClick={() => setMode(mode === "login" ? "signup" : "login")}
-            className="mt-8 w-full text-center text-sm text-white/50 hover:text-gold transition font-body-lux"
-          >
-            {mode === "login" ? "ليس لديك حساب؟ " : "لديك حساب بالفعل؟ "}
-            <span className="text-gold font-bold">{mode === "login" ? "أنشئ حساباً" : "سجّل الدخول"}</span>
-          </button>
+          <p className="mt-5 text-center text-[11px] leading-relaxed text-white/40 font-body-lux">
+            بالمتابعة أنت توافق على الشروط والأحكام وسياسة الخصوصية.
+            <br />
+            سنطلب رقم هاتفك بعد الدخول لاستخدامه في التوصيل فقط.
+          </p>
 
           {/* Bottom decorative dots */}
           <div className="mt-8 flex justify-center gap-1.5">
@@ -314,40 +147,6 @@ function AuthPage() {
   );
 }
 
-function LuxuryField({ icon, placeholder, type = "text", value, onChange, required }: {
-  icon: React.ReactNode; placeholder: string; type?: string; value: string; onChange: (v: string) => void; required?: boolean;
-}) {
-  const [show, setShow] = useState(false);
-  const isPassword = type === "password";
-  const inputType = isPassword ? (show ? "text" : "password") : type;
-  return (
-    <div className="group relative">
-      <div className="absolute inset-0 rounded-2xl bg-gold/5 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity" />
-      <div className="relative flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0f172a]/50 px-4 py-3.5 focus-within:border-gold/50 focus-within:ring-1 focus-within:ring-gold/20 transition-all">
-        <span className="text-gold/80 shrink-0">{icon}</span>
-        <input
-          type={inputType}
-          placeholder={placeholder}
-          required={required}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="flex-1 bg-transparent outline-none text-sm text-white placeholder:text-white/30 font-body-lux"
-        />
-        {isPassword && (
-          <button
-            type="button"
-            onClick={() => setShow((s) => !s)}
-            className="text-white/50 hover:text-gold transition-colors shrink-0"
-            aria-label={show ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
-          >
-            {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function GoogleG() {
   return (
     <svg className="size-5" viewBox="0 0 24 24" aria-hidden>
@@ -355,14 +154,6 @@ function GoogleG() {
       <path fill="#34A853" d="M12 24c3.13 0 5.75-1.04 7.66-2.81l-3.72-2.84c-1.03.69-2.35 1.09-3.94 1.09-3.03 0-5.6-2.05-6.51-4.81H1.63v2.93A11.99 11.99 0 0012 24z"/>
       <path fill="#FBBC05" d="M5.49 14.63c-.23-.69-.35-1.42-.35-2.17s.13-1.48.35-2.17V7.36H1.63A11.99 11.99 0 000 12.46c0 1.93.46 3.75 1.27 5.36l4.22-3.19z"/>
       <path fill="#EA4335" d="M12 4.75c1.7 0 3.23.59 4.43 1.74l3.32-3.32C17.74 1.19 15.12 0 12 0 7.31 0 3.26 2.69 1.27 6.6l4.22 3.19C6.4 6.8 8.97 4.75 12 4.75z"/>
-    </svg>
-  );
-}
-
-function AppleLogo() {
-  return (
-    <svg className="size-5" viewBox="0 0 24 24" fill="white" aria-hidden>
-      <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
     </svg>
   );
 }

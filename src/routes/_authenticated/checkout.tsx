@@ -7,6 +7,7 @@ import { OrderSubmitSplash } from "@/components/order-submit-splash";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 import { addressesQuery, cartQuery, profileQuery } from "@/lib/queries";
+import { ProfileCompletionDialog } from "@/components/profile-completion";
 import { formatIQD } from "@/lib/format";
 import { useAdjustedPrice } from "@/lib/admin";
 import { computeShipping, shipmentCount as computeShipmentCount } from "@/lib/shipping";
@@ -52,9 +53,19 @@ function CheckoutPage() {
   const pointsDiscount = parsedPoints * 10; // 1 point = 10 IQD
   const total = Math.max(0, subtotal + shippingCost - pointsDiscount);
 
-  const placeOrder = async () => {
+  // Delivery requires a contact phone. Browsing is free (no gate), but an order
+  // cannot be placed until the user's profile has a phone number.
+  const hasPhone = !!((profile as { phone?: string | null } | null)?.phone
+    && String((profile as { phone?: string | null }).phone).trim());
+  const [showPhoneGate, setShowPhoneGate] = useState(false);
+
+  const placeOrder = async (skipPhoneCheck = false) => {
     if (!activeAddr) return toast.error("اختر عنواناً أولاً");
     if (items.length === 0) return toast.error("السلة فارغة");
+    if (!skipPhoneCheck && !hasPhone) {
+      setShowPhoneGate(true);
+      return;
+    }
     setPlacing(true);
     try {
       const { data: orderId, error } = await supabase.rpc("place_order", {
@@ -186,7 +197,7 @@ function CheckoutPage() {
         </div>
 
         <button
-          onClick={placeOrder}
+          onClick={() => placeOrder()}
           disabled={placing || items.length === 0}
           className="w-full h-14 rounded-2xl bg-gradient-gold text-navy font-black shadow-gold flex items-center justify-center gap-2 disabled:opacity-50"
         >
@@ -194,6 +205,15 @@ function CheckoutPage() {
           تأكيد الطلب
         </button>
       </div>
+
+      {/* Hard delivery-phone gate: cannot place an order without a phone.
+          After saving, the order continues automatically (skipPhoneCheck). */}
+      <ProfileCompletionDialog
+        open={showPhoneGate}
+        onOpenChange={setShowPhoneGate}
+        dismissible={false}
+        onSaved={() => placeOrder(true)}
+      />
 
       {showSplitAlert && (
         <div
