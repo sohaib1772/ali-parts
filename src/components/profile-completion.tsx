@@ -8,18 +8,6 @@ import { profileQuery } from "@/lib/queries";
 import { normalizePhone } from "@/lib/phone-auth";
 
 /**
- * True when the signed-in user has a profile row but no phone number yet.
- * Phone is DELIVERY CONTACT DATA — collected after Google sign-in, never verified.
- */
-export function useNeedsPhone(): { needsPhone: boolean; loading: boolean; profile: unknown } {
-  const { userId } = useAuth();
-  const { data: profile, isLoading } = useQuery(profileQuery(userId));
-  const phone = (profile as { phone?: string | null } | null)?.phone;
-  const needsPhone = !!userId && !isLoading && !!profile && !(phone && String(phone).trim());
-  return { needsPhone, loading: isLoading, profile };
-}
-
-/**
  * Controlled phone-entry dialog. Saves phone (+ optional name) to profiles.
  * No verification of any kind. `dismissible=false` makes it a hard gate (checkout).
  */
@@ -34,7 +22,7 @@ export function ProfileCompletionDialog({
   onSaved?: () => void;
   dismissible?: boolean;
 }) {
-  const { userId } = useAuth();
+  const { userId, user } = useAuth();
   const { data: profile } = useQuery(profileQuery(userId));
   const qc = useQueryClient();
   const [phone, setPhone] = useState("");
@@ -44,10 +32,14 @@ export function ProfileCompletionDialog({
   useEffect(() => {
     if (open) {
       const p = profile as { full_name?: string | null; phone?: string | null } | null;
-      setFullName(p?.full_name ?? "");
+      // Apple sends the name only on the FIRST sign-in; GoTrue puts it in the
+      // user's metadata. Pre-fill from the profile, else fall back to the OAuth
+      // metadata (Apple/Google) so the name is captured into profiles on save.
+      const meta = (user?.user_metadata ?? {}) as { full_name?: string; name?: string };
+      setFullName(p?.full_name || meta.full_name || meta.name || "");
       setPhone(p?.phone ?? "");
     }
-  }, [open, profile]);
+  }, [open, profile, user]);
 
   if (!open) return null;
 
@@ -124,15 +116,39 @@ export function ProfileCompletionDialog({
 }
 
 /**
- * Soft, dismissible prompt mounted in the authenticated layout: nudges the user
- * to add a phone after login WITHOUT blocking browsing. The hard requirement is
- * enforced separately at checkout.
+ * Mounted in the authenticated layout. Two jobs:
+ *  1) Backfill profiles.full_name from the OAuth metadata. Apple returns the
+ *     user's name ONLY on the first-ever sign-in (in user_metadata); persist it
+ *     immediately so it's never lost. Also covers Google.
+ *  2) Nudge the user to add a phone (dismissible — browsing is never blocked;
+ *     the hard requirement is enforced at checkout).
  */
 export function ProfilePhonePrompt() {
-  const { needsPhone } = useNeedsPhone();
+  const { userId, user } = useAuth();
+  const { data: profile, isLoading } = useQuery(profileQuery(userId));
+  const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
+  const p = profile as { full_name?: string | null; phone?: string | null } | null;
+  const hasPhone = !!(p?.phone && String(p.phone).trim());
+  const needsPhone = !!userId && !isLoading && !!p && !hasPhone;
+
+  // (1) Persist the OAuth display name if the profile doesn't have one yet.
+  useEffect(() => {
+    if (!userId || !p) return;
+    const meta = (user?.user_metadata ?? {}) as { full_name?: string; name?: string };
+    const metaName = (meta.full_name || meta.name || "").trim();
+    if (metaName && !(p.full_name && p.full_name.trim())) {
+      void supabase
+        .from("profiles")
+        .update({ full_name: metaName })
+        .eq("id", userId)
+        .then(() => qc.invalidateQueries({ queryKey: ["profile"] }));
+    }
+  }, [userId, profile, user, qc]);
+
+  // (2) Soft, dismissible phone prompt.
   useEffect(() => {
     if (needsPhone && !dismissed) setOpen(true);
   }, [needsPhone, dismissed]);
