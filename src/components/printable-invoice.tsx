@@ -5,9 +5,14 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Printer, FileDown, Image as ImageIcon, X, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
-import logoAsset from "@/assets/ali-chevrolet-logo.jpeg.asset.json";
-
-const LOGO_URL = logoAsset.url;
+// The logo previously came from `@/assets/ali-chevrolet-logo.jpeg.asset.json`,
+// a Lovable `/__l5e/` pointer asset that 404s off Lovable. The broken image
+// rendered as a black rectangle in the invoice header (the element carried a
+// `bg-black` background, which is all that remained once the image failed —
+// and React's onError never fires inside html-to-image's detached clone, so
+// the black block also ended up in exported PNGs/PDFs).
+// `/icon-512.png` is a real asset served from our own origin.
+const LOGO_URL = "/icon-512.png";
 
 type Customer = { full_name?: string | null; phone?: string | null } | null | undefined;
 
@@ -86,9 +91,67 @@ function InfoRow({
   );
 }
 
+/**
+ * inlineImagesAsDataUrls — replaces every <img src> under `root` with a
+ * base64 data URL, returning an undo function.
+ *
+ * WHY: rasterising to a canvas taints it if any drawn image is cross-origin
+ * without valid CORS, and a tainted canvas throws SecurityError on export.
+ * The invoice draws product photos from api.maktabali.com while the page is
+ * maktabali.com. Storage does send `Access-Control-Allow-Origin: *`, but the
+ * same photo is also rendered elsewhere (the order detail list) WITHOUT
+ * crossOrigin, so it can already sit in the HTTP cache as a non-CORS response.
+ * Safari will happily reuse that cached opaque response for the crossOrigin
+ * request and taint the canvas — which is why this failed on iOS but not
+ * desktop Chrome.
+ *
+ * Data URLs are same-origin by definition, so inlining removes the entire
+ * class of failure rather than relying on cache behaviour we don't control.
+ * A failed fetch drops the image (kept out of the canvas) instead of poisoning
+ * the whole export.
+ */
+async function inlineImagesAsDataUrls(root: HTMLElement): Promise<() => void> {
+  const imgs = Array.from(root.querySelectorAll("img"));
+  const restores: Array<() => void> = [];
+  await Promise.all(
+    imgs.map(async (img) => {
+      const original = img.getAttribute("src") ?? "";
+      if (!original || original.startsWith("data:")) return;
+      try {
+        const res = await fetch(original, { mode: "cors", credentials: "omit" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const blob = await res.blob();
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const fr = new FileReader();
+          fr.onload = () => resolve(String(fr.result));
+          fr.onerror = () => reject(new Error("read failed"));
+          fr.readAsDataURL(blob);
+        });
+        img.setAttribute("src", dataUrl);
+        restores.push(() => img.setAttribute("src", original));
+      } catch {
+        // Unreachable/blocked image: hide it so it never reaches the canvas.
+        const prevDisplay = img.style.display;
+        img.style.display = "none";
+        restores.push(() => { img.style.display = prevDisplay; });
+      }
+    }),
+  );
+  return () => restores.forEach((fn) => fn());
+}
+
 export async function downloadInvoicePdf(elementId: string, filename: string) {
   const source = document.getElementById(elementId);
   if (!source) return;
+  const restoreImages = await inlineImagesAsDataUrls(source);
+  try {
+    return await renderInvoicePdf(source, filename);
+  } finally {
+    restoreImages();
+  }
+}
+
+async function renderInvoicePdf(source: HTMLElement, filename: string) {
   const [{ toPng }, { jsPDF }] = await Promise.all([
     import("html-to-image"),
     import("jspdf"),
@@ -186,6 +249,15 @@ export async function downloadInvoicePdf(elementId: string, filename: string) {
 export async function downloadInvoicePng(elementId: string, filename: string) {
   const source = document.getElementById(elementId);
   if (!source) return;
+  const restoreImages = await inlineImagesAsDataUrls(source);
+  try {
+    return await renderInvoicePng(source, filename);
+  } finally {
+    restoreImages();
+  }
+}
+
+async function renderInvoicePng(source: HTMLElement, filename: string) {
   const { toPng } = await import("html-to-image");
   // Wait for images (logo, product photos) to be decoded first — html-to-image
   // relies on them being ready in the DOM. crossOrigin="anonymous" on the logo
@@ -282,6 +354,26 @@ export async function downloadInvoicePng(elementId: string, filename: string) {
   } catch (err) {
     console.warn("[invoice] native save failed, falling back to browser download", err);
   }
+  // Mobile web (notably iOS Safari) ignores the <a download> attribute — the
+  // image would open in a tab or do nothing, with no way to reach Photos. When
+  // the browser can share files, open the native share sheet instead so the
+  // user can tap "Save Image". Desktop browsers report canShare(files) false
+  // (or lack navigator.share entirely) and keep the direct download below.
+  try {
+    const blob = await (await fetch(dataUrl)).blob();
+    const file = new File([blob], filename, { type: "image/png" });
+    const nav = navigator as Navigator & { canShare?: (d?: any) => boolean };
+    if (typeof nav.share === "function" && nav.canShare?.({ files: [file] })) {
+      await nav.share({ files: [file], title: filename });
+      return "web-share" as const;
+    }
+  } catch (err) {
+    // AbortError = user dismissed the share sheet; that's not a failure and
+    // must not fall through to a download they didn't ask for.
+    if (err instanceof Error && err.name === "AbortError") return "cancelled" as const;
+    console.warn("[invoice] web share failed, falling back to download", err);
+  }
+
   const link = document.createElement("a");
   link.href = dataUrl;
   link.download = filename;
@@ -324,7 +416,8 @@ export function InvoicePreviewDialog({
     try {
       await downloadInvoicePdf(domId, `invoice-${order.order_number ?? order.id}.pdf`);
       toast.success("تم تنزيل الفاتورة");
-    } catch {
+    } catch (err) {
+      console.error("[invoice] PDF generation failed", err);
       toast.error("تعذّر توليد ملف PDF");
     } finally {
       setBusy(false);
@@ -345,12 +438,22 @@ export function InvoicePreviewDialog({
           description: "اختر «حفظ الصورة» من قائمة المشاركة لإضافتها للاستوديو",
           duration: 5000,
         });
+      } else if (result === "web-share") {
+        toast.success("تم إنشاء صورة الفاتورة ✓", {
+          description: "اختر «حفظ الصورة» من قائمة المشاركة",
+          duration: 5000,
+        });
+      } else if (result === "cancelled") {
+        // User dismissed the share sheet — no toast.
       } else {
         toast.success("تم حفظ الفاتورة كصورة ✓", {
           description: "تم تنزيل الملف على جهازك",
         });
       }
-    } catch {
+    } catch (err) {
+      // Log the real exception — this was previously swallowed, which is why
+      // the iOS failure took a full investigation to diagnose.
+      console.error("[invoice] save as image failed", err);
       toast.error("تعذّر حفظ الصورة");
     } finally {
       setBusy(false);
@@ -383,7 +486,7 @@ export function InvoicePreviewDialog({
         <DialogHeader className="px-4 py-3 border-b border-border bg-gradient-navy text-primary-foreground">
           <div className="flex items-center justify-between gap-3">
             <DialogTitle className="text-sm font-black text-gold flex items-center gap-2">
-              <img src={LOGO_URL} alt="" className="size-7 rounded-md bg-black object-contain" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+              <img src={LOGO_URL} alt="" className="size-7 rounded-md object-contain" onError={(e) => { e.currentTarget.style.display = "none"; }} />
               معاينة الفاتورة
             </DialogTitle>
             <div className="flex items-center gap-2">

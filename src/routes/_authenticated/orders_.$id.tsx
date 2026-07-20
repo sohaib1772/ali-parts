@@ -211,7 +211,9 @@ function OrderDetail() {
               <div key={it.id} className="space-y-2">
               <div className="flex gap-3">
                 <div className="size-14 rounded-xl bg-muted overflow-hidden flex-shrink-0">
-                  {it.image_url && <img src={it.image_url} alt="" className="size-full object-cover" />}
+                  {/* crossOrigin so this shares a CORS-enabled cache entry with the
+                      invoice export below; a non-CORS cached copy taints the canvas. */}
+                  {it.image_url && <img src={it.image_url} alt="" crossOrigin="anonymous" className="size-full object-cover" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-bold line-clamp-1">{it.name_ar}</div>
