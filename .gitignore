@@ -40,5 +40,4 @@ ali-parts-pro/
 
 supabase/.temp/
 supabase/.branches/
-.env.production
 .env.*.local
