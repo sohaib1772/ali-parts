@@ -304,7 +304,7 @@ function ProductPage() {
 
   return (
     <div className="h-[100dvh] overflow-y-auto overflow-x-hidden overscroll-contain bg-background pb-32" style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
-      <div className="md:mx-auto md:max-w-3xl lg:max-w-4xl md:flex md:flex-row-reverse md:gap-6 md:px-4 md:pt-4 md:items-start">
+      <div className="md:mx-auto md:max-w-3xl lg:max-w-5xl md:flex md:flex-row-reverse md:gap-6 md:px-4 md:pt-4 md:items-start">
       <div className="relative bg-card md:w-1/2 md:self-start md:sticky md:top-4 md:rounded-3xl md:overflow-hidden">
         <button onClick={goBack} aria-label="رجوع" className="absolute top-4 start-4 z-20 size-10 rounded-full bg-white/90 shadow-card grid place-items-center">
           <ArrowRight className="size-5" />
@@ -550,7 +550,7 @@ function ProductPage() {
       )}
 
       <div className="fixed bottom-0 inset-x-0 z-30 bg-card border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:bg-transparent md:border-transparent md:p-0">
-        <div className="mx-auto max-w-md flex items-center gap-2 md:max-w-3xl lg:max-w-4xl md:bg-card md:border md:border-border md:rounded-2xl md:shadow-luxe md:px-4 md:py-3 md:mb-3">
+        <div className="mx-auto max-w-md flex items-center gap-2 md:max-w-3xl lg:max-w-5xl md:bg-card md:border md:border-border md:rounded-2xl md:shadow-luxe md:px-4 md:py-3 md:mb-3">
           <div className="flex-shrink-0">
             {available ? (
               <span className="inline-flex items-center gap-1 text-success text-xs font-bold bg-success/10 border border-success/30 px-2 py-1 rounded-full">

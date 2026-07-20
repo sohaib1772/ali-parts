@@ -115,7 +115,7 @@ function ReplacementDetail() {
   return (
     <div className="min-h-screen bg-background pb-8">
       <div className="sticky top-0 z-20 bg-gradient-navy text-primary-foreground shadow-luxe">
-        <div className="mx-auto max-w-md px-4 py-4 flex items-center gap-3">
+        <div className="mx-auto max-w-md md:max-w-3xl lg:max-w-5xl px-4 py-4 flex items-center gap-3">
           <button onClick={() => router.history.back()} className="size-9 rounded-full bg-white/10 grid place-items-center">
             <ArrowRight className="size-5" />
           </button>
@@ -127,7 +127,7 @@ function ReplacementDetail() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-md px-4 pt-4 space-y-4">
+      <div className="mx-auto max-w-md md:max-w-3xl lg:max-w-5xl px-4 pt-4 space-y-4">
         {/* Current status banner */}
         <div className="bg-card rounded-2xl border border-border p-4 shadow-card flex items-center gap-3">
           <div className={`size-12 rounded-full grid place-items-center ${iconTone(meta.color, true)}`}>
