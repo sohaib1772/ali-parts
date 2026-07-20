@@ -10,7 +10,8 @@
     "cap:sync:android": "node -e \"require('fs').mkdirSync('android/app/src/main/assets/public',{recursive:true})\" && npx cap sync android",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "predeploy": "bash scripts/predeploy-check.sh"
   },
   "dependencies": {
     "@aparajita/capacitor-secure-storage": "^8.0.0",
