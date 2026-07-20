@@ -1754,6 +1754,8 @@ function TaxonomyAdmin() {
   const { data: brands = [] } = useQuery(brandsQuery());
   const [catOpen, setCatOpen] = useState(false);
   const [catForm, setCatForm] = useState<{ id?: string; name_ar: string; name_en: string; icon: string; image_url: string }>({ name_ar: "", name_en: "", icon: "", image_url: "" });
+  const [brandOpen, setBrandOpen] = useState(false);
+  const [brandForm, setBrandForm] = useState<{ id?: string; name_ar: string; name_en: string; logo_url: string }>({ name_ar: "", name_en: "", logo_url: "" });
 
   const openCat = (c?: any) => {
     setCatForm({
@@ -1793,13 +1795,36 @@ function TaxonomyAdmin() {
     if (error) toast.error(error.message);
     else qc.invalidateQueries({ queryKey: ["categories"] });
   };
-  const addBrand = async () => {
-    const name = prompt("اسم الماركة:");
-    if (!name) return;
-    const { error } = await supabase.from("brands").insert({ name_ar: name, name_en: name });
-    if (error) toast.error(error.message);
-    else { toast.success("تمت الإضافة"); qc.invalidateQueries({ queryKey: ["brands"] }); }
+  const openBrand = (b?: any) => {
+    setBrandForm({
+      id: b?.id,
+      name_ar: b?.name_ar ?? "",
+      name_en: b?.name_en ?? "",
+      logo_url: b?.logo_url ?? "",
+    });
+    setBrandOpen(true);
   };
+
+  const saveBrand = async () => {
+    if (!brandForm.name_ar.trim()) {
+      toast.error("اسم الماركة مطلوب");
+      return;
+    }
+    const payload = {
+      name_ar: brandForm.name_ar,
+      name_en: brandForm.name_en || brandForm.name_ar,
+      logo_url: brandForm.logo_url || null,
+    };
+    const res = brandForm.id
+      ? await supabase.from("brands").update(payload).eq("id", brandForm.id)
+      : await supabase.from("brands").insert(payload);
+    if (res.error) { toast.error(res.error.message); return; }
+    toast.success(brandForm.id ? "تم التحديث" : "تمت الإضافة");
+    setBrandOpen(false);
+    qc.invalidateQueries({ queryKey: ["brands"] });
+  };
+
+  const addBrand = () => openBrand();
   const removeBrand = async (id: string) => {
     if (!confirm("حذف الماركة؟")) return;
     const { error } = await supabase.from("brands").delete().eq("id", id);
@@ -1856,13 +1881,29 @@ function TaxonomyAdmin() {
         </div>
         <div className="space-y-2 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
           {brands.map((b) => (
-            <div key={b.id} className="bg-card border border-border rounded-xl p-3 flex items-center gap-2">
-              <span className="flex-1 text-sm font-semibold">{b.name_ar}</span>
+            <div key={b.id} className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
+              <div className="size-12 rounded-lg bg-muted overflow-hidden shrink-0 flex items-center justify-center">
+                {b.logo_url ? <img src={b.logo_url} alt="" className="size-full object-contain p-1" /> : <ImageIcon className="size-5 text-muted-foreground" />}
+              </div>
+              <span className="flex-1 text-sm font-semibold truncate">{b.name_ar}</span>
+              <Button size="icon" variant="ghost" onClick={() => openBrand(b)}><Pencil className="size-4" /></Button>
               <Button size="icon" variant="ghost" onClick={() => removeBrand(b.id)}><Trash2 className="size-4 text-destructive" /></Button>
             </div>
           ))}
         </div>
       </section>
+
+      <Dialog open={brandOpen} onOpenChange={setBrandOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{brandForm.id ? "تعديل ماركة" : "إضافة ماركة"}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <ImageUploader images={brandForm.logo_url ? [brandForm.logo_url] : []} max={1} resizeTo={256} onChange={(imgs) => setBrandForm({ ...brandForm, logo_url: imgs[0] ?? "" })} />
+            <Field label="الاسم بالعربي *"><Input value={brandForm.name_ar} onChange={(e) => setBrandForm({ ...brandForm, name_ar: e.target.value })} /></Field>
+            <Field label="الاسم بالإنجليزي"><Input value={brandForm.name_en} onChange={(e) => setBrandForm({ ...brandForm, name_en: e.target.value })} /></Field>
+            <Button className="w-full" onClick={saveBrand}>حفظ</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
