@@ -11,7 +11,7 @@ export const Route = createFileRoute("/privacy")({
       { name: "description", content: "سياسة الخصوصية لتطبيق Ali Parts لقطع غيار السيارات في العراق: البيانات التي نجمعها وكيفية استخدامها وحمايتها." },
       { name: "robots", content: "index, follow" },
     ],
-    links: [{ rel: "canonical", href: "https://ali-parts-pro.lovable.app/privacy" }],
+    links: [{ rel: "canonical", href: "https://maktabali.com/privacy" }],
   }),
   component: PrivacyPage,
 });

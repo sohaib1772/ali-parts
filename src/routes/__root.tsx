@@ -90,11 +90,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "Ali Parts — قطع غيار شفروليه GMC كاديلاك الأصلية في العراق" },
       { property: "og:description", content: "Ali Parts: متجرك الأول لقطع غيار السيارات الأصلية شفروليه، GMC، وكاديلاك داخل العراق. توصيل سريع وضمان الجودة." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
+      // `summary` (not `summary_large_image`) because the only share image we
+      // currently serve is the square 512x512 store logo. Switch back to
+      // `summary_large_image` once a proper 1200x630 og-image.png exists.
+      { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "Ali Parts — قطع غيار شفروليه GMC كاديلاك الأصلية في العراق" },
       { name: "twitter:description", content: "Ali Parts: متجرك الأول لقطع غيار السيارات الأصلية شفروليه، GMC، وكاديلاك داخل العراق. توصيل سريع وضمان الجودة." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9a473287-927a-410e-9a8f-b1158b330734/id-preview-6bd46758--7cd13b5a-6bc7-407c-b28f-91a5e8795805.lovable.app-1782943816898.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9a473287-927a-410e-9a8f-b1158b330734/id-preview-6bd46758--7cd13b5a-6bc7-407c-b28f-91a5e8795805.lovable.app-1782943816898.png" },
+      { property: "og:url", content: "https://maktabali.com/" },
+      { property: "og:image", content: "https://maktabali.com/icon-512.png" },
+      { property: "og:image:width", content: "512" },
+      { property: "og:image:height", content: "512" },
+      { name: "twitter:image", content: "https://maktabali.com/icon-512.png" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "Ali Parts" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },

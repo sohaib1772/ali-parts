@@ -12,8 +12,12 @@ const config: CapacitorConfig = {
   ...(isProduction
     ? {}
     : {
+        // Dev/live-reload target only — applies unless CAP_ENV=production.
+        // Was pointing at the old Lovable preview domain, which we no longer
+        // control. Points at the real site now; for local live-reload set this
+        // to your machine's LAN URL (e.g. http://192.168.x.x:8080) instead.
         server: {
-          url: 'https://ali-parts-pro.lovable.app?forceHideBadge=true',
+          url: 'https://maktabali.com',
           cleartext: true,
         },
       }),

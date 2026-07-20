@@ -11,7 +11,7 @@ export const Route = createFileRoute("/terms")({
       { name: "description", content: "الشروط والأحكام لاستخدام تطبيق Ali Parts لبيع قطع غيار السيارات في العراق." },
       { name: "robots", content: "index, follow" },
     ],
-    links: [{ rel: "canonical", href: "https://ali-parts-pro.lovable.app/terms" }],
+    links: [{ rel: "canonical", href: "https://maktabali.com/terms" }],
   }),
   component: TermsPage,
 });
