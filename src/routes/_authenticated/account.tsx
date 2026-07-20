@@ -92,8 +92,8 @@ function AccountPage() {
   ] as const;
 
   return (
-    <PageShell title="حسابي">
-      <div className="px-4 pt-4">
+    <PageShell wide title="حسابي">
+      <div className="px-4 pt-4 md:max-w-2xl md:mx-auto">
         <div className="bg-gradient-navy text-primary-foreground rounded-3xl p-5 shadow-luxe">
           <div className="flex items-center gap-4">
             <button

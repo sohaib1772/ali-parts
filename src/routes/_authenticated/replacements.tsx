@@ -37,8 +37,8 @@ function ReplacementsList() {
   });
 
   return (
-    <PageShell title="طلبات الاستبدال">
-      <div className="px-4 pt-4 space-y-3">
+    <PageShell wide title="طلبات الاستبدال">
+      <div className="px-4 pt-4 space-y-3 md:max-w-3xl md:mx-auto">
         <PushOptIn />
         {isLoading ? (
           <div className="py-12 text-center text-muted-foreground text-sm">جاري التحميل...</div>

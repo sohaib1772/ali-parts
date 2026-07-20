@@ -203,8 +203,8 @@ function AddressesPage() {
   };
 
   return (
-    <PageShell title="عناويني">
-      <div className="px-4 pt-4 space-y-3">
+    <PageShell wide title="عناويني">
+      <div className="px-4 pt-4 space-y-3 md:max-w-2xl md:mx-auto">
         {addresses.length === 0 && !adding && (
           <div className="py-16 text-center">
             <div className="size-20 rounded-full bg-muted grid place-items-center mx-auto mb-4">

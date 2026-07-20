@@ -582,7 +582,7 @@ function AdminPageInner() {
 
   if (isLoading) {
     return (
-      <PageShell title="لوحة الإدارة">
+      <PageShell wide title="لوحة الإدارة">
         <div className="px-4 pt-16 flex flex-col items-center text-center gap-3">
           <Loader2 className="size-8 animate-spin text-muted-foreground" />
           <p className="text-sm text-muted-foreground">جاري التحقق من الصلاحيات…</p>
@@ -593,7 +593,7 @@ function AdminPageInner() {
 
   if (isError) {
     return (
-      <PageShell title="لوحة الإدارة">
+      <PageShell wide title="لوحة الإدارة">
         <div className="px-4 pt-10 flex flex-col items-center text-center gap-3" role="alert">
           <div className="size-16 rounded-full bg-amber-500/10 grid place-items-center">
             <ShieldAlert className="size-8 text-amber-600" />
@@ -610,7 +610,7 @@ function AdminPageInner() {
 
   if (!hasAnyAccess) {
     return (
-      <PageShell title="لوحة الإدارة">
+      <PageShell wide title="لوحة الإدارة">
         <div className="px-4 pt-10 flex flex-col items-center text-center gap-3">
           <div className="size-16 rounded-full bg-destructive/10 grid place-items-center">
             <ShieldAlert className="size-8 text-destructive" />
@@ -625,7 +625,7 @@ function AdminPageInner() {
 
   if (otpLoading || !otp) {
     return (
-      <PageShell title="لوحة الإدارة">
+      <PageShell wide title="لوحة الإدارة">
         <div className="px-4 pt-16 flex flex-col items-center text-center gap-3">
           <Loader2 className="size-8 animate-spin text-muted-foreground" />
           <p className="text-sm text-muted-foreground">جاري التحقق…</p>
@@ -636,7 +636,7 @@ function AdminPageInner() {
 
   if (otp.required && !otp.verified) {
     return (
-      <PageShell title="تحقق ثنائي">
+      <PageShell wide title="تحقق ثنائي">
         <AdminOtpGate email={otp.email ?? ""} onVerified={() => refetchOtp()} />
       </PageShell>
     );

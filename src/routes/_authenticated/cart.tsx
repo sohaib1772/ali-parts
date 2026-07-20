@@ -93,7 +93,7 @@ function CartPage() {
 
   if (isLoading) {
     return (
-      <PageShell title="السلة">
+      <PageShell wide title="السلة">
         <div className="px-4 pt-4 pb-6 space-y-3">
           {[0, 1, 2].map((i) => (
             <div key={i} className="bg-card rounded-2xl border border-border p-3 shadow-card flex gap-3 animate-pulse">
@@ -117,7 +117,7 @@ function CartPage() {
 
   if (isError) {
     return (
-      <PageShell title="السلة">
+      <PageShell wide title="السلة">
         <div className="px-6 py-20 text-center">
           <h2 className="text-lg font-bold mb-2 text-destructive">تعذر تحميل السلة</h2>
           <p className="text-sm text-muted-foreground mb-6">تحقق من الاتصال ثم أعد المحاولة.</p>
@@ -131,7 +131,7 @@ function CartPage() {
 
   if (items.length === 0) {
     return (
-      <PageShell title="السلة">
+      <PageShell wide title="السلة">
         <div className="px-6 py-20 text-center">
           <div className="size-20 rounded-full bg-muted grid place-items-center mx-auto mb-4">
             <ShoppingBag className="size-10 text-muted-foreground" />

@@ -98,8 +98,8 @@ function NotificationsPage() {
   const unread = items.filter((n) => !n.read_at).length;
 
   return (
-    <PageShell title="الإشعارات">
-      <div className="px-4 pt-4 pb-6">
+    <PageShell wide title="الإشعارات">
+      <div className="px-4 pt-4 pb-6 md:max-w-3xl md:mx-auto">
         {unread > 0 && (
           <div className="flex items-center justify-between mb-3">
             <div className="text-xs font-bold text-muted-foreground">{unread} إشعار غير مقروء</div>

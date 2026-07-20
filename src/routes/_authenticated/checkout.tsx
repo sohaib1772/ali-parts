@@ -96,9 +96,9 @@ function CheckoutPage() {
   };
 
   return (
-    <PageShell title="إتمام الطلب">
+    <PageShell wide title="إتمام الطلب">
       {placing && <OrderSubmitSplash message="جاري إرسال طلبك..." />}
-      <div className="px-4 pt-4 space-y-4">
+      <div className="px-4 pt-4 space-y-4 md:max-w-2xl md:mx-auto">
         <Section title="عنوان التوصيل" icon={<MapPin className="size-4 text-gold" />}>
           {addresses.length === 0 ? (
             <Link to="/addresses" className="flex items-center justify-center gap-2 h-12 rounded-xl border-2 border-dashed border-gold text-gold font-bold">

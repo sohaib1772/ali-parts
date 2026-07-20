@@ -79,8 +79,8 @@ function OrdersPage() {
   }, [userId, qc]);
 
   return (
-    <PageShell title="طلباتي">
-      <div className="px-4 pt-4 space-y-3">
+    <PageShell wide title="طلباتي">
+      <div className="px-4 pt-4 space-y-3 md:max-w-3xl md:mx-auto">
         {orders.length === 0 ? (
           <div className="py-20 text-center">
             <div className="size-20 rounded-full bg-muted grid place-items-center mx-auto mb-4">

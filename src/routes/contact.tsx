@@ -15,8 +15,8 @@ function ContactPage() {
   const waNumber = formatIraqiWhatsAppNumber(useSetting("whatsapp_number", WHATSAPP_NUMBER));
   const phoneNumber = formatIraqiWhatsAppNumber(useSetting("phone_number", "") || waNumber);
   return (
-    <PageShell title="اتصل بنا">
-      <div className="px-4 pt-4 space-y-3">
+    <PageShell wide title="اتصل بنا">
+      <div className="px-4 pt-4 space-y-3 md:max-w-2xl md:mx-auto">
         <a href={whatsappLink("مرحباً", waNumber)} target="_blank" rel="noreferrer" className="flex items-center gap-3 bg-card rounded-2xl border border-border p-4 shadow-card hover:shadow-luxe transition">
           <div className="size-12 rounded-xl bg-whatsapp/10 text-whatsapp grid place-items-center"><WhatsappIcon className="size-6" /></div>
           <div>

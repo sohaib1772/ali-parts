@@ -28,8 +28,8 @@ function PrivacyPage() {
   const today = new Date().toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
 
   return (
-    <PageShell title="سياسة الخصوصية">
-      <div className="px-4 pt-4 pb-8">
+    <PageShell wide title="سياسة الخصوصية">
+      <div className="px-4 pt-4 pb-8 md:max-w-2xl md:mx-auto">
         <div className="bg-card rounded-2xl border border-border p-5 shadow-card space-y-5 text-sm leading-relaxed">
           <p className="text-xs text-muted-foreground">آخر تحديث: {today}</p>
           <p>

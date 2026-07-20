@@ -11,8 +11,8 @@ export const Route = createFileRoute("/_authenticated/messages")({
 function MessagesPage() {
   const waNumber = useSetting("whatsapp_number");
   return (
-    <PageShell title="الرسائل">
-      <div className="px-6 pt-8 text-center">
+    <PageShell wide title="الرسائل">
+      <div className="px-6 pt-8 text-center md:max-w-2xl md:mx-auto">
         <div className="size-20 rounded-full bg-whatsapp/10 grid place-items-center mx-auto mb-4">
           <WhatsappIcon className="size-10 text-whatsapp" />
         </div>

@@ -32,8 +32,8 @@ function AboutPage() {
   ];
 
   return (
-    <PageShell title="من نحن">
-      <div className="px-4 pt-4">
+    <PageShell wide title="من نحن">
+      <div className="px-4 pt-4 md:max-w-2xl md:mx-auto">
         <div className="bg-gradient-hero text-primary-foreground rounded-3xl p-6 shadow-luxe">
           <h1 className="text-2xl font-black mb-3">{storeName}</h1>
           <p className="text-sm text-primary-foreground/80 leading-relaxed whitespace-pre-line">{aboutText}</p>
