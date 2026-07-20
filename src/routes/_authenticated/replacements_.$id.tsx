@@ -9,7 +9,7 @@ import { uploadWithProgress } from "@/lib/upload-with-progress";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export const Route = createFileRoute("/_authenticated/replacements/$id")({
+export const Route = createFileRoute("/_authenticated/replacements_/$id")({
   component: ReplacementDetail,
 });
 

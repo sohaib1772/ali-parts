@@ -34,8 +34,8 @@ import { Route as AuthenticatedCartRouteImport } from './routes/_authenticated/c
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAddressesRouteImport } from './routes/_authenticated/addresses'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
-import { Route as AuthenticatedReplacementsIdRouteImport } from './routes/_authenticated/replacements.$id'
-import { Route as AuthenticatedOrdersIdRouteImport } from './routes/_authenticated/orders.$id'
+import { Route as AuthenticatedReplacementsIdRouteImport } from './routes/_authenticated/replacements_.$id'
+import { Route as AuthenticatedOrdersIdRouteImport } from './routes/_authenticated/orders_.$id'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -165,14 +165,14 @@ const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
 } as any)
 const AuthenticatedReplacementsIdRoute =
   AuthenticatedReplacementsIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => AuthenticatedReplacementsRoute,
+    id: '/replacements_/$id',
+    path: '/replacements/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedOrdersIdRoute = AuthenticatedOrdersIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AuthenticatedOrdersRoute,
+  id: '/orders_/$id',
+  path: '/orders/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -195,8 +195,8 @@ export interface FileRoutesByFullPath {
   '/favorites': typeof AuthenticatedFavoritesRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
-  '/orders': typeof AuthenticatedOrdersRouteWithChildren
-  '/replacements': typeof AuthenticatedReplacementsRouteWithChildren
+  '/orders': typeof AuthenticatedOrdersRoute
+  '/replacements': typeof AuthenticatedReplacementsRoute
   '/category/$id': typeof CategoryIdRoute
   '/order-success/$id': typeof OrderSuccessIdRoute
   '/product/$id': typeof ProductIdRoute
@@ -223,8 +223,8 @@ export interface FileRoutesByTo {
   '/favorites': typeof AuthenticatedFavoritesRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
-  '/orders': typeof AuthenticatedOrdersRouteWithChildren
-  '/replacements': typeof AuthenticatedReplacementsRouteWithChildren
+  '/orders': typeof AuthenticatedOrdersRoute
+  '/replacements': typeof AuthenticatedReplacementsRoute
   '/category/$id': typeof CategoryIdRoute
   '/order-success/$id': typeof OrderSuccessIdRoute
   '/product/$id': typeof ProductIdRoute
@@ -253,13 +253,13 @@ export interface FileRoutesById {
   '/_authenticated/favorites': typeof AuthenticatedFavoritesRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
-  '/_authenticated/orders': typeof AuthenticatedOrdersRouteWithChildren
-  '/_authenticated/replacements': typeof AuthenticatedReplacementsRouteWithChildren
+  '/_authenticated/orders': typeof AuthenticatedOrdersRoute
+  '/_authenticated/replacements': typeof AuthenticatedReplacementsRoute
   '/category/$id': typeof CategoryIdRoute
   '/order-success/$id': typeof OrderSuccessIdRoute
   '/product/$id': typeof ProductIdRoute
-  '/_authenticated/orders/$id': typeof AuthenticatedOrdersIdRoute
-  '/_authenticated/replacements/$id': typeof AuthenticatedReplacementsIdRoute
+  '/_authenticated/orders_/$id': typeof AuthenticatedOrdersIdRoute
+  '/_authenticated/replacements_/$id': typeof AuthenticatedReplacementsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -345,8 +345,8 @@ export interface FileRouteTypes {
     | '/category/$id'
     | '/order-success/$id'
     | '/product/$id'
-    | '/_authenticated/orders/$id'
-    | '/_authenticated/replacements/$id'
+    | '/_authenticated/orders_/$id'
+    | '/_authenticated/replacements_/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -544,47 +544,22 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/replacements/$id': {
-      id: '/_authenticated/replacements/$id'
-      path: '/$id'
+    '/_authenticated/replacements_/$id': {
+      id: '/_authenticated/replacements_/$id'
+      path: '/replacements/$id'
       fullPath: '/replacements/$id'
       preLoaderRoute: typeof AuthenticatedReplacementsIdRouteImport
-      parentRoute: typeof AuthenticatedReplacementsRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/orders/$id': {
-      id: '/_authenticated/orders/$id'
-      path: '/$id'
+    '/_authenticated/orders_/$id': {
+      id: '/_authenticated/orders_/$id'
+      path: '/orders/$id'
       fullPath: '/orders/$id'
       preLoaderRoute: typeof AuthenticatedOrdersIdRouteImport
-      parentRoute: typeof AuthenticatedOrdersRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
-
-interface AuthenticatedOrdersRouteChildren {
-  AuthenticatedOrdersIdRoute: typeof AuthenticatedOrdersIdRoute
-}
-
-const AuthenticatedOrdersRouteChildren: AuthenticatedOrdersRouteChildren = {
-  AuthenticatedOrdersIdRoute: AuthenticatedOrdersIdRoute,
-}
-
-const AuthenticatedOrdersRouteWithChildren =
-  AuthenticatedOrdersRoute._addFileChildren(AuthenticatedOrdersRouteChildren)
-
-interface AuthenticatedReplacementsRouteChildren {
-  AuthenticatedReplacementsIdRoute: typeof AuthenticatedReplacementsIdRoute
-}
-
-const AuthenticatedReplacementsRouteChildren: AuthenticatedReplacementsRouteChildren =
-  {
-    AuthenticatedReplacementsIdRoute: AuthenticatedReplacementsIdRoute,
-  }
-
-const AuthenticatedReplacementsRouteWithChildren =
-  AuthenticatedReplacementsRoute._addFileChildren(
-    AuthenticatedReplacementsRouteChildren,
-  )
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
@@ -595,8 +570,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFavoritesRoute: typeof AuthenticatedFavoritesRoute
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
-  AuthenticatedOrdersRoute: typeof AuthenticatedOrdersRouteWithChildren
-  AuthenticatedReplacementsRoute: typeof AuthenticatedReplacementsRouteWithChildren
+  AuthenticatedOrdersRoute: typeof AuthenticatedOrdersRoute
+  AuthenticatedReplacementsRoute: typeof AuthenticatedReplacementsRoute
+  AuthenticatedOrdersIdRoute: typeof AuthenticatedOrdersIdRoute
+  AuthenticatedReplacementsIdRoute: typeof AuthenticatedReplacementsIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -608,8 +585,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFavoritesRoute: AuthenticatedFavoritesRoute,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
-  AuthenticatedOrdersRoute: AuthenticatedOrdersRouteWithChildren,
-  AuthenticatedReplacementsRoute: AuthenticatedReplacementsRouteWithChildren,
+  AuthenticatedOrdersRoute: AuthenticatedOrdersRoute,
+  AuthenticatedReplacementsRoute: AuthenticatedReplacementsRoute,
+  AuthenticatedOrdersIdRoute: AuthenticatedOrdersIdRoute,
+  AuthenticatedReplacementsIdRoute: AuthenticatedReplacementsIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

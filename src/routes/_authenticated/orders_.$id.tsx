@@ -1,5 +1,5 @@
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
-import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, PackageCheck, Package as PackageIcon, PackageOpen, Truck, MapPin, Home, XCircle, StickyNote, Receipt, RefreshCw, Headphones } from "lucide-react";
@@ -21,8 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/lib/use-auth";
 
-export const Route = createFileRoute("/_authenticated/orders/$id")({
-  loader: ({ context, params }) => context.queryClient.ensureQueryData(orderByIdQuery(params.id)),
+export const Route = createFileRoute("/_authenticated/orders_/$id")({
   component: OrderDetail,
 });
 
@@ -49,8 +48,10 @@ function AddressRow({ label, value, mono, muted }: { label: string; value?: stri
 
 function OrderDetail() {
   const { id } = Route.useParams();
-  const { data } = useSuspenseQuery(orderByIdQuery(id));
-  const { order, items, customer } = data;
+  const { data, isLoading, error } = useQuery(orderByIdQuery(id));
+  const order = (data as any)?.order;
+  const items: any[] = (data as any)?.items ?? [];
+  const customer = (data as any)?.customer ?? null;
   const router = useRouter();
   const qc = useQueryClient();
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -110,13 +111,14 @@ function OrderDetail() {
   }, [id, qc]);
 
   useEffect(() => {
+    if (!order) return;
     markOrderSeen(order.id, (order as any).updated_at ?? order.created_at);
   }, [order]);
 
-  const activeIdx = TIMELINE.findIndex((t) => t.key === order.status);
-  const cancelled = order.status === "cancelled";
-  const canCancel = order.status === "received" || order.status === "preparing";
-  const canReplace = order.status === "delivered";
+  const activeIdx = TIMELINE.findIndex((t) => t.key === order?.status);
+  const cancelled = order?.status === "cancelled";
+  const canCancel = order?.status === "received" || order?.status === "preparing";
+  const canReplace = order?.status === "delivered";
   const [cancelling, setCancelling] = useState(false);
 
   const handleCancel = async () => {
@@ -132,6 +134,23 @@ function OrderDetail() {
       qc.invalidateQueries({ queryKey: ["orders"] });
     }
   };
+
+  // All hooks above this line so the order stays stable across renders.
+  if (isLoading) {
+    return <div className="min-h-screen grid place-items-center text-muted-foreground">جاري التحميل...</div>;
+  }
+
+  if (error || !order) {
+    return (
+      <div className="min-h-screen grid place-items-center px-4 text-center">
+        <div>
+          <PackageIcon className="size-12 text-muted-foreground mx-auto mb-3" />
+          <div className="text-lg font-bold mb-1">لم يتم العثور على الطلب</div>
+          <Link to="/orders" className="text-gold text-sm font-bold">عودة لطلباتي</Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-8">
