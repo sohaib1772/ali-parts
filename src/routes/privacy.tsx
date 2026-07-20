@@ -1,8 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageShell } from "@/components/page-shell";
-import { useSetting } from "@/lib/admin";
-import { WHATSAPP_NUMBER, formatIraqiWhatsAppNumber, whatsappLink } from "@/lib/format";
-import { MessageCircle, AlertTriangle } from "lucide-react";
+import { MessageCircle } from "lucide-react";
+
+const EMAIL = "aliskida816@gmail.com";
+const PHONE_DISPLAY = "+964 773 795 9595";
+const PHONE_TEL = "+9647737959595";
+const WHATSAPP_INTL = "9647737959595";
+const LAST_UPDATED = "20 July 2026";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
@@ -17,150 +21,208 @@ export const Route = createFileRoute("/privacy")({
 });
 
 function PrivacyPage() {
-  const storeName = useSetting("store_name", "Ali Parts");
-  const ownerName = useSetting("store_owner", "").trim();
-  const supportEmail = useSetting("store_email", "").trim();
-  const address = useSetting("store_address", "").trim();
-  const rawWa = useSetting("whatsapp_number", "").trim();
-  const waNumber = rawWa ? formatIraqiWhatsAppNumber(rawWa) : formatIraqiWhatsAppNumber(WHATSAPP_NUMBER);
-  const hasWa = Boolean(rawWa);
-  const missing = !ownerName || !address || !supportEmail || !hasWa;
-  const today = new Date().toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
-
   return (
     <PageShell wide title="سياسة الخصوصية">
       <div className="px-4 pt-4 pb-8 md:max-w-2xl md:mx-auto">
-        <div className="bg-card rounded-2xl border border-border p-5 shadow-card space-y-5 text-sm leading-relaxed">
-          <p className="text-xs text-muted-foreground">آخر تحديث: {today}</p>
+        {/* The policy body is English, so it is explicitly LTR/left-aligned.
+            The page chrome (header + bottom nav) stays RTL. */}
+        <div
+          dir="ltr"
+          className="bg-card rounded-2xl border border-border p-5 shadow-card space-y-5 text-sm leading-relaxed text-left"
+        >
+          <div>
+            <h1 className="text-lg font-black text-navy mb-1">Privacy Policy</h1>
+            <p className="text-xs text-muted-foreground">
+              <strong>Last updated:</strong> {LAST_UPDATED}
+            </p>
+          </div>
+
           <p>
-            نحن في <strong>{storeName}</strong> نحترم خصوصيتك ونلتزم بحماية بياناتك الشخصية وفقاً للقوانين المعمول بها
-            وسياسات متاجر التطبيقات (Apple App Store و Google Play). توضح هذه السياسة أنواع البيانات التي نجمعها،
-            وكيف نستخدمها ونحميها، وحقوقك عليها.
+            Maktab Ali Chevrolet (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) operates the online store at
+            maktabali.com and its mobile applications (the &quot;Service&quot;). This policy explains what personal
+            information we collect, why we collect it, and what we do with it.
           </p>
 
-          <Section title="١. البيانات التي نجمعها">
-            <ul className="list-disc ps-6 space-y-1">
-              <li>بيانات الحساب: الاسم الكامل، البريد الإلكتروني، رقم الهاتف، الصورة الشخصية (اختيارية).</li>
-              <li>بيانات الطلب والتوصيل: العنوان، المحافظة، ملاحظات التوصيل، تاريخ الطلبات.</li>
-              <li>بيانات السيارة (اختيارية): الشركة المصنّعة، الموديل، وسنة الصنع لعرض القطع المتوافقة.</li>
-              <li>بيانات تقنية: نوع الجهاز، نظام التشغيل، معرّف الجلسة، سجلات الأخطاء لتحسين الأداء.</li>
-              <li>الإشعارات (اختيارية): توكن الإشعارات فقط عند موافقتك على تفعيلها.</li>
-            </ul>
-            <p className="mt-2 text-muted-foreground">لا نجمع بيانات مالية؛ الدفع يتم عند الاستلام فقط.</p>
+          <p>
+            <strong>Data controller:</strong> Ali — Maktab Ali Chevrolet, Erbil, Kurdistan Region, Iraq.
+          </p>
+
+          <Section title="1. Information We Collect">
+            <p>
+              <strong>Account information.</strong> When you create an account you sign in using Google or Apple.
+              From them we receive your email address, your name, and your profile picture if you have one. We never
+              receive or store your Google or Apple password.
+            </p>
+            <p className="mt-2">
+              <strong>Contact and delivery information.</strong> After signing in we ask for a phone number so we can
+              contact you about your order. When you place an order you provide a delivery address. Please note we do
+              not verify phone numbers.
+            </p>
+            <p className="mt-2">
+              <strong>Order information.</strong> The products you order, quantities, prices, order status, delivery
+              method, and your order history. Because we sell on a cash-on-delivery basis, we do not collect or store
+              bank card or payment card details of any kind.
+            </p>
+            <p className="mt-2">
+              <strong>Shopping activity.</strong> Items in your cart, products you save to favourites, and loyalty
+              points earned on orders.
+            </p>
+            <p className="mt-2">
+              <strong>Vehicle information.</strong> The vehicle make, model, year and engine size you select, so we can
+              show you parts compatible with your car.
+            </p>
+            <p className="mt-2">
+              <strong>Replacement requests.</strong> If you request a replacement for a part, any photographs and
+              description you submit with that request.
+            </p>
+            <p className="mt-2">
+              <strong>Technical information.</strong> Your device sends standard technical data such as IP address and
+              browser type when you use the Service. If you enable notifications, we store a device notification token
+              so we can send you updates about your orders.
+            </p>
           </Section>
 
-          <Section title="٢. كيفية استخدام البيانات">
-            <ul className="list-disc ps-6 space-y-1">
-              <li>معالجة الطلبات، تجهيزها، وتوصيلها.</li>
-              <li>التواصل معك بخصوص الطلب عبر الهاتف أو واتساب.</li>
-              <li>عرض تاريخ طلباتك ومنتجاتك المفضلة داخل حسابك.</li>
-              <li>إرسال إشعارات الطلب والعروض (بعد موافقتك).</li>
-              <li>تحسين أداء التطبيق ورصد الأخطاء.</li>
-              <li>الامتثال للالتزامات القانونية.</li>
-            </ul>
-          </Section>
-
-          <Section title="٣. مشاركة البيانات">
-            <p>لا نبيع بياناتك ولا نؤجّرها لأي طرف. نشاركها فقط في الحدود اللازمة مع:</p>
+          <Section title="2. How We Use Your Information">
+            <p>We use your information to:</p>
             <ul className="list-disc ps-6 space-y-1 mt-2">
-              <li>مندوبي التوصيل داخل العراق لإتمام إيصال الطلب.</li>
-              <li>مزودي البنية التحتية السحابية (استضافة قاعدة البيانات والإشعارات) الملتزمين بمعايير حماية بيانات دولية.</li>
-              <li>الجهات الحكومية أو القضائية عند وجود طلب قانوني رسمي.</li>
+              <li>Create and maintain your account</li>
+              <li>Process, prepare and deliver your orders</li>
+              <li>Contact you about an order, by phone or WhatsApp</li>
+              <li>Show you parts compatible with your vehicle</li>
+              <li>Handle replacement requests</li>
+              <li>Send you order notifications, if you have enabled them</li>
+              <li>Keep records of our sales</li>
             </ul>
           </Section>
 
-          <Section title="٤. حماية البيانات">
-            <p>
-              نستخدم اتصالات مشفرة (HTTPS)، وسياسات صلاحيات صارمة على قاعدة البيانات (Row Level Security)،
-              ومصادقة آمنة لكل حساب. رغم كل الاحتياطات، لا يمكن ضمان أمان مطلق لأي نظام إلكتروني،
-              ونلتزم بإبلاغك عند أي خرق يؤثر على بياناتك.
-            </p>
-          </Section>
-
-          <Section title="٥. مدة الاحتفاظ بالبيانات">
-            <p>
-              نحتفظ ببيانات حسابك وطلباتك طالما حسابك نشط ولحد أقصى (5) سنوات من آخر نشاط لأغراض المحاسبة والدعم،
-              ثم تُحذف أو تُجهَّل. يمكنك طلب الحذف الفوري في أي وقت.
-            </p>
-          </Section>
-
-          <Section title="٦. حقوقك">
+          <Section title="3. What We Do Not Do">
             <ul className="list-disc ps-6 space-y-1">
-              <li>الوصول إلى بياناتك وتعديلها من صفحة الحساب.</li>
-              <li>طلب حذف حسابك وكامل بياناتك.</li>
-              <li>سحب موافقتك على الإشعارات في أي وقت.</li>
-              <li>تقديم شكوى إذا رأيت أن حقوقك قد انتُهكت.</li>
+              <li>We do not sell, rent or trade your personal information to anyone.</li>
+              <li>We do not use advertising networks or advertising trackers.</li>
+              <li>We do not use analytics services that follow you across other websites.</li>
+              <li>We do not collect payment card information. We accept cash on delivery only.</li>
             </ul>
           </Section>
 
-          <Section title="٧. خصوصية الأطفال">
+          <Section title="4. Who We Share Information With">
             <p>
-              التطبيق غير موجّه لمن هم دون سن (13) عاماً. لا نجمع بيانات عن الأطفال عن قصد،
-              وسنحذف أي بيانات نكتشف أنها تعود لطفل فور علمنا بها.
+              <strong>Sign-in providers.</strong> Google and Apple, solely to sign you in. Their handling of your data
+              is governed by their own privacy policies.
+            </p>
+            <p className="mt-2">
+              <strong>Delivery.</strong> We share your name, phone number and delivery address with the delivery
+              service or driver bringing your order, only as needed to complete the delivery.
+            </p>
+            <p className="mt-2">
+              <strong>Technical services.</strong> Our website and database run on servers we rent from Contabo. Some
+              technical components load from a public content delivery network (jsDelivr), which may receive your IP
+              address as part of a normal web request.
+            </p>
+            <p className="mt-2">
+              <strong>Legal.</strong> We may disclose information where required by law or a lawful order.
             </p>
           </Section>
 
-          <Section title="٨. الأذونات على الجهاز">
+          <Section title="5. Where Your Data Is Stored">
+            <p>
+              Your information is stored on servers located in Germany. As this is outside Iraq, your data is
+              transferred and stored outside your country.
+            </p>
+          </Section>
+
+          <Section title="6. How Long We Keep Your Information">
+            <p>
+              We keep your account information for as long as your account is open. We keep order records after that
+              where we need them for business and accounting purposes. If you ask us to delete your account, we will
+              delete your personal account data, though we may retain order records we are required to keep.
+            </p>
+          </Section>
+
+          <Section title="7. Security">
+            <p>
+              We protect your information using encrypted connections (HTTPS), access controls on our database, and
+              restricted administrative access. However, no method of transmission or storage is completely secure, and
+              we cannot guarantee absolute security.
+            </p>
+          </Section>
+
+          <Section title="8. Your Choices and Rights">
             <ul className="list-disc ps-6 space-y-1">
-              <li>الكاميرا والصور: لرفع صورة شخصية أو صور طلبات الاستبدال (اختياري).</li>
-              <li>الإشعارات: لإعلامك بحالة الطلب والعروض (اختياري).</li>
-              <li>الإنترنت: مطلوب لعمل التطبيق.</li>
-            </ul>
-            <p className="mt-2 text-muted-foreground">لا نصل لأي إذن دون طلبه صراحة منك، ويمكنك إلغاء أي إذن من إعدادات جهازك.</p>
-          </Section>
-
-          <Section title="٩. الامتثال لمتاجر التطبيقات">
-            <p>
-              يلتزم التطبيق بسياسات Apple App Store وGoogle Play بشأن جمع البيانات وشفافيتها،
-              وبقوانين حماية المستهلك في جمهورية العراق.
-            </p>
-          </Section>
-
-          <Section title="١٠. تعديلات على السياسة">
-            <p>
-              قد نقوم بتحديث هذه السياسة من وقت لآخر. سيتم نشر التعديلات هنا مع تحديث تاريخ "آخر تحديث"،
-              واستمرارك في استخدام التطبيق بعد التعديل يُعدّ موافقة على النسخة الجديدة.
-            </p>
-          </Section>
-
-          <Section title="١١. التواصل معنا">
-            <p>لأي استفسار حول الخصوصية أو لطلب حذف بياناتك:</p>
-            {missing && (
-              <div className="mt-2 flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200 p-3 text-xs">
-                <AlertTriangle className="size-4 shrink-0 mt-0.5" />
-                <span>لم يتم تعبئة كامل بيانات المالك بعد. يرجى تحديث المعلومات من لوحة الإدارة (الإعدادات: اسم الجهة، العنوان، البريد الإلكتروني، رقم واتساب).</span>
-              </div>
-            )}
-            <ul className="list-disc ps-6 space-y-1 mt-2">
-              <li>الجهة المسؤولة: {ownerName || <span className="text-muted-foreground">— لم يتم تحديدها بعد —</span>}</li>
-              <li>العنوان: {address || <span className="text-muted-foreground">— لم يتم تحديده بعد —</span>}</li>
               <li>
-                البريد الإلكتروني:{" "}
-                {supportEmail ? (
-                  <a className="text-gold underline" href={`mailto:${supportEmail}`}>{supportEmail}</a>
-                ) : (
-                  <span className="text-muted-foreground">— لم يتم تحديده بعد —</span>
-                )}
+                <strong>Access and correct.</strong> You can view and update your name, phone number, addresses and
+                vehicle details at any time in the Account section of the app.
               </li>
               <li>
-                واتساب:{" "}
-                {hasWa ? (
-                  <span dir="ltr">+{waNumber}</span>
-                ) : (
-                  <span className="text-muted-foreground">— لم يتم تحديده بعد —</span>
-                )}
+                <strong>Delete your account.</strong> Contact us using the details below and we will delete your
+                account data.
+              </li>
+              <li>
+                <strong>Notifications.</strong> You can turn notifications off at any time in your device settings.
+              </li>
+              <li>
+                <strong>Sign out.</strong> You can sign out of your account at any time.
               </li>
             </ul>
-            {hasWa && (
-              <a
-              href={whatsappLink("لدي استفسار بخصوص الخصوصية", waNumber)}
+          </Section>
+
+          <Section title="9. Children">
+            <p>
+              The Service is not directed at children. We do not knowingly collect personal information from anyone
+              under 18. If you believe a child has provided us with personal information, please contact us and we will
+              delete it.
+            </p>
+          </Section>
+
+          <Section title="10. Changes to This Policy">
+            <p>
+              We may update this policy from time to time. When we do, we will change the &quot;Last updated&quot; date
+              at the top of this page. Your continued use of the Service after a change means you accept the updated
+              policy.
+            </p>
+          </Section>
+
+          <Section title="11. Contact Us">
+            <p>
+              If you have any questions about this policy or about your personal information, contact us:
+            </p>
+            <p className="mt-2">
+              <strong>Maktab Ali Chevrolet</strong>
+              <br />
+              Erbil, Kurdistan Region, Iraq
+            </p>
+            <ul className="list-none ps-0 space-y-1 mt-2">
+              <li>
+                Email:{" "}
+                <a className="text-gold underline" href={`mailto:${EMAIL}`}>
+                  {EMAIL}
+                </a>
+              </li>
+              <li>
+                Phone:{" "}
+                <a className="text-gold underline" href={`tel:${PHONE_TEL}`}>
+                  {PHONE_DISPLAY}
+                </a>
+              </li>
+              <li>
+                WhatsApp:{" "}
+                <a
+                  className="text-gold underline"
+                  href={`https://wa.me/${WHATSAPP_INTL}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {PHONE_DISPLAY}
+                </a>
+              </li>
+            </ul>
+            <a
+              href={`https://wa.me/${WHATSAPP_INTL}`}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-3 inline-flex items-center gap-2 bg-navy text-primary-foreground text-xs font-bold px-4 py-2 rounded-xl"
-              >
-                <MessageCircle className="size-3.5" /> تواصل عبر واتساب
-              </a>
-            )}
+            >
+              <MessageCircle className="size-3.5" /> Contact us on WhatsApp
+            </a>
           </Section>
         </div>
       </div>
