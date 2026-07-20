@@ -354,18 +354,27 @@ async function renderInvoicePng(source: HTMLElement, filename: string) {
   } catch (err) {
     console.warn("[invoice] native save failed, falling back to browser download", err);
   }
-  // Mobile web (notably iOS Safari) ignores the <a download> attribute — the
-  // image would open in a tab or do nothing, with no way to reach Photos. When
-  // the browser can share files, open the native share sheet instead so the
-  // user can tap "Save Image". Desktop browsers report canShare(files) false
-  // (or lack navigator.share entirely) and keep the direct download below.
+  // iOS Safari ignores the <a download> attribute — the image opens in a tab
+  // or does nothing, with no route to Photos. Use the native share sheet there
+  // so the user can tap "Save Image".
+  //
+  // Gated on iOS specifically, NOT on canShare() alone: desktop Chrome on
+  // Windows also reports canShare({files}) === true, and using it there would
+  // replace the expected file download with an OS share dialog. Desktop keeps
+  // the direct download below.
+  const isIOS =
+    /iP(hone|ad|od)/.test(navigator.userAgent) ||
+    // iPadOS 13+ reports itself as Macintosh; touch support disambiguates.
+    (navigator.userAgent.includes("Macintosh") && "ontouchend" in document);
   try {
-    const blob = await (await fetch(dataUrl)).blob();
-    const file = new File([blob], filename, { type: "image/png" });
-    const nav = navigator as Navigator & { canShare?: (d?: any) => boolean };
-    if (typeof nav.share === "function" && nav.canShare?.({ files: [file] })) {
-      await nav.share({ files: [file], title: filename });
-      return "web-share" as const;
+    if (isIOS) {
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], filename, { type: "image/png" });
+      const nav = navigator as Navigator & { canShare?: (d?: any) => boolean };
+      if (typeof nav.share === "function" && nav.canShare?.({ files: [file] })) {
+        await nav.share({ files: [file], title: filename });
+        return "web-share" as const;
+      }
     }
   } catch (err) {
     // AbortError = user dismissed the share sheet; that's not a failure and
