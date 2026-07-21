@@ -4,7 +4,7 @@ import { whatsappLink } from "@/lib/format";
 import { ContactList, MissingSettingsNotice, useLegalContact } from "@/components/legal-contact";
 import { MessageCircle } from "lucide-react";
 
-const LAST_UPDATED = "20 July 2026";
+const LAST_UPDATED = "21 July 2026";
 
 export const Route = createFileRoute("/terms")({
   head: () => ({
@@ -89,8 +89,14 @@ function TermsPage() {
               <li>Payment is made on delivery, in cash, in Iraqi Dinars.</li>
               <li>Delivery time and cost vary by governorate, as shown on the shipping page.</li>
               <li>
-                The User must ensure that the address and phone number are correct; the Operator does not bear the
-                delivery cost of a failed order caused by incorrect information.
+                The User must ensure that the delivery address and phone number are correct and that they are
+                available to receive the order. If an order cannot be delivered because the User provided an incorrect
+                address or an incorrect phone number, or because the User was unreachable or unavailable to receive
+                it, the User is responsible for the delivery cost of that failed attempt.
+              </li>
+              <li>
+                An unpaid delivery cost of this kind is added to the User&apos;s next order, and the Operator may
+                decline to accept further orders from the User until it has been settled.
               </li>
               <li>The User has the right to inspect the part in front of the delivery agent before paying.</li>
             </ul>
@@ -99,12 +105,30 @@ function TermsPage() {
           <Section title="5. Replacement and Returns">
             <ul className="list-disc ps-6 space-y-1">
               <li>
-                A part may be replaced or returned within three (3) days of the date of receipt, provided it is in its
-                original condition, not installed and not used, and in its complete packaging.
+                A part bought from stock may be replaced or returned within three (3) days of the date of receipt,
+                provided it is in its original condition, not installed and not used, and in its complete packaging.
               </li>
               <li>
-                Replacement does not cover electrical parts once the packaging has been opened, or parts ordered
-                specially at the User&apos;s request.
+                Replacement does not cover electrical parts once the packaging has been opened.
+              </li>
+              <li>
+                <strong>Special orders are not returnable.</strong> A special order is either of the following, and in
+                each case the three (3) day right of return above does not apply:
+                <ul className="list-[circle] ps-6 space-y-1 mt-1">
+                  <li>
+                    A part arranged directly with us by telephone or WhatsApp, rather than ordered through the normal
+                    ordering flow in the App.
+                  </li>
+                  <li>
+                    A part that was not in stock at the time of ordering and was brought in from a supplier
+                    specifically to fulfil the User&apos;s order — including where that order was placed through the
+                    App.
+                  </li>
+                </ul>
+              </li>
+              <li>
+                A part that was in stock at the time of ordering and bought through the App in the normal way is not a
+                special order, and keeps the three (3) day right of return set out above.
               </li>
               <li>A part with a manufacturing defect is replaced free of charge after inspection.</li>
               <li>
