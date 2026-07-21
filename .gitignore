@@ -41,3 +41,9 @@ ali-parts-pro/
 supabase/.temp/
 supabase/.branches/
 .env.*.local
+
+# Android release signing — NEVER commit these.
+# Losing the keystore means the app can never be updated on Google Play.
+*.jks
+*.keystore
+android/key.properties

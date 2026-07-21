@@ -408,6 +408,25 @@ function BlockLogAdmin() {
   );
 }
 
+/**
+ * Staff management is HIDDEN, not deleted.
+ *
+ * createStaff() provisions a phone+password account (p<phone>@aliparts.app),
+ * but sign-in is Google/Apple only — there is no password login UI anywhere in
+ * the app. Any staff member created this way therefore CANNOT SIGN IN, and
+ * nothing warned the admin about it. Hiding the tab prevents creating those
+ * dead accounts.
+ *
+ * Nothing is removed: StaffAdmin, staff.functions.ts, the staff_permissions
+ * table, existing staff rows and all `staff_can()` permission checks are
+ * untouched — staff who already exist keep working exactly as before.
+ *
+ * TO RE-ENABLE: set this to true. Only do that once staff can actually sign
+ * in — i.e. after either adding an email/password login path or moving staff
+ * onto Google/Apple accounts.
+ */
+const STAFF_TAB_ENABLED = false;
+
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
@@ -688,7 +707,7 @@ function AdminPageInner() {
             {isAdmin && (
               <TabsTrigger value="users" className={tabTriggerCls}><UsersIcon className="size-4" />مستخدمون</TabsTrigger>
             )}
-            {isAdmin && (
+            {STAFF_TAB_ENABLED && isAdmin && (
               <TabsTrigger value="staff" className={tabTriggerCls}><ShieldCheck className="size-4" />موظفون</TabsTrigger>
             )}
             {canBlock && (
@@ -714,7 +733,7 @@ function AdminPageInner() {
           {canOrders && <TabsContent value="orders" className={tabContentCls}><OrdersAdmin /></TabsContent>}
           {canReplacements && <TabsContent value="replacements" className={tabContentCls}><ReplacementsAdmin /></TabsContent>}
           {isAdmin && <TabsContent value="users" className={tabContentCls}><UsersAdmin /></TabsContent>}
-          {isAdmin && <TabsContent value="staff" className={tabContentCls}><StaffAdmin /></TabsContent>}
+          {STAFF_TAB_ENABLED && isAdmin && <TabsContent value="staff" className={tabContentCls}><StaffAdmin /></TabsContent>}
           {canBlock && <TabsContent value="block-log" className={tabContentCls}><BlockLogAdmin /></TabsContent>}
           {canProducts && <TabsContent value="stock" className={tabContentCls}><StockMovementsAdmin /></TabsContent>}
           {isAdmin && <TabsContent value="settings" className={tabContentCls}><SettingsAdmin /></TabsContent>}
