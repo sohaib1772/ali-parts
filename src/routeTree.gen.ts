@@ -14,6 +14,7 @@ import { Route as SearchRouteImport } from './routes/search'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OffersRouteImport } from './routes/offers'
+import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as DealsRouteImport } from './routes/deals'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as BestSellersRouteImport } from './routes/best-sellers'
@@ -60,6 +61,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const OffersRoute = OffersRouteImport.update({
   id: '/offers',
   path: '/offers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeleteAccountRoute = DeleteAccountRouteImport.update({
+  id: '/delete-account',
+  path: '/delete-account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DealsRoute = DealsRouteImport.update({
@@ -182,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/best-sellers': typeof BestSellersRoute
   '/contact': typeof ContactRoute
   '/deals': typeof DealsRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
   '/products': typeof ProductsRoute
@@ -210,6 +217,7 @@ export interface FileRoutesByTo {
   '/best-sellers': typeof BestSellersRoute
   '/contact': typeof ContactRoute
   '/deals': typeof DealsRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
   '/products': typeof ProductsRoute
@@ -240,6 +248,7 @@ export interface FileRoutesById {
   '/best-sellers': typeof BestSellersRoute
   '/contact': typeof ContactRoute
   '/deals': typeof DealsRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
   '/products': typeof ProductsRoute
@@ -270,6 +279,7 @@ export interface FileRouteTypes {
     | '/best-sellers'
     | '/contact'
     | '/deals'
+    | '/delete-account'
     | '/offers'
     | '/privacy'
     | '/products'
@@ -298,6 +308,7 @@ export interface FileRouteTypes {
     | '/best-sellers'
     | '/contact'
     | '/deals'
+    | '/delete-account'
     | '/offers'
     | '/privacy'
     | '/products'
@@ -327,6 +338,7 @@ export interface FileRouteTypes {
     | '/best-sellers'
     | '/contact'
     | '/deals'
+    | '/delete-account'
     | '/offers'
     | '/privacy'
     | '/products'
@@ -357,6 +369,7 @@ export interface RootRouteChildren {
   BestSellersRoute: typeof BestSellersRoute
   ContactRoute: typeof ContactRoute
   DealsRoute: typeof DealsRoute
+  DeleteAccountRoute: typeof DeleteAccountRoute
   OffersRoute: typeof OffersRoute
   PrivacyRoute: typeof PrivacyRoute
   ProductsRoute: typeof ProductsRoute
@@ -402,6 +415,13 @@ declare module '@tanstack/react-router' {
       path: '/offers'
       fullPath: '/offers'
       preLoaderRoute: typeof OffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/delete-account': {
+      id: '/delete-account'
+      path: '/delete-account'
+      fullPath: '/delete-account'
+      preLoaderRoute: typeof DeleteAccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/deals': {
@@ -602,6 +622,7 @@ const rootRouteChildren: RootRouteChildren = {
   BestSellersRoute: BestSellersRoute,
   ContactRoute: ContactRoute,
   DealsRoute: DealsRoute,
+  DeleteAccountRoute: DeleteAccountRoute,
   OffersRoute: OffersRoute,
   PrivacyRoute: PrivacyRoute,
   ProductsRoute: ProductsRoute,

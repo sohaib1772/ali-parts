@@ -592,7 +592,7 @@ export type Database = {
           subtotal_iqd: number
           total_iqd: number
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           address: Json
@@ -610,7 +610,7 @@ export type Database = {
           subtotal_iqd?: number
           total_iqd?: number
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           address?: Json
@@ -628,7 +628,7 @@ export type Database = {
           subtotal_iqd?: number
           total_iqd?: number
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -840,7 +840,7 @@ export type Database = {
           reason: string
           status: Database["public"]["Enums"]["replacement_status"]
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           admin_notes?: string | null
@@ -854,7 +854,7 @@ export type Database = {
           reason: string
           status?: Database["public"]["Enums"]["replacement_status"]
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           admin_notes?: string | null
@@ -868,7 +868,7 @@ export type Database = {
           reason?: string
           status?: Database["public"]["Enums"]["replacement_status"]
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -1098,6 +1098,7 @@ export type Database = {
         Args: { _rate: number; _rounding: number; _usd: number }
         Returns: number
       }
+      delete_my_account: { Args: never; Returns: Json }
       get_public_profiles: {
         Args: { _ids: string[] }
         Returns: {

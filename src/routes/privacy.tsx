@@ -153,8 +153,22 @@ function PrivacyPage() {
                 vehicle details at any time in the Account section of the app.
               </li>
               <li>
-                <strong>Delete your account.</strong> Contact us using the details below and we will delete your
-                account data.
+                <strong>Delete your account.</strong> You can delete your account yourself, at any time, from the
+                Account section of the app (<span dir="rtl">الحساب ← حذف الحساب</span>). Deletion takes effect
+                immediately and cannot be undone. It removes your profile (name, phone number and picture), your
+                saved delivery addresses, your cart and favourites, your notifications and device notification
+                tokens, your loyalty points, and your sign-in account itself.
+                <br />
+                Records of orders you have already placed are <strong>kept</strong> for the accounting, tax and legal
+                purposes described in section 6, but they are disconnected from your account first, so they no longer
+                identify you. That retained order data is not used to contact you or to build a profile of you.
+                <br />
+                If you cannot sign in, contact us using the details below and we will delete your account within 30
+                days, after verifying your identity. Full details are on our{" "}
+                <a className="text-gold underline" href="/delete-account">
+                  account deletion page
+                </a>
+                .
               </li>
               <li>
                 <strong>Notifications.</strong> You can turn notifications off at any time in your device settings.

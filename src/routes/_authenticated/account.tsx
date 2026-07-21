@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { ChevronLeft, LogOut, MapPin, Heart, Package, Bell, Info, Shield, ScrollText, MessageCircle, ShieldCheck, Sparkles, Camera, Loader2, Pencil, Check, X } from "lucide-react";
+import { ChevronLeft, LogOut, MapPin, Heart, Package, Bell, Info, Shield, ScrollText, MessageCircle, ShieldCheck, Sparkles, Camera, Loader2, Pencil, Check, X, Trash2 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { VehicleBar, VehiclePicker } from "@/components/vehicle-picker";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,17 @@ import { profileQuery } from "@/lib/queries";
 import { useAdminAccessStatus } from "@/lib/admin";
 import { uploadAvatar } from "@/lib/avatar";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/account")({
   component: AccountPage,
@@ -24,6 +35,9 @@ function AccountPage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
   const [savingName, setSavingName] = useState(false);
@@ -77,6 +91,38 @@ function AccountPage() {
     await supabase.auth.signOut();
     toast.success("تم تسجيل الخروج");
     navigate({ to: "/auth", replace: true });
+  };
+
+  const CONFIRM_WORD = "حذف";
+  const deleteAccount = async () => {
+    if (deleteConfirm.trim() !== CONFIRM_WORD) return;
+    setDeleting(true);
+    try {
+      // Remove the uploaded avatar first: storage.objects is protected against
+      // direct SQL deletes, so the DB function cannot clear it. Non-fatal.
+      const avatarPath = (profile as any)?.avatar_url as string | undefined;
+      if (userId && avatarPath && avatarPath.includes("/avatars/")) {
+        const key = avatarPath.split("/avatars/")[1]?.split("?")[0];
+        if (key) await supabase.storage.from("avatars").remove([key]).catch(() => {});
+      }
+
+      const { error } = await supabase.rpc("delete_my_account");
+      if (error) throw error;
+
+      await qc.cancelQueries();
+      qc.clear();
+      await supabase.auth.signOut();
+      toast.success("تم حذف حسابك", { description: "نأسف لرحيلك." });
+      navigate({ to: "/auth", replace: true });
+    } catch (e: any) {
+      // Surface the real reason — never swallow it.
+      console.error("[account] delete failed", e);
+      toast.error("تعذّر حذف الحساب", {
+        description: e?.message ? String(e.message).slice(0, 140) : "يرجى المحاولة مرة أخرى أو التواصل معنا.",
+        duration: 7000,
+      });
+      setDeleting(false);
+    }
   };
 
   const links = [
@@ -217,7 +263,70 @@ function AccountPage() {
         >
           <LogOut className="size-4" /> تسجيل الخروج
         </button>
+
+        <button
+          onClick={() => { setDeleteConfirm(""); setDeleteOpen(true); }}
+          className="w-full mt-3 mb-2 h-11 rounded-2xl text-destructive/80 text-sm font-bold flex items-center justify-center gap-2 hover:bg-destructive/5 transition"
+        >
+          <Trash2 className="size-4" /> حذف الحساب
+        </button>
       </div>
+
+      <AlertDialog open={deleteOpen} onOpenChange={(o) => { if (!deleting) setDeleteOpen(o); }}>
+        <AlertDialogContent dir="rtl" className="max-w-sm">
+          <AlertDialogHeader>
+            <div className="size-12 rounded-full bg-destructive/15 grid place-items-center mb-2">
+              <Trash2 className="size-6 text-destructive" />
+            </div>
+            <AlertDialogTitle className="text-base">حذف الحساب نهائياً</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="text-xs leading-relaxed space-y-2 text-start">
+                <p>لا يمكن التراجع عن هذا الإجراء.</p>
+                <div>
+                  <div className="font-bold text-destructive mb-1">سيتم حذف:</div>
+                  <ul className="list-disc ps-5 space-y-0.5">
+                    <li>بياناتك الشخصية (الاسم، الهاتف، الصورة)</li>
+                    <li>عناوين التوصيل المحفوظة</li>
+                    <li>السلة والمفضلة</li>
+                    <li>الإشعارات ونقاط الولاء</li>
+                  </ul>
+                </div>
+                <div>
+                  <div className="font-bold mb-1">سيتم الاحتفاظ به:</div>
+                  <ul className="list-disc ps-5 space-y-0.5">
+                    <li>
+                      سجلّات طلباتك السابقة تُحفظ للأغراض المحاسبية والقانونية، بعد فصلها عن حسابك
+                      (لن تبقى مرتبطة بك).
+                    </li>
+                  </ul>
+                </div>
+                <p className="pt-1">
+                  للتأكيد، اكتب <strong className="text-destructive">حذف</strong> في الحقل أدناه.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input
+            value={deleteConfirm}
+            onChange={(e) => setDeleteConfirm(e.target.value)}
+            placeholder="حذف"
+            disabled={deleting}
+            className="text-center"
+            aria-label="تأكيد الحذف"
+          />
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel disabled={deleting}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); deleteAccount(); }}
+              disabled={deleting || deleteConfirm.trim() !== "حذف"}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+            >
+              {deleting ? <><Loader2 className="size-4 animate-spin me-1" /> جاري الحذف…</> : "حذف حسابي نهائياً"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <VehiclePicker open={pickerOpen} onOpenChange={setPickerOpen} />
     </PageShell>
   );
