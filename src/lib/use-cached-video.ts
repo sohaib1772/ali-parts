@@ -202,8 +202,20 @@ export function useCachedVideo(url: string | null | undefined): string | null {
     readCachedBlob(url).then((blob) => {
       if (!cancelled && blob) setResolved(blob);
     });
-    // 4) Warm the cache in the background for next time.
-    warmCache(url);
+    // 4) NO automatic warmCache() here.
+    //
+    // This used to call warmCache(url), which fetch()es the WHOLE file into
+    // Cache Storage — while the <video> element was independently loading the
+    // same URL. Every visitor downloaded the banner video TWICE (measured:
+    // 2 x 16.6MB = ~33MB on a cold home-page load).
+    //
+    // The <video> element is now the single owner of loading: it streams with
+    // range requests and, with preload="none", fetches nothing until playback.
+    // A background fetch() cannot do either — it always pulls the entire file.
+    //
+    // Callers that genuinely want to pre-warm a video still can, explicitly,
+    // via prefetchVideo() / usePrefetchNearbyVideo() (offers.tsx does this
+    // deliberately for the next reel, gated on IntersectionObserver).
     return () => { cancelled = true; };
   }, [url]);
 

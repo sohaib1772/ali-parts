@@ -118,8 +118,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", type: "image/png", sizes: "512x512", href: "/icon-512.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "preconnect", href: "https://nqdsvubimpftjfygzisx.supabase.co", crossOrigin: "anonymous" },
-      { rel: "dns-prefetch", href: "https://nqdsvubimpftjfygzisx.supabase.co" },
+      // api.maktabali.com is hit on essentially every page (Supabase REST,
+      // auth, storage). The two entries here previously pointed at the old
+      // Lovable Supabase project (nqdsvubimpftjfygzisx), which this app never
+      // calls — burning a DNS+TCP+TLS handshake on a dead host.
+      { rel: "preconnect", href: "https://api.maktabali.com", crossOrigin: "anonymous" },
+      { rel: "dns-prefetch", href: "https://api.maktabali.com" },
       {
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Cormorant+Garamond:wght@400;500;600;700&family=Karla:wght@400;500;600;700&display=swap",

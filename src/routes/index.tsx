@@ -376,12 +376,18 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
         <video
           ref={videoRef}
           src={cachedVideoUrl ?? videoUrl}
-          poster={current.image_url || undefined}
+          // Banners created video-only have image_url = '' (empty string, not
+          // NULL), so `image_url || undefined` produced NO poster and the
+          // fallback <img> above never rendered either — the user stared at an
+          // empty gradient while 16MB downloaded. Fall back to the store icon
+          // so something branded always paints immediately.
+          poster={current.image_url || "/icon-512.png"}
           autoPlay
           muted={muted}
           loop
           playsInline
-          preload="auto"
+          // preload="none": don't pull the file down as part of page load.
+          preload="none"
           disableRemotePlayback
           className="absolute inset-0 w-full h-full object-cover cursor-pointer"
           onCanPlay={() => setVideoReady(true)}
