@@ -427,6 +427,9 @@ function BlockLogAdmin() {
  */
 const STAFF_TAB_ENABLED = false;
 
+/** Banner videos must stay small — customers are on Iraqi mobile data. */
+const MAX_BANNER_VIDEO_BYTES = 3 * 1024 * 1024;
+
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
@@ -1603,6 +1606,17 @@ function BannersAdmin() {
 
   const save = async () => {
     if (!form.image_url && !form.video_url) { toast.error("الصورة أو الفيديو مطلوب"); return; }
+    // A video banner MUST have a poster image. Video-only banners were saved
+    // with image_url = '' (empty string), so the storefront rendered neither a
+    // poster nor the fallback <img> — visitors saw an empty gradient while the
+    // video downloaded. The poster is what shows before/instead of playback.
+    if (form.video_url && !form.image_url) {
+      toast.error("صورة الغلاف مطلوبة مع الفيديو", {
+        description: "يرجى رفع صورة تظهر قبل تشغيل الفيديو — بدونها سيرى الزبون مساحة فارغة.",
+        duration: 8000,
+      });
+      return;
+    }
     const payload = {
       title_ar: form.title_ar || null,
       subtitle_ar: form.subtitle_ar || null,
@@ -1723,6 +1737,26 @@ function BannersAdmin() {
                 onChange={async (e) => {
                   const f = e.target.files?.[0];
                   if (!f) return;
+                  // Guard rails: a 16MB QuickTime banner once made the home
+                  // page download ~33MB per visit. Only web-playable formats,
+                  // and only at a sane size.
+                  const okType = /^video\/(mp4|webm)$/i.test(f.type) || /\.(mp4|webm)$/i.test(f.name);
+                  if (!okType) {
+                    toast.error("صيغة الفيديو غير مدعومة", {
+                      description: "يرجى رفع فيديو بصيغة MP4 أو WebM فقط. صيغ مثل MOV كبيرة جداً ولا تعمل على كل الأجهزة.",
+                      duration: 8000,
+                    });
+                    e.target.value = "";
+                    return;
+                  }
+                  if (f.size > MAX_BANNER_VIDEO_BYTES) {
+                    toast.error("حجم الفيديو كبير جداً", {
+                      description: `الحد الأقصى ${Math.round(MAX_BANNER_VIDEO_BYTES / (1024 * 1024))} ميغابايت. حجم الملف ${(f.size / (1024 * 1024)).toFixed(1)} ميغابايت — يرجى ضغطه قبل الرفع حتى لا يستهلك بيانات الزبائن.`,
+                      duration: 9000,
+                    });
+                    e.target.value = "";
+                    return;
+                  }
                   setUploadingVideo(true);
                   setVideoProgress(0);
                   try {

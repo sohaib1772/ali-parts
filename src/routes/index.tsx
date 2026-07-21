@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
-import { Search, ChevronLeft, Sparkles, CircleDot, Timer, Flame, Volume2, VolumeX } from "lucide-react";
+import { Search, ChevronLeft, Sparkles, CircleDot, Timer, Flame, Volume2, VolumeX, Play } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import { PageShell } from "@/components/page-shell";
@@ -312,6 +312,10 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   const [inView, setInView] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
+  // Tap-to-play. The banner video is large (megabytes) and most visitors are
+  // on Iraqi mobile data, so nothing is downloaded until the user asks for it:
+  // `preload="none"` + no autoPlay + no programmatic play() before this flips.
+  const [started, setStarted] = useState(false);
   // Show only the latest uploaded VIDEO as a fixed hero — no rotation.
   // Hide the whole section when no video has been uploaded.
   const current = banners.find((b) => !!(b as any).video_url) ?? null;
@@ -337,7 +341,10 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
           } else {
             setInView(true);
             if (userWantsSoundRef.current) setMuted(false);
-            if (el) {
+            // Resume only if the user already started playback — otherwise
+            // scrolling the banner into view would trigger the download we are
+            // deliberately deferring.
+            if (el && startedRef.current) {
               el.muted = !userWantsSoundRef.current;
               if (userWantsSoundRef.current) el.volume = 1;
               el.play().catch(() => {});
@@ -351,13 +358,21 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
     return () => io.disconnect();
   }, []);
 
+  // Mirror `started` into a ref so the IntersectionObserver (created once) can
+  // read the current value without being torn down and rebuilt.
+  const startedRef = useRef(false);
+  useEffect(() => { startedRef.current = started; }, [started]);
+
   useEffect(() => {
     const el = videoRef.current;
     if (!el) return;
     el.muted = muted;
+    // Do not call play() until the user has tapped: play() forces the browser
+    // to fetch the media regardless of preload="none".
+    if (!started) return;
     const p = el.play();
     if (p && typeof p.catch === "function") p.catch(() => {});
-  }, [muted, current?.id]);
+  }, [muted, current?.id, started]);
 
   if (!current) return null;
 
@@ -382,11 +397,13 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
           // empty gradient while 16MB downloaded. Fall back to the store icon
           // so something branded always paints immediately.
           poster={current.image_url || "/icon-512.png"}
-          autoPlay
           muted={muted}
           loop
           playsInline
-          // preload="none": don't pull the file down as part of page load.
+          // preload="none" AND no autoPlay: autoplay overrides preload, so the
+          // browser would download the whole file anyway. Together with the
+          // guarded play() calls above, a visitor who never taps play
+          // downloads zero video bytes.
           preload="none"
           disableRemotePlayback
           className="absolute inset-0 w-full h-full object-cover cursor-pointer"
@@ -402,13 +419,42 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
           }}
         />
       )}
-      {mounted && !videoReady && !videoFailed && (
+      {/* Tap-to-play. Shown until the user starts the video; costs no bandwidth. */}
+      {mounted && !started && !videoFailed && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setStarted(true);
+            const el = videoRef.current;
+            if (el) {
+              el.muted = muted;
+              const p = el.play();
+              if (p && typeof p.catch === "function") p.catch(() => {});
+            }
+          }}
+          aria-label="تشغيل الفيديو"
+          className="absolute inset-0 grid place-items-center bg-navy/35 backdrop-blur-[1px] transition hover:bg-navy/45 group"
+        >
+          <span className="size-16 rounded-full bg-gradient-gold text-navy grid place-items-center shadow-gold transition group-hover:scale-105">
+            <Play className="size-7 ms-1" fill="currentColor" />
+          </span>
+          <span className="absolute bottom-14 text-[11px] font-bold text-white/85 bg-black/40 backdrop-blur-md rounded-full px-3 py-1">
+            اضغط لتشغيل الفيديو
+          </span>
+        </button>
+      )}
+      {/* Buffering spinner — only once playback has actually been requested. */}
+      {mounted && started && !videoReady && !videoFailed && (
         <div className="absolute inset-0 grid place-items-center bg-navy/40 backdrop-blur-[2px] pointer-events-none">
           <div className="size-10 rounded-full border-2 border-white/25 border-t-gold animate-spin" />
         </div>
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/40 to-transparent pointer-events-none" />
-      {mounted && (
+      {/* Sound toggle only once playing — unmuting calls play(), which would
+          otherwise trigger the very download tap-to-play defers. */}
+      {mounted && started && (
         <button
           type="button"
           onClick={(e) => {
