@@ -1,11 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageShell } from "@/components/page-shell";
+import { whatsappLink } from "@/lib/format";
+import { ContactList, MissingSettingsNotice, useLegalContact } from "@/components/legal-contact";
 import { MessageCircle } from "lucide-react";
 
-const EMAIL = "aliskida816@gmail.com";
-const PHONE_DISPLAY = "+964 773 795 9595";
-const PHONE_TEL = "+9647737959595";
-const WHATSAPP_INTL = "9647737959595";
 const LAST_UPDATED = "20 July 2026";
 
 export const Route = createFileRoute("/privacy")({
@@ -21,6 +19,8 @@ export const Route = createFileRoute("/privacy")({
 });
 
 function PrivacyPage() {
+  const { ownerName, address, supportEmail, waNumber, missing } = useLegalContact();
+
   return (
     <PageShell wide title="سياسة الخصوصية">
       <div className="px-4 pt-4 pb-8 md:max-w-2xl md:mx-auto">
@@ -38,13 +38,13 @@ function PrivacyPage() {
           </div>
 
           <p>
-            Maktab Ali Chevrolet (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) operates the online store at
-            maktabali.com and its mobile applications (the &quot;Service&quot;). This policy explains what personal
-            information we collect, why we collect it, and what we do with it.
+            {ownerName} (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) operates the online store at maktabali.com
+            and its mobile applications (the &quot;Service&quot;). This policy explains what personal information we
+            collect, why we collect it, and what we do with it.
           </p>
 
           <p>
-            <strong>Data controller:</strong> Ali — Maktab Ali Chevrolet, Erbil, Kurdistan Region, Iraq.
+            <strong>Data controller:</strong> {ownerName}, {address}.
           </p>
 
           <Section title="1. Information We Collect">
@@ -185,38 +185,10 @@ function PrivacyPage() {
             <p>
               If you have any questions about this policy or about your personal information, contact us:
             </p>
-            <p className="mt-2">
-              <strong>Maktab Ali Chevrolet</strong>
-              <br />
-              Erbil, Kurdistan Region, Iraq
-            </p>
-            <ul className="list-none ps-0 space-y-1 mt-2">
-              <li>
-                Email:{" "}
-                <a className="text-gold underline" href={`mailto:${EMAIL}`}>
-                  {EMAIL}
-                </a>
-              </li>
-              <li>
-                Phone:{" "}
-                <a className="text-gold underline" href={`tel:${PHONE_TEL}`}>
-                  {PHONE_DISPLAY}
-                </a>
-              </li>
-              <li>
-                WhatsApp:{" "}
-                <a
-                  className="text-gold underline"
-                  href={`https://wa.me/${WHATSAPP_INTL}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {PHONE_DISPLAY}
-                </a>
-              </li>
-            </ul>
+            {missing && <MissingSettingsNotice />}
+            <ContactList ownerName={ownerName} address={address} supportEmail={supportEmail} waNumber={waNumber} />
             <a
-              href={`https://wa.me/${WHATSAPP_INTL}`}
+              href={whatsappLink("I have a question about privacy", waNumber)}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-3 inline-flex items-center gap-2 bg-navy text-primary-foreground text-xs font-bold px-4 py-2 rounded-xl"

@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageShell } from "@/components/page-shell";
-import { useSetting } from "@/lib/admin";
-import { WHATSAPP_NUMBER, formatIraqiWhatsAppNumber, whatsappLink } from "@/lib/format";
-import { MessageCircle, AlertTriangle } from "lucide-react";
+import { whatsappLink } from "@/lib/format";
+import { ContactList, MissingSettingsNotice, useLegalContact } from "@/components/legal-contact";
+import { MessageCircle } from "lucide-react";
+
+const LAST_UPDATED = "20 July 2026";
 
 export const Route = createFileRoute("/terms")({
   head: () => ({
@@ -17,169 +19,186 @@ export const Route = createFileRoute("/terms")({
 });
 
 function TermsPage() {
-  const storeName = useSetting("store_name", "Ali Parts");
-  const ownerName = useSetting("store_owner", "").trim();
-  const address = useSetting("store_address", "").trim();
-  const supportEmail = useSetting("store_email", "").trim();
-  const rawWa = useSetting("whatsapp_number", "").trim();
-  const waNumber = rawWa ? formatIraqiWhatsAppNumber(rawWa) : formatIraqiWhatsAppNumber(WHATSAPP_NUMBER);
-  const hasWa = Boolean(rawWa);
-  const missing = !ownerName || !address || !supportEmail || !hasWa;
-  const today = new Date().toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
+  const { storeName, ownerName, address, supportEmail, waNumber, missing } = useLegalContact();
 
   return (
     <PageShell wide title="الشروط والأحكام">
       <div className="px-4 pt-4 pb-8 md:max-w-2xl md:mx-auto">
-        <div className="bg-card rounded-2xl border border-border p-5 shadow-card space-y-5 text-sm leading-relaxed">
-          <p className="text-xs text-muted-foreground">آخر تحديث: {today}</p>
+        {/* The terms body is English, so it is explicitly LTR/left-aligned.
+            The page chrome (header + bottom nav) stays RTL. */}
+        <div
+          dir="ltr"
+          className="bg-card rounded-2xl border border-border p-5 shadow-card space-y-5 text-sm leading-relaxed text-left"
+        >
+          <div>
+            <h1 className="text-lg font-black text-navy mb-1">Terms and Conditions</h1>
+            <p className="text-xs text-muted-foreground">
+              <strong>Last updated:</strong> {LAST_UPDATED}
+            </p>
+          </div>
+
           <p>
-            مرحباً بك في تطبيق <strong>{storeName}</strong>. باستخدامك للتطبيق فإنك توافق على الشروط والأحكام التالية.
-            نرجو قراءتها بعناية؛ إذا كنت لا توافق على أي بند منها، يرجى عدم استخدام التطبيق.
+            Welcome to the <strong>{storeName}</strong> app. By using the app you agree to the following terms and
+            conditions. Please read them carefully; if you do not agree to any provision, please do not use the app.
           </p>
 
-          <Section title="١. تعريفات">
+          <Section title="1. Definitions">
             <ul className="list-disc ps-6 space-y-1">
-              <li>"التطبيق": تطبيق {storeName} على الجوال والويب.</li>
-              <li>"المستخدم": أي شخص ينشئ حساباً أو يستخدم التطبيق.</li>
-              <li>"الطلب": أي عملية شراء يتم تقديمها عبر التطبيق.</li>
+              <li>&quot;The App&quot;: the {storeName} application on mobile and web.</li>
+              <li>&quot;The User&quot;: any person who creates an account or uses the App.</li>
+              <li>&quot;The Order&quot;: any purchase submitted through the App.</li>
+              <li>&quot;The Operator&quot;: {ownerName}, the legal owner and operator of the App.</li>
+            </ul>
+          </Section>
+
+          <Section title="2. Use of the App">
+            <ul className="list-disc ps-6 space-y-1">
+              <li>You must be 18 years of age or older to create an account.</li>
+              <li>You undertake to provide true and accurate information about your identity and address.</li>
               <li>
-                "المشغّل":{" "}
-                {ownerName ? (
-                  <>{ownerName}، المالك القانوني والمشغّل للتطبيق.</>
-                ) : (
-                  <span className="text-muted-foreground">— لم يتم تحديد الجهة المسؤولة بعد —</span>
-                )}
+                Using the App for any unlawful purpose, or for any purpose contrary to Apple App Store or Google Play
+                policies, is prohibited.
+              </li>
+              <li>Attempting to hack the App, misusing the Service, or posting offensive content is prohibited.</li>
+              <li>
+                The Operator may suspend or delete any account that violates these Terms without prior notice.
               </li>
             </ul>
           </Section>
 
-          <Section title="٢. استخدام التطبيق">
+          <Section title="3. Orders and Prices">
             <ul className="list-disc ps-6 space-y-1">
-              <li>يجب أن تكون بعمر (18) عاماً أو أكثر لإنشاء حساب.</li>
-              <li>تلتزم بتقديم بيانات صحيحة ودقيقة عن هويتك وعنوانك.</li>
-              <li>يُمنع استخدام التطبيق لأي غرض غير قانوني أو مخالف لسياسات Apple App Store أو Google Play.</li>
-              <li>يُمنع محاولة اختراق التطبيق، أو إساءة استخدام الخدمة، أو نشر محتوى مسيء.</li>
-              <li>يحق للمشغّل تعليق أو حذف أي حساب يخالف هذه الشروط دون إشعار مسبق.</li>
-            </ul>
-          </Section>
-
-          <Section title="٣. الطلبات والأسعار">
-            <ul className="list-disc ps-6 space-y-1">
-              <li>جميع الأسعار بالدينار العراقي وتشمل ما هو مذكور في صفحة المنتج.</li>
-              <li>الأسعار قابلة للتغيير في أي وقت دون إشعار مسبق، ويُعتمد السعر المعروض وقت تأكيد الطلب.</li>
-              <li>توفر المنتجات مرتبط بالمخزون؛ نحتفظ بحق إلغاء الطلب أو تعديله عند نفاد المنتج.</li>
-              <li>يعتبر الطلب مؤكداً بعد استلام رسالة تأكيد من المشغّل عبر واتساب أو الاتصال.</li>
-            </ul>
-          </Section>
-
-          <Section title="٤. الدفع والتوصيل">
-            <ul className="list-disc ps-6 space-y-1">
-              <li>الدفع يتم عند الاستلام نقداً بالدينار العراقي.</li>
-              <li>مدة التوصيل وقيمته تختلف حسب المحافظة كما هو موضّح في صفحة الشحن.</li>
-              <li>على المستخدم التأكد من صحة العنوان ورقم الهاتف؛ لا يتحمل المشغّل ثمن التوصيل عن طلب فاشل بسبب بيانات خاطئة.</li>
-              <li>يحق للمستخدم فحص القطعة أمام مندوب التوصيل قبل الدفع.</li>
-            </ul>
-          </Section>
-
-          <Section title="٥. الاستبدال والإرجاع">
-            <ul className="list-disc ps-6 space-y-1">
-              <li>يمكن استبدال أو إرجاع القطعة خلال (3) أيام من تاريخ الاستلام بشرط أن تكون في حالتها الأصلية، غير مركّبة وغير مستخدمة، وبكامل تغليفها.</li>
-              <li>لا يشمل الاستبدال القطع الكهربائية بعد فك التغليف، أو القطع المطلوبة خصيصاً حسب طلب المستخدم.</li>
-              <li>القطعة المعيبة من المصنع تُستبدل مجاناً بعد الفحص.</li>
-              <li>لطلب الاستبدال استخدم قسم "طلبات الاستبدال" داخل التطبيق أو تواصل عبر واتساب.</li>
-            </ul>
-          </Section>
-
-          <Section title="٦. الضمان">
-            <p>
-              يقتصر الضمان على ما هو مذكور صراحة في صفحة المنتج أو في فاتورة الشراء.
-              لا يشمل الضمان الأضرار الناتجة عن التركيب الخاطئ، أو الاستخدام غير الصحيح، أو التعديل، أو الحوادث.
-            </p>
-          </Section>
-
-          <Section title="٧. الملكية الفكرية">
-            <ul className="list-disc ps-6 space-y-1">
-              <li>جميع محتويات التطبيق (الشعار، النصوص، الصور، التصميم، الكود) ملك للمشغّل ومحمية بموجب قوانين حقوق النشر.</li>
-              <li>يُمنع نسخ أو إعادة استخدام أي محتوى من التطبيق دون إذن كتابي مسبق.</li>
-              <li>أسماء العلامات التجارية (Chevrolet, GMC, Cadillac وغيرها) هي علامات مسجلة لأصحابها، ونستخدمها لأغراض وصف توافق القطع فقط، دون أي ادعاء بالانتماء أو الرعاية الرسمية من قِبل هذه الشركات.</li>
-              <li>لسنا وكيلاً رسمياً معتمداً لأي من هذه الشركات ما لم يُذكر ذلك صراحة.</li>
-            </ul>
-          </Section>
-
-          <Section title="٨. المحتوى المُقدَّم من المستخدم">
-            <p>
-              أي تعليق أو صورة أو مراجعة تنشرها داخل التطبيق تمنح المشغّل ترخيصاً غير حصري لعرضها داخل التطبيق.
-              أنت مسؤول عن قانونية ما تنشره، ولا يجوز نشر محتوى مسيء أو ينتهك حقوق الآخرين.
-            </p>
-          </Section>
-
-          <Section title="٩. حدود المسؤولية">
-            <ul className="list-disc ps-6 space-y-1">
-              <li>يُقدَّم التطبيق "كما هو" دون أي ضمانات ضمنية بخصوص استمرارية الخدمة أو خلوّها من الأخطاء.</li>
-              <li>لا يتحمل المشغّل أي مسؤولية عن الأضرار غير المباشرة أو التبعية الناجمة عن استخدام التطبيق.</li>
-              <li>الحد الأقصى لمسؤولية المشغّل تجاه أي طلب هو قيمة الطلب المدفوعة.</li>
-            </ul>
-          </Section>
-
-          <Section title="١٠. الامتثال لسياسات المتاجر">
-            <p>
-              يلتزم التطبيق بسياسات Apple App Store وGoogle Play، بما في ذلك متطلبات الشفافية،
-              وحماية البيانات، وحقوق المستخدم. أي بند في هذه الشروط يتعارض مع سياسات المتاجر يُعدَّل تلقائياً ليتوافق معها.
-            </p>
-          </Section>
-
-          <Section title="١١. القانون المعمول به وحل النزاعات">
-            <p>
-              تخضع هذه الشروط لقوانين جمهورية العراق. أي نزاع ينشأ عن استخدام التطبيق تُبذل جهود لحلّه ودياً أولاً،
-              وفي حال تعذّر ذلك يُحال إلى المحاكم العراقية المختصة.
-            </p>
-          </Section>
-
-          <Section title="١٢. تعديل الشروط">
-            <p>
-              يحق للمشغّل تعديل هذه الشروط في أي وقت. سيُنشر التعديل داخل التطبيق مع تحديث تاريخ "آخر تحديث"،
-              واستمرار استخدامك للتطبيق يُعدّ موافقة على النسخة المعدَّلة.
-            </p>
-          </Section>
-
-          <Section title="١٣. التواصل">
-            <p>لأي استفسار أو شكوى قانونية:</p>
-            {missing && (
-              <div className="mt-2 flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200 p-3 text-xs">
-                <AlertTriangle className="size-4 shrink-0 mt-0.5" />
-                <span>لم يتم تعبئة كامل بيانات المالك بعد. يرجى تحديث المعلومات من لوحة الإدارة (الإعدادات: اسم الجهة، العنوان، البريد الإلكتروني، رقم واتساب).</span>
-              </div>
-            )}
-            <ul className="list-disc ps-6 space-y-1 mt-2">
-              <li>الجهة المسؤولة: {ownerName || <span className="text-muted-foreground">— لم يتم تحديدها بعد —</span>}</li>
-              <li>العنوان: {address || <span className="text-muted-foreground">— لم يتم تحديده بعد —</span>}</li>
+              <li>All prices are in Iraqi Dinars and cover what is stated on the product page.</li>
               <li>
-                البريد الإلكتروني:{" "}
-                {supportEmail ? (
-                  <a className="text-gold underline" href={`mailto:${supportEmail}`}>{supportEmail}</a>
-                ) : (
-                  <span className="text-muted-foreground">— لم يتم تحديده بعد —</span>
-                )}
+                Prices are subject to change at any time without prior notice; the price displayed at the time the
+                order is confirmed is the price that applies.
               </li>
               <li>
-                واتساب:{" "}
-                {hasWa ? (
-                  <span dir="ltr">+{waNumber}</span>
-                ) : (
-                  <span className="text-muted-foreground">— لم يتم تحديده بعد —</span>
-                )}
+                Product availability depends on stock; we reserve the right to cancel or amend an order if a product is
+                out of stock.
+              </li>
+              <li>
+                An order is considered confirmed once you receive a confirmation message from the Operator by WhatsApp
+                or by telephone.
               </li>
             </ul>
-            {hasWa && (
-              <a
-                href={whatsappLink("لدي استفسار قانوني", waNumber)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 inline-flex items-center gap-2 bg-navy text-primary-foreground text-xs font-bold px-4 py-2 rounded-xl"
-              >
-                <MessageCircle className="size-3.5" /> تواصل عبر واتساب
-              </a>
-            )}
+          </Section>
+
+          <Section title="4. Payment and Delivery">
+            <ul className="list-disc ps-6 space-y-1">
+              <li>Payment is made on delivery, in cash, in Iraqi Dinars.</li>
+              <li>Delivery time and cost vary by governorate, as shown on the shipping page.</li>
+              <li>
+                The User must ensure that the address and phone number are correct; the Operator does not bear the
+                delivery cost of a failed order caused by incorrect information.
+              </li>
+              <li>The User has the right to inspect the part in front of the delivery agent before paying.</li>
+            </ul>
+          </Section>
+
+          <Section title="5. Replacement and Returns">
+            <ul className="list-disc ps-6 space-y-1">
+              <li>
+                A part may be replaced or returned within three (3) days of the date of receipt, provided it is in its
+                original condition, not installed and not used, and in its complete packaging.
+              </li>
+              <li>
+                Replacement does not cover electrical parts once the packaging has been opened, or parts ordered
+                specially at the User&apos;s request.
+              </li>
+              <li>A part with a manufacturing defect is replaced free of charge after inspection.</li>
+              <li>
+                To request a replacement, use the &quot;Replacement Requests&quot; section inside the App or contact us
+                by WhatsApp.
+              </li>
+            </ul>
+          </Section>
+
+          <Section title="6. Warranty">
+            <p>
+              The warranty is limited to what is expressly stated on the product page or on the purchase invoice. The
+              warranty does not cover damage resulting from incorrect installation, improper use, modification, or
+              accidents.
+            </p>
+          </Section>
+
+          <Section title="7. Intellectual Property">
+            <ul className="list-disc ps-6 space-y-1">
+              <li>
+                All contents of the App (logo, text, images, design, code) are the property of the Operator and are
+                protected under copyright law.
+              </li>
+              <li>Copying or reusing any content from the App without prior written permission is prohibited.</li>
+              <li>
+                Trade names (Chevrolet, GMC, Cadillac and others) are registered trademarks of their respective owners.
+                We use them solely to describe part compatibility, without any claim of affiliation with, or official
+                sponsorship by, those companies.
+              </li>
+              <li>
+                We are not an authorised official agent of any of these companies unless expressly stated otherwise.
+              </li>
+            </ul>
+          </Section>
+
+          <Section title="8. User-Submitted Content">
+            <p>
+              Any comment, image or review you post within the App grants the Operator a non-exclusive licence to
+              display it within the App. You are responsible for the legality of what you post, and you may not post
+              offensive content or content that infringes the rights of others.
+            </p>
+          </Section>
+
+          <Section title="9. Limitation of Liability">
+            <ul className="list-disc ps-6 space-y-1">
+              <li>
+                The App is provided &quot;as is&quot;, without any implied warranties as to the continuity of the
+                Service or that it will be free of errors.
+              </li>
+              <li>
+                The Operator bears no liability for indirect or consequential damages arising from use of the App.
+              </li>
+              <li>
+                The Operator&apos;s maximum liability in respect of any order is the amount paid for that order.
+              </li>
+            </ul>
+          </Section>
+
+          <Section title="10. Compliance with App Store Policies">
+            <p>
+              The App complies with Apple App Store and Google Play policies, including their requirements for
+              transparency, data protection, and user rights. Any provision of these Terms that conflicts with the
+              stores&apos; policies is automatically amended so as to conform with them.
+            </p>
+          </Section>
+
+          <Section title="11. Governing Law and Dispute Resolution">
+            <p>
+              These Terms are governed by the laws of the Republic of Iraq. Any dispute arising from use of the App
+              shall first be the subject of efforts to resolve it amicably; failing that, it shall be referred to the
+              competent Iraqi courts.
+            </p>
+          </Section>
+
+          <Section title="12. Changes to These Terms">
+            <p>
+              The Operator may amend these Terms at any time. Any amendment will be published within the App together
+              with an updated &quot;Last updated&quot; date, and your continued use of the App constitutes acceptance
+              of the amended version.
+            </p>
+          </Section>
+
+          <Section title="13. Contact">
+            <p>For any enquiry or legal complaint:</p>
+            {missing && <MissingSettingsNotice />}
+            <ContactList ownerName={ownerName} address={address} supportEmail={supportEmail} waNumber={waNumber} />
+            <a
+              href={whatsappLink("I have a legal enquiry", waNumber)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex items-center gap-2 bg-navy text-primary-foreground text-xs font-bold px-4 py-2 rounded-xl"
+            >
+              <MessageCircle className="size-3.5" /> Contact us on WhatsApp
+            </a>
           </Section>
         </div>
       </div>
