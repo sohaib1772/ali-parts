@@ -41,6 +41,19 @@ ALTER TABLE public.replacement_requests
   ADD CONSTRAINT replacement_requests_user_id_fkey
   FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL;
 
+-- The moderation audit trail must outlive the account it refers to: a user who
+-- was blocked for abuse should not be able to erase the record of that by
+-- deleting their account. DROP NOT NULL is required as well as the FK swap —
+-- without it, SET NULL would raise a not-null violation at deletion time and
+-- abort the whole delete_my_account() transaction.
+-- NOTE: the surviving row is anonymous (who/when/by-whom action, no identity).
+-- See the caveat reported alongside this migration.
+ALTER TABLE public.user_block_log ALTER COLUMN user_id DROP NOT NULL;
+ALTER TABLE public.user_block_log DROP CONSTRAINT IF EXISTS user_block_log_user_id_fkey;
+ALTER TABLE public.user_block_log
+  ADD CONSTRAINT user_block_log_user_id_fkey
+  FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL;
+
 -- ---------------------------------------------------------------------------
 -- 2. delete_my_account()
 -- ---------------------------------------------------------------------------
