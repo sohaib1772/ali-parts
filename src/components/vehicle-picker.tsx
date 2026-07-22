@@ -173,7 +173,9 @@ export function VehiclePicker({ open, onOpenChange, mandatory }: { open: boolean
           })}
         </div>
 
-        <div className="px-5 pb-24">
+        {/* pb clears the fixed action bar below; it has to grow by the same
+            inset the bar does, or step 4's engine input ends up behind it. */}
+        <div className="px-5 pb-[calc(6rem+env(safe-area-inset-bottom))]">
           {step === 1 && (
             <div>
               <div className="flex items-center justify-between mb-3">
@@ -277,7 +279,14 @@ export function VehiclePicker({ open, onOpenChange, mandatory }: { open: boolean
           )}
         </div>
 
-        <div className="fixed bottom-0 inset-x-0 bg-card border-t border-border p-3 flex gap-2 max-w-md mx-auto">
+        {/*
+          Sits flush against the bottom of the viewport, so on Android the system
+          nav bar overlays it and "التالي" becomes hard to tap. The sheet is
+          mandatory on a first visit, which makes that a hard block. max() keeps
+          the existing 0.75rem (p-3) padding wherever the inset is 0 — browsers,
+          gesture navigation — and grows to the inset only when there is one.
+        */}
+        <div className="fixed bottom-0 inset-x-0 bg-card border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex gap-2 max-w-md mx-auto">
           {step > 1 && (
             <Button variant="outline" className="flex-1" onClick={() => setStep(step - 1)}>
               السابق
