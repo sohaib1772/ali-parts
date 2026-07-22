@@ -22,6 +22,21 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!--
+              OAuth return leg. The provider runs in a Chrome Custom Tab and
+              redirects to com.mkteb.ali.chevrolet://auth; this filter routes
+              that back into the running activity (launchMode=singleTask, so it
+              arrives as onNewIntent and Capacitor emits appUrlOpen).
+              Must stay in sync with NATIVE_REDIRECT_URL in src/lib/native-oauth.ts
+              and with the Supabase redirect allow-list.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.mkteb.ali.chevrolet" android:host="auth" />
+            </intent-filter>
+
         </activity>
 
         <provider

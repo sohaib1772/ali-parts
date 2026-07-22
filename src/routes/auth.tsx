@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowRight, Loader2 } from "lucide-react";
@@ -68,6 +69,27 @@ function AuthPage() {
   const oauth = async (provider: "google" | "apple", label: string) => {
     if (loading) return;
     setLoading(true);
+
+    // Native shell: the provider cannot run inside the WebView, so it runs in
+    // a Custom Tab and returns through a custom scheme. See lib/native-oauth.
+    // Lazy-imported so the web bundle never ships @capacitor/browser.
+    if (Capacitor.isNativePlatform()) {
+      const { signInWithProviderNative } = await import("@/lib/native-oauth");
+      const result = await signInWithProviderNative(provider);
+      if (result.status === "signed-in") {
+        // Session is set; onAuthStateChange above navigates. Spinner stays up
+        // until it does, so the screen never looks idle mid-transition.
+        return;
+      }
+      if (result.status === "error") {
+        toast.error(`تعذّر تسجيل الدخول عبر ${label}`, { description: result.message });
+      }
+      // "cancelled" needs no message — the user chose to back out — but the
+      // spinner must clear either way or the screen reads as frozen.
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
