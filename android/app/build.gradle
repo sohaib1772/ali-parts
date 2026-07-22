@@ -1,5 +1,33 @@
 apply plugin: 'com.android.application'
 
+// --- Release signing --------------------------------------------------------
+// Credentials live in android/key.properties (gitignored); the keystore itself
+// lives outside the repo entirely. No password is ever written into this file.
+def keystorePropertiesFile = rootProject.file('key.properties')
+def keystoreProperties = new Properties()
+def hasReleaseSigning = keystorePropertiesFile.exists()
+if (hasReleaseSigning) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+}
+
+// A missing or misconfigured key.properties must never silently degrade into an
+// unsigned (or debug-signed) release — that is the kind of failure you only
+// discover at upload time. Fail loudly instead, but only when a release task is
+// actually requested, so debug builds still work on a machine without the key.
+if (gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') }) {
+    if (!hasReleaseSigning) {
+        throw new GradleException(
+            'Release signing is not configured: android/key.properties is missing.\n' +
+            'It is gitignored by design — restore it from your backup before building a release.')
+    }
+    def storeFilePath = keystoreProperties['storeFile']
+    if (!storeFilePath || !file(storeFilePath).exists()) {
+        throw new GradleException(
+            "Release keystore not found at '${storeFilePath}' (storeFile in android/key.properties).\n" +
+            'Restore the .jks from your backup — without it this app can never be updated on Play.')
+    }
+}
+
 android {
     namespace = "com.mkteb.ali.chevrolet"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,9 +44,21 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (hasReleaseSigning) {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
-            minifyEnabled false
+            signingConfig hasReleaseSigning ? signingConfigs.release : null
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
