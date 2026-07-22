@@ -41,21 +41,37 @@ Verify `capacitor-public/index.html` exists before continuing.
 
 ---
 
-## 3. Sync Capacitor (production mode)
+## 3. Sync Capacitor (pick a mode)
 
-`CAP_ENV=production` strips the remote `server.url` from `capacitor.config.ts` so
-the native app loads local bundled assets — required for App Store submission.
+`CAP_MODE` selects what the native shell loads. Full table in **DEPLOY.md →
+Native (Android / iOS) builds**.
+
+> **`CAP_ENV` is gone.** It read backwards — it *removed* `server.url`, so a store
+> build was exactly when you had to NOT set `CAP_ENV=production`, and following the
+> obvious convention shipped a blank screen. `CAP_MODE=production` is now a loud
+> error instead of a silent stub.
 
 ```bash
-CAP_ENV=production npx cap sync ios
-CAP_ENV=production npx cap sync android
-```
+# Self-contained build (bundled assets) — required for App Store submission.
+# Refuses to sync while capacitor-public/ is still the boot-splash stub.
+CAP_MODE=bundled npx cap sync ios
+CAP_MODE=bundled npx cap sync android
 
-For local development with live-reload against the deployed preview, omit
-`CAP_ENV`:
-```bash
+# Wrapper build — loads https://maktabali.com. This is the DEFAULT.
 npx cap sync ios
+
+# Local live-reload against your machine.
+CAP_SERVER_URL=http://192.168.1.20:8080 CAP_MODE=livereload npx cap sync ios
 ```
+
+Each sync prints its resolved target — check this line before you archive:
+
+```
+[capacitor.config] CAP_MODE=bundled → bundled assets in capacitor-public/
+```
+
+Android CLI builds also need **JDK 21** (`JAVA_HOME` → Android Studio's JBR); the
+JDK 25 on `PATH` cannot run Gradle 8.14.3. See DEPLOY.md.
 
 ---
 
@@ -102,7 +118,10 @@ npx cap open android
 
 1. In `android/app/build.gradle` set `versionCode` and `versionName`.
 2. **Build → Generate Signed Bundle / APK → Android App Bundle (.aab)**.
-3. Create a keystore the first time; keep it safe — it's required for every update.
+3. Signing is already wired — `signingConfigs.release` reads `android/key.properties`,
+   so Android Studio picks it up without prompting. The keystore lives outside the
+   repo; see **DEPLOY.md → Release signing** for its path, fingerprints and the
+   Play App Signing caveat about which SHA-1 to register for Google Sign-In.
 4. Upload the `.aab` to https://play.google.com/console.
 
 ---
@@ -112,7 +131,7 @@ npx cap open android
 ```bash
 bun run build
 rm -rf capacitor-public && cp -R dist/client/* capacitor-public/
-CAP_ENV=production npx cap sync
+CAP_MODE=bundled npx cap sync
 # Then re-archive in Xcode / regenerate the .aab in Android Studio
 ```
 
@@ -123,9 +142,13 @@ each store submission.
 
 ## 7. Troubleshooting
 
-- **White screen in native app** → `capacitor-public/` is empty. Re-run step 2.
-- **App loads the website instead of the bundle** → you forgot `CAP_ENV=production`
-  before `cap sync`. Re-sync and rebuild.
+- **White screen in native app** → `capacitor-public/` holds no real build. `CAP_MODE=bundled`
+  now refuses to sync in that state, so this should surface as a build error, not a
+  blank app. Re-run step 2.
+- **App loads the website instead of the bundle** → you were in the default `wrapper`
+  mode. Use `CAP_MODE=bundled npx cap sync` and rebuild.
+- **`Unsupported class file major version 69`** on an Android build → wrong JDK. Point
+  `JAVA_HOME` at Android Studio's JBR (JDK 21); see DEPLOY.md.
 - **Content under the notch / status bar** → make sure pages use `PageShell`
   or apply `pt-[env(safe-area-inset-top)]` to top-level headers.
 - **App rejected for "web wrapper"** → ensure meaningful native metadata
