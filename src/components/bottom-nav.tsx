@@ -1,11 +1,10 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, Heart, Package, MessageCircle, User } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
-import { ordersQuery } from "@/lib/queries";
-import { isOrderUnseen, useOrderSeenMap } from "@/lib/order-updates";
+import { useUnreadCounts } from "@/lib/notifications";
 
 const items = [
   { to: "/", label: "الرئيسية", icon: Home },
@@ -18,8 +17,9 @@ const items = [
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { userId } = useAuth();
-  const { data: orders = [] } = useQuery(ordersQuery(userId));
-  const seen = useOrderSeenMap();
+  // Unread ORDER notifications (read_at IS NULL, order_id set) — per-user and
+  // live, not the old per-device localStorage guess.
+  const { orders: unseenCount } = useUnreadCounts();
   const qc = useQueryClient();
   useEffect(() => {
     if (!userId) return;
@@ -64,9 +64,6 @@ export function BottomNav() {
       supabase.removeChannel(ch);
     };
   }, [userId, qc]);
-  const unseenCount = (orders as any[]).filter((o) =>
-    isOrderUnseen(seen, o.id, o.updated_at, o.created_at),
-  ).length;
   return (
     <nav className="sticky bottom-0 inset-x-0 z-40 border-t border-border/60 bg-card/95 backdrop-blur-lg pb-[env(safe-area-inset-bottom)] shadow-luxe">
       <div className="w-full grid grid-cols-5 md:max-w-md md:mx-auto">

@@ -3,11 +3,14 @@ import { Bell, Search, ShoppingCart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useSetting } from "@/lib/admin";
+import { useUnreadCounts } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 
 export function AppHeader({ title }: { title?: string }) {
   const [count, setCount] = useState(0);
-  const [unread, setUnread] = useState(0);
+  // The bell counts ALL unread notifications; the shared hook keeps it in sync
+  // with the طلباتي badge and refreshes it over realtime.
+  const { total: unread } = useUnreadCounts();
   const [cartBump, setCartBump] = useState(false);
   const [cartIconJump, setCartIconJump] = useState(false);
   const [bumpKey, setBumpKey] = useState(0);
@@ -25,12 +28,6 @@ export function AppHeader({ title }: { title?: string }) {
         .select("quantity")
         .eq("user_id", uid);
       if (mounted) setCount((cartItems ?? []).reduce((sum, item) => sum + Number(item.quantity ?? 0), 0));
-      const { count: nCount } = await (supabase as any)
-        .from("notifications")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", uid)
-        .is("read_at", null);
-      if (mounted) setUnread(nCount ?? 0);
     };
 
     const setup = async (uid: string | null) => {
@@ -40,16 +37,11 @@ export function AppHeader({ title }: { title?: string }) {
       }
       currentUid = uid;
       if (channel) { supabase.removeChannel(channel); channel = null; }
-      if (!uid) { if (mounted) { setCount(0); setUnread(0); } return; }
+      if (!uid) { if (mounted) setCount(0); return; }
       refreshCounts(uid);
-      const channelName = `notif-badge-${uid}-${crypto.randomUUID()}`;
+      const channelName = `cart-badge-${uid}-${crypto.randomUUID()}`;
       channel = supabase
         .channel(channelName)
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${uid}` },
-          () => refreshCounts(uid),
-        )
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "cart_items", filter: `user_id=eq.${uid}` },

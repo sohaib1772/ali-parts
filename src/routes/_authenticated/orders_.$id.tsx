@@ -6,7 +6,7 @@ import { ArrowRight, PackageCheck, Package as PackageIcon, PackageOpen, Truck, M
 import { orderByIdQuery } from "@/lib/queries";
 import { formatIQD, formatArabicDate } from "@/lib/format";
 import { statusLabel } from "@/lib/order-status";
-import { markOrderSeen } from "@/lib/order-updates";
+import { markOrderNotificationsRead } from "@/lib/notifications";
 import { toast } from "sonner";
 import { PrintableInvoice, InvoicePreviewDialog } from "@/components/printable-invoice";
 import {
@@ -110,10 +110,13 @@ function OrderDetail() {
     };
   }, [id, qc]);
 
+  // Opening an order is "reading" its notifications. Writing read_at server-side
+  // (instead of the old localStorage stamp) is what clears the badge on this
+  // user's other devices too.
   useEffect(() => {
-    if (!order) return;
-    markOrderSeen(order.id, (order as any).updated_at ?? order.created_at);
-  }, [order]);
+    if (!order || !userId) return;
+    markOrderNotificationsRead(userId, order.id).catch(() => { /* badge stays until next read */ });
+  }, [order, userId]);
 
   const activeIdx = TIMELINE.findIndex((t) => t.key === order?.status);
   const cancelled = order?.status === "cancelled";

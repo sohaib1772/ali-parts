@@ -4,6 +4,8 @@ import { PageShell } from "@/components/page-shell";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
+import { useQueryClient } from "@tanstack/react-query";
+import { unreadNotificationsKey } from "@/lib/notifications";
 import { statusColor, statusLabel } from "@/lib/order-status";
 
 type Notif = {
@@ -43,6 +45,11 @@ function timeAgo(iso: string): string {
 
 function NotificationsPage() {
   const { userId } = useAuth();
+  const qc = useQueryClient();
+  // Refresh the shared unread count immediately rather than waiting for the
+  // realtime echo, so the bell and طلباتي badges clear on the same tick.
+  const refreshBadges = () =>
+    qc.invalidateQueries({ queryKey: unreadNotificationsKey(userId) });
   const [items, setItems] = useState<Notif[]>([]);
   const [loading, setLoading] = useState(true);
   const [limit, setLimit] = useState(30);
@@ -85,6 +92,7 @@ function NotificationsPage() {
       .eq("user_id", userId)
       .is("read_at", null);
     load();
+    refreshBadges();
   };
 
   const markRead = async (id: string) => {
@@ -93,6 +101,7 @@ function NotificationsPage() {
       .update({ read_at: new Date().toISOString() })
       .eq("id", id);
     setItems((prev) => prev.map((n) => n.id === id ? { ...n, read_at: new Date().toISOString() } : n));
+    refreshBadges();
   };
 
   const unread = items.filter((n) => !n.read_at).length;

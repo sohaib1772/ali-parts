@@ -9,7 +9,7 @@ import { ordersQuery } from "@/lib/queries";
 import { useAuth } from "@/lib/use-auth";
 import { formatIQD, formatArabicDate } from "@/lib/format";
 import { statusLabel, statusColor, statusIcon } from "@/lib/order-status";
-import { isOrderUnseen, useOrderSeenMap } from "@/lib/order-updates";
+import { useUnreadCounts } from "@/lib/notifications";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/orders")({
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/orders")({
 function OrdersPage() {
   const { userId } = useAuth();
   const { data: orders = [] } = useQuery(ordersQuery(userId));
-  const seen = useOrderSeenMap();
+  const { orderIds: unreadOrderIds } = useUnreadCounts();
   const qc = useQueryClient();
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [pulseId, setPulseId] = useState<string | null>(null);
@@ -92,7 +92,7 @@ function OrdersPage() {
           </div>
         ) : (
           orders.map((o: any) => {
-            const updated = isOrderUnseen(seen, o.id, o.updated_at, o.created_at);
+            const updated = unreadOrderIds.has(o.id);
             const StatusIcon = statusIcon(o.status);
             const hasUpdateAfterCreate = !!o.updated_at && o.updated_at !== o.created_at;
             return (
