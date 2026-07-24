@@ -47,6 +47,14 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      // Internal FCM dispatch endpoint the database posts to (net.http_post).
+      // Handled here, ahead of the SSR router, so it needs no user-facing route
+      // and authenticates by shared secret rather than a session.
+      if (new URL(request.url).pathname === "/api/internal/fcm-dispatch") {
+        const { handleFcmDispatch } = await import("./lib/fcm-dispatch.server");
+        return await handleFcmDispatch(request);
+      }
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

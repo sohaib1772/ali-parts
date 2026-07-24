@@ -794,6 +794,33 @@ export type Database = {
         }
         Relationships: []
       }
+      device_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          last_seen: string
+          platform: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_seen?: string
+          platform?: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_seen?: string
+          platform?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -1106,6 +1133,10 @@ export type Database = {
         Returns: { user_id: string }[]
       }
       admin_otp_verified: { Args: { p_device_id: string }; Returns: boolean }
+      register_device_token: {
+        Args: { p_platform?: string; p_token: string }
+        Returns: undefined
+      }
       admin_set_user_blocked: {
         Args: { p_blocked: boolean; p_reason?: string; p_user_id: string }
         Returns: undefined

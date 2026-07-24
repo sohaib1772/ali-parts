@@ -35,6 +35,15 @@ dist-ssr
 .env
 .env.local
 
+# Firebase ADMIN service-account key — SERVER ONLY, never commit. This is the
+# private key that can send push as us; it lives on the server root-only.
+# (google-services.json is the PUBLIC client config and IS committed — do not
+# add it here.)
+*firebase-adminsdk*.json
+*service-account*.json
+fcm-service-account*.json
+secrets/
+
 # stray duplicate clone
 ali-parts-pro/
 

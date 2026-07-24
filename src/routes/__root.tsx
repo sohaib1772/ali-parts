@@ -18,6 +18,8 @@ import { NotificationPopup } from "@/components/notification-popup";
 import { usePriceSyncListener } from "@/lib/price-sync";
 import { AuthProvider } from "@/lib/use-auth";
 import { SessionPersistence } from "@/lib/session-persistence";
+import { Capacitor } from "@capacitor/core";
+import { initNativePush } from "@/lib/native-push";
 
 function NotFoundComponent() {
   return (
@@ -170,6 +172,7 @@ function RootComponent() {
         <PriceSync />
         <SplashScreen />
         <NotificationPermissionGate />
+        <NativePushGate />
         <NotificationPopup />
       </AuthProvider>
     </QueryClientProvider>
@@ -213,6 +216,24 @@ function AuthListener() {
     });
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
+  return null;
+}
+
+// Native (Capacitor) FCM registration. No-op on web. Runs after a session
+// exists — push permission is requested post-login, not as a cold first-launch
+// slap — and re-runs on SIGNED_IN so a fresh login on a shared device reassigns
+// the token. Tapping a system notification deep-links via the router.
+function NativePushGate() {
+  const router = useRouter();
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    const navigate = (path: string) => { void router.navigate({ to: path }); };
+    void initNativePush(navigate);
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN") void initNativePush(navigate);
+    });
+    return () => data.subscription.unsubscribe();
+  }, [router]);
   return null;
 }
 

@@ -84,26 +84,13 @@ export const sendAdminBroadcast = createServerFn({ method: "POST" })
 
     const count = (sent as number) ?? 0;
 
-    // ---------------------------------------------------------------------
-    // FCM PUSH HOOK GOES HERE.
-    //
-    // The in-app rows are committed by this point, so push is a strictly
-    // additive second delivery step: a failure here must NOT fail the request,
-    // because the notification has already been delivered in-app. Mirror the
-    // existing web-push broadcast in banner-push.functions.ts:
-    //
-    //   try {
-    //     const { sendBroadcastPush } = await import("./web-push.server");
-    //     await sendBroadcastPush({ title: data.title, body: data.body,
-    //                               url: "/notifications", tag: "admin-broadcast" });
-    //   } catch (err) {
-    //     console.error("[push] admin broadcast failed", err);
-    //   }
-    //
-    // To push only to this audience rather than everyone, resolve device tokens
-    // from the same `admin_broadcast_recipients(p_audience, p_user_id)` set the
-    // insert above used, so both channels always target one audience.
-    // ---------------------------------------------------------------------
+    // FCM push is NOT sent from here — do not add a call, it would double-send.
+    // Every row this function inserted fires the AFTER INSERT trigger
+    // trg_dispatch_notification_push on public.notifications (migration
+    // 20260725120000), which posts each to /api/internal/fcm-dispatch → FCM.
+    // That single trigger is the one push path for ALL notification sources
+    // (orders, replacements, banners, broadcasts, block), so the broadcast is
+    // already covered by the same mechanism as everything else.
 
     return { ok: true as const, sent: count };
   });
