@@ -1,3 +1,15 @@
+# NOT a live cloud project. This app runs on SELF-HOSTED Supabase in Docker at
+# /opt/supabase/maktabali on the VPS, served at https://api.maktabali.com. There is
+# no supabase.com dashboard, and this string resolves to nothing there — do not
+# build dashboard URLs from it. Auth/config changes are env vars in that stack's
+# .env (e.g. ADDITIONAL_REDIRECT_URLS -> GOTRUE_URI_ALLOW_LIST); see DEPLOY.md.
+#
+# The value is a leftover from the original Lovable project and is kept only
+# because the Supabase CLI uses it to namespace LOCAL dev containers
+# (supabase_db_<project_id>). Renaming it points `supabase start` at a fresh empty
+# stack and orphans the existing local dev volumes, so it is left alone
+# deliberately. Omitting it entirely is also valid — the CLI then falls back to
+# the directory name — with the same re-namespacing effect.
 project_id = "nqdsvubimpftjfygzisx"
 
 # Local dev only: the analytics (logflare) container cannot pass health checks on

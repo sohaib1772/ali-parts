@@ -11,12 +11,6 @@ export function formatIQDEn(amount: number | string | null | undefined): string 
   return `${new Intl.NumberFormat("en-US").format(Math.round(n))} د.ع`;
 }
 
-export function formatUSD(amount: number | string | null | undefined): string {
-  const n = Number(amount ?? 0);
-  if (!isFinite(n)) return "$0";
-  return `$${n.toFixed(0)}`;
-}
-
 export function formatArabicDate(iso: string): string {
   try {
     return new Intl.DateTimeFormat("ar-IQ", {

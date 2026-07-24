@@ -306,12 +306,3 @@ export const verifyAdminOtp = createServerFn({ method: "POST" })
     });
     return { ok: true, expiresAt: expires_at };
   });
-
-export const revokeAdminOtp = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from("admin_otp_verifications").delete().eq("user_id", context.userId);
-    await logOtpEvent({ event: "revoke", user_id: context.userId });
-    return { ok: true };
-  });

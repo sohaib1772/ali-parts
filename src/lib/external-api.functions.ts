@@ -94,22 +94,6 @@ export const getExternalApiConfig = createServerFn({ method: "GET" })
     return await loadConfig(context);
   });
 
-const CallInput = z.object({
-  endpointId: z.string(),
-  body: z.record(z.unknown()).optional(),
-  query: z.record(z.string()).optional(),
-});
-
-export const callExternalApi = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => CallInput.parse(d))
-  .handler(async ({ data, context }) => {
-    await assertAdmin(context);
-    await requireAdminOtp(context);
-    const config = await loadConfig(context);
-    return await executeExternalApiCall(config, data.endpointId, data.body, data.query);
-  });
-
 const TestInput = z.object({
   endpointId: z.string(),
 });

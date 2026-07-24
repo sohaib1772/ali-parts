@@ -6,19 +6,20 @@ Arabic PWA (safe-area aware, standalone display, dark navy theme).
 
 ---
 
-## 1. Export the project to GitHub
+## 1. Prerequisites
 
-1. In Lovable: top-right → **GitHub → Connect** → authorize the Lovable GitHub App.
-2. Choose the org/account and click **Create Repository**.
-3. Clone locally:
-   ```bash
-   git clone git@github.com:<you>/<repo>.git
-   cd <repo>
-   ```
-4. Install deps:
-   ```bash
-   bun install    # or: npm install
-   ```
+The repo already lives on GitHub — clone it and install:
+
+```bash
+git clone git@github.com:<you>/<repo>.git
+cd <repo>
+npm install      # bun install also works; bunfig.toml configures the install guard
+```
+
+`.env.production` (gitignored) must be present before any build — see
+**DEPLOY.md → "The one thing that will bite you"**. `VITE_*` vars are inlined at
+build time, so building without it bakes the local dev Supabase URL into the
+bundle and ships an app that talks to `127.0.0.1`.
 
 ---
 
@@ -28,16 +29,18 @@ Capacitor loads the compiled web assets from `webDir` (`capacitor-public`). Buil
 the production bundle first:
 
 ```bash
-# Build the TanStack Start production bundle
-bun run build
+# Build the TanStack Start production bundle (same preset DEPLOY.md uses)
+NITRO_PRESET=node-server npm run build
 
-# Copy the built client output into the Capacitor webDir
-# (adjust the source dir if your build outputs elsewhere)
+# Copy the built client output into the Capacitor webDir.
+# The Nitro build emits client assets to .output/public — there is no dist/.
 rm -rf capacitor-public && mkdir capacitor-public
-cp -R dist/client/* capacitor-public/ 2>/dev/null || cp -R .output/public/* capacitor-public/
+cp -R .output/public/* capacitor-public/
 ```
 
-Verify `capacitor-public/index.html` exists before continuing.
+Verify `capacitor-public/index.html` exists **and contains a `<script src=…>`**
+before continuing — `CAP_MODE=bundled` refuses to sync otherwise, because an
+index.html with no script bundle is the boot-splash stub and ships a blank screen.
 
 ---
 
@@ -129,11 +132,15 @@ npx cap open android
 ## 6. Updating the app after code changes
 
 ```bash
-bun run build
-rm -rf capacitor-public && cp -R dist/client/* capacitor-public/
+NITRO_PRESET=node-server npm run build
+rm -rf capacitor-public && mkdir capacitor-public && cp -R .output/public/* capacitor-public/
 CAP_MODE=bundled npx cap sync
 # Then re-archive in Xcode / regenerate the .aab in Android Studio
 ```
+
+> Only needed for **bundled** builds. The current Play Store build is a `wrapper`
+> (loads `https://maktabali.com`), so shipping a web change there is a normal
+> deploy per DEPLOY.md — no rebuild, no store submission.
 
 Bump the version/build number in Xcode and `android/app/build.gradle` before
 each store submission.

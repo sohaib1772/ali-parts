@@ -57,17 +57,6 @@ function logEntry(kind: PriceSyncEntry["kind"], info?: Record<string, unknown>) 
   } catch {}
 }
 
-/** Return the recent sync log (from sessionStorage). Useful for a debug UI. */
-export function readPriceSyncLog(): PriceSyncEntry[] {
-  try {
-    if (typeof sessionStorage === "undefined") return [];
-    const raw = sessionStorage.getItem(LOG_KEY);
-    return raw ? (JSON.parse(raw) as PriceSyncEntry[]) : [];
-  } catch {
-    return [];
-  }
-}
-
 const PRICE_KEYS = [
   ["products"],
   ["product"],

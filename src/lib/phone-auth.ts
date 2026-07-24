@@ -37,7 +37,3 @@ export function normalizePhone(raw: string): string | null {
 export function phoneToEmail(phone: string) {
   return `p${phone}@aliparts.app`;
 }
-
-export function phoneToEmailLegacy(phone: string) {
-  return `p${phone}@aliparts.local`;
-}
