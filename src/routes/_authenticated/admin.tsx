@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote, Receipt, Search as SearchIcon, Ban, CheckCircle2, History, Users as UsersIcon, KeyRound, Loader2, Repeat, Boxes, ArrowUp, ArrowDown, UserPlus, ShieldCheck, Webhook } from "lucide-react";
-import { BellRing, MailCheck, MailX, Clock } from "lucide-react";
+import { BellRing, MailCheck, MailX, Clock, Megaphone } from "lucide-react";
 import { Film, Trash } from "lucide-react";
 import { clearVideoCache, getVideoCacheSize } from "@/lib/use-cached-video";
 import { Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw } from "lucide-react";
@@ -51,6 +51,12 @@ import { broadcastPricesChanged } from "@/lib/price-sync";
 import { normalizePhone } from "@/lib/phone-auth";
 import { getExternalApiConfig, testExternalApi } from "@/lib/external-api.functions";
 import { validateExternalApiConfig, type ExternalApiEndpoint } from "@/lib/external-api";
+import {
+  sendAdminBroadcast,
+  adminBroadcastAudienceCount,
+  BROADCAST_TITLE_MAX,
+  BROADCAST_BODY_MAX,
+} from "@/lib/broadcast.functions";
 
 function getAdminDeviceId(): string {
   if (typeof window === "undefined") return "";
@@ -720,6 +726,9 @@ function AdminPageInner() {
               <TabsTrigger value="stock" className={tabTriggerCls}><Boxes className="size-4" />سجل المخزون</TabsTrigger>
             )}
             {isAdmin && (
+              <TabsTrigger value="broadcast" className={tabTriggerCls}><Megaphone className="size-4" />إشعار جماعي</TabsTrigger>
+            )}
+            {isAdmin && (
               <TabsTrigger value="settings" className={tabTriggerCls}><SettingsIcon className="size-4" />إعدادات</TabsTrigger>
             )}
             {isAdmin && (
@@ -739,6 +748,7 @@ function AdminPageInner() {
           {STAFF_TAB_ENABLED && isAdmin && <TabsContent value="staff" className={tabContentCls}><StaffAdmin /></TabsContent>}
           {canBlock && <TabsContent value="block-log" className={tabContentCls}><BlockLogAdmin /></TabsContent>}
           {canProducts && <TabsContent value="stock" className={tabContentCls}><StockMovementsAdmin /></TabsContent>}
+          {isAdmin && <TabsContent value="broadcast" className={tabContentCls}><BroadcastAdmin /></TabsContent>}
           {isAdmin && <TabsContent value="settings" className={tabContentCls}><SettingsAdmin /></TabsContent>}
           {isAdmin && <TabsContent value="diagnostics" className={tabContentCls}><DiagnosticsAdmin /></TabsContent>}
           {isAdmin && <TabsContent value="otp-log" className={tabContentCls}><AdminOtpEventsLog /></TabsContent>}
@@ -2682,6 +2692,162 @@ function ExternalApiSettings() {
 }
 
 /* ---------------- Settings ---------------- */
+
+/* ---------------- Broadcast ---------------- */
+
+/** Typed into the confirm box before the send button unlocks. A broadcast writes
+ *  one row per customer and cannot be undone, so a stray Enter must not send it. */
+const BROADCAST_CONFIRM_WORD = "إرسال";
+
+function BroadcastAdmin() {
+  const countFn = useServerFn(adminBroadcastAudienceCount);
+  const sendFn = useServerFn(sendAdminBroadcast);
+
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const { data: audience, isLoading: countLoading, refetch: refetchCount } = useQuery({
+    queryKey: ["admin", "broadcast", "count", "all_customers"],
+    queryFn: () => countFn({ data: { audience: "all_customers" as const } }),
+    staleTime: 30_000,
+  });
+  const recipients = audience?.count ?? 0;
+
+  const titleTrimmed = title.trim();
+  const canOpenConfirm = titleTrimmed.length > 0 && recipients > 0 && !sending;
+
+  const send = async () => {
+    setSending(true);
+    try {
+      const res = await sendFn({
+        data: { title: titleTrimmed, body: body.trim(), audience: "all_customers" as const },
+      });
+      toast.success(`تم إرسال الإشعار إلى ${res.sent} عميل`);
+      setTitle("");
+      setBody("");
+      setConfirmOpen(false);
+      setConfirmText("");
+      refetchCount();
+    } catch (err: any) {
+      toast.error("تعذّر إرسال الإشعار", { description: err?.message ?? "خطأ غير معروف" });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-3">
+        <div className="text-sm font-bold text-gold flex items-center gap-2">
+          <Megaphone className="size-4" /> إرسال إشعار لجميع العملاء
+        </div>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          يصل الإشعار داخل التطبيق فوراً لكل عميل، ويظهر في جرس الإشعارات. لا يمكن التراجع بعد
+          الإرسال.
+        </p>
+
+        <Field label="العنوان">
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value.slice(0, BROADCAST_TITLE_MAX))}
+            placeholder="وصلت قطع جديدة 🎉"
+            maxLength={BROADCAST_TITLE_MAX}
+          />
+          <p className="text-[11px] text-muted-foreground mt-1">
+            {titleTrimmed.length}/{BROADCAST_TITLE_MAX}
+          </p>
+        </Field>
+
+        <Field label="نص الرسالة (اختياري)">
+          <Textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value.slice(0, BROADCAST_BODY_MAX))}
+            rows={4}
+            placeholder="تفقّد أحدث قطع الغيار المتوفرة الآن في المتجر."
+            maxLength={BROADCAST_BODY_MAX}
+          />
+          <p className="text-[11px] text-muted-foreground mt-1">
+            {body.trim().length}/{BROADCAST_BODY_MAX}
+          </p>
+        </Field>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <div className="text-sm">
+            {countLoading ? (
+              <span className="text-muted-foreground">جاري حساب عدد المستلمين…</span>
+            ) : (
+              <span className="font-bold">
+                سيتم الإرسال إلى <span className="text-gold">{recipients}</span> عميل
+              </span>
+            )}
+          </div>
+          <Button
+            size="sm"
+            disabled={!canOpenConfirm}
+            onClick={() => { setConfirmText(""); setConfirmOpen(true); }}
+          >
+            {sending ? <Loader2 className="size-4 animate-spin" /> : <><Megaphone className="size-4 me-1" /> مراجعة وإرسال</>}
+          </Button>
+        </div>
+
+        {recipients === 0 && !countLoading && (
+          <p className="text-xs text-destructive">لا يوجد عملاء لإرسال الإشعار إليهم.</p>
+        )}
+      </div>
+
+      <AlertDialog
+        open={confirmOpen}
+        onOpenChange={(v) => { if (!sending) { setConfirmOpen(v); if (!v) setConfirmText(""); } }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد الإرسال الجماعي</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-start">
+                <div>
+                  سيصل هذا الإشعار إلى{" "}
+                  <span className="font-bold text-foreground">{recipients} عميل</span>{" "}
+                  ولا يمكن التراجع عنه.
+                </div>
+                <div className="rounded-xl border border-border bg-muted/40 p-3">
+                  <div className="font-bold text-foreground">{titleTrimmed || "—"}</div>
+                  {body.trim() && (
+                    <div className="text-sm mt-1 whitespace-pre-wrap">{body.trim()}</div>
+                  )}
+                </div>
+                <div>
+                  اكتب «<span className="font-bold text-foreground">{BROADCAST_CONFIRM_WORD}</span>»
+                  للتأكيد:
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <Input
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder={BROADCAST_CONFIRM_WORD}
+            disabled={sending}
+          />
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={sending}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); send(); }}
+              disabled={sending || confirmText.trim() !== BROADCAST_CONFIRM_WORD}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {sending ? <Loader2 className="size-4 animate-spin" /> : `إرسال إلى ${recipients} عميل`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
 
 function SettingsAdmin() {
   const qc = useQueryClient();

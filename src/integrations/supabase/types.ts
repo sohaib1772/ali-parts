@@ -1088,6 +1088,23 @@ export type Database = {
         Args: { p_product_id: string; p_quantity?: number; p_side?: string }
         Returns: undefined
       }
+      admin_broadcast_audience_count: {
+        Args: { p_audience?: string; p_user_id?: string }
+        Returns: number
+      }
+      admin_broadcast_notification: {
+        Args: {
+          p_audience?: string
+          p_body: string
+          p_title: string
+          p_user_id?: string
+        }
+        Returns: number
+      }
+      admin_broadcast_recipients: {
+        Args: { p_audience?: string; p_user_id?: string }
+        Returns: { user_id: string }[]
+      }
       admin_otp_verified: { Args: { p_device_id: string }; Returns: boolean }
       admin_set_user_blocked: {
         Args: { p_blocked: boolean; p_reason?: string; p_user_id: string }
