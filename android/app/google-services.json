@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "794940821827",
+    "project_id": "maktab-ali",
+    "storage_bucket": "maktab-ali.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:794940821827:android:ac35a0449a0905b2309ff6",
+        "android_client_info": {
+          "package_name": "com.mkteb.ali.chevrolet"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBXVbYjp0QOCz3iHGTgyYIXUD0WUKQTLC4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
