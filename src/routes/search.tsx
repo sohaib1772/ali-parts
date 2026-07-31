@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useDeferredValue } from "react";
+import { useDeferredValue, useEffect, useState } from "react";
+import { Search as SearchIcon, X } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { ProductCard } from "@/components/product-card";
 import { FilterBar } from "@/components/filter-bar";
@@ -32,8 +33,20 @@ function SearchPending() {
 }
 
 function SearchPage() {
-  const { filters } = useStorefrontFilters();
+  const { filters, setFilter } = useStorefrontFilters();
   const q = filters.q;
+  // Local, debounced input so the search page has its own field (the FilterBar
+  // no longer carries a search box) without pushing a URL update per keystroke.
+  const [qLocal, setQLocal] = useState(q);
+  useEffect(() => setQLocal(q), [q]);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (qLocal.trim() !== q.trim()) setFilter({ q: qLocal });
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qLocal]);
+
   const deferredQ = useDeferredValue(q);
   const { data: results, isFetching } = useQuery(searchProductsQuery(deferredQ));
   // Narrow server search results by the active category/brand/model (and re-apply
@@ -42,7 +55,23 @@ function SearchPage() {
 
   return (
     <PageShell wide title="بحث">
-      <div className="px-4 pt-4">
+      <div className="px-4 pt-4 space-y-3">
+        <label className="flex items-center gap-2 bg-card border border-border rounded-2xl px-4 h-11 shadow-card focus-within:border-gold">
+          <SearchIcon className="size-5 text-muted-foreground shrink-0" />
+          <input
+            autoFocus
+            value={qLocal}
+            onChange={(e) => setQLocal(e.target.value)}
+            placeholder="ابحث عن قطعة، اسم أو رقم OEM…"
+            className="flex-1 bg-transparent outline-none text-sm"
+            inputMode="search"
+          />
+          {qLocal && (
+            <button type="button" onClick={() => setQLocal("")} aria-label="مسح البحث" className="text-muted-foreground">
+              <X className="size-4" />
+            </button>
+          )}
+        </label>
         <FilterBar />
       </div>
 

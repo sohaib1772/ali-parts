@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, ChevronDown, Check, X } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -134,17 +134,6 @@ export function FilterBar({
     ? categoryOverride.onChange
     : (id: string) => setFilter({ category: id });
 
-  // Local, debounced search input so we don't push a URL update on every keystroke.
-  const [qLocal, setQLocal] = useState(filters.q);
-  useEffect(() => setQLocal(filters.q), [filters.q]);
-  useEffect(() => {
-    const t = setTimeout(() => {
-      if (qLocal.trim() !== filters.q.trim()) setFilter({ q: qLocal });
-    }, 300);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qLocal]);
-
   const categoryOptions: Option[] = categories.map((c) => ({ id: c.id, label: c.name_ar }));
   const brandOptions: Option[] = brands.map((b) => ({ id: b.id, label: b.name_ar, sub: b.name_en }));
   // Model depends on Brand: only that brand's models when a brand is picked.
@@ -171,59 +160,40 @@ export function FilterBar({
 
   return (
     <div dir="rtl" className="w-full">
-      <div className="flex flex-col md:flex-row md:items-center gap-2">
-        {/* Search — full width on phone (top), flexible on desktop */}
-        <label className="flex items-center gap-2 bg-card border border-border rounded-2xl px-4 h-11 shadow-card focus-within:border-gold md:flex-1">
-          <Search className="size-5 text-muted-foreground shrink-0" />
-          <input
-            value={qLocal}
-            onChange={(e) => setQLocal(e.target.value)}
-            placeholder="ابحث عن قطعة، اسم أو رقم OEM…"
-            className="flex-1 bg-transparent outline-none text-sm"
-            inputMode="search"
-          />
-          {qLocal && (
-            <button type="button" onClick={() => setQLocal("")} aria-label="مسح البحث" className="text-muted-foreground">
-              <X className="size-4" />
-            </button>
-          )}
-        </label>
-
-        {/* Dropdowns — wrap below on phone, inline on desktop */}
-        <div className="flex flex-wrap items-center gap-2">
+      {/* Dropdown filters — wrap on phone, inline row on desktop. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <FilterDropdown
+          label="التصنيف"
+          allLabel="الكل"
+          value={categoryValue}
+          options={categoryOptions}
+          onSelect={onSelectCategory}
+        />
+        <FilterDropdown
+          label="الماركة"
+          allLabel="الكل"
+          value={filters.brand}
+          options={brandOptions}
+          onSelect={onSelectBrand}
+        />
+        {showModel && (
           <FilterDropdown
-            label="التصنيف"
+            label="الموديل"
             allLabel="الكل"
-            value={categoryValue}
-            options={categoryOptions}
-            onSelect={onSelectCategory}
+            value={filters.model}
+            options={modelOptions}
+            onSelect={onSelectModel}
           />
-          <FilterDropdown
-            label="الماركة"
-            allLabel="الكل"
-            value={filters.brand}
-            options={brandOptions}
-            onSelect={onSelectBrand}
-          />
-          {showModel && (
-            <FilterDropdown
-              label="الموديل"
-              allLabel="الكل"
-              value={filters.model}
-              options={modelOptions}
-              onSelect={onSelectModel}
-            />
-          )}
-          {activeCount > 0 && (
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="h-11 px-3 rounded-xl border border-gold/40 bg-gold/10 text-gold text-sm font-bold flex items-center gap-1 shrink-0"
-            >
-              <X className="size-4" /> مسح ({activeCount})
-            </button>
-          )}
-        </div>
+        )}
+        {activeCount > 0 && (
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="h-11 px-3 rounded-xl border border-gold/40 bg-gold/10 text-gold text-sm font-bold flex items-center gap-1 shrink-0"
+          >
+            <X className="size-4" /> مسح ({activeCount})
+          </button>
+        )}
       </div>
     </div>
   );
