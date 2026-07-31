@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { ChevronLeft, LogOut, MapPin, Heart, Package, Bell, Info, Shield, ScrollText, MessageCircle, ShieldCheck, Sparkles, Camera, Loader2, Pencil, Check, X, Trash2 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
-import { VehicleBar, VehiclePicker } from "@/components/vehicle-picker";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 import { profileQuery } from "@/lib/queries";
@@ -32,7 +31,6 @@ function AccountPage() {
   const { hasAnyAccess, isLoading: adminAccessLoading } = useAdminAccessStatus();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [pickerOpen, setPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -215,10 +213,6 @@ function AccountPage() {
           </div>
         </div>
 
-        <div className="mt-4">
-          <VehicleBar onOpen={() => setPickerOpen(true)} />
-        </div>
-
         <div className="mt-4 bg-gradient-gold text-navy rounded-2xl p-4 shadow-gold flex items-center gap-3">
           <div className="size-11 rounded-full bg-navy/10 grid place-items-center">
             <Sparkles className="size-5" />
@@ -326,8 +320,6 @@ function AccountPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <VehiclePicker open={pickerOpen} onOpenChange={setPickerOpen} />
     </PageShell>
   );
 }

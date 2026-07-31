@@ -31,10 +31,11 @@ export type CarModel = { id: string; brand_id: string | null; name_ar: string; n
 export type Banner = { id: string; title_ar: string | null; subtitle_ar: string | null; image_url: string; video_url?: string | null; link: string | null; expires_at?: string | null };
 
 // Slim projection for product lists (cards). Excludes heavy fields like
-// `description_ar`, `specs`, and `compatible_models` that are only needed
-// on the product detail page. Keeps payload small for fast list loads.
+// `description_ar` and `specs` that are only needed on the product detail page.
+// `compatible_models` IS included: the storefront FilterBar's Model filter matches
+// against it client-side, so list rows must carry it (it's a small uuid[]).
 const PRODUCT_LIST_COLUMNS =
-  "id, name_ar, name_en, oem_number, price_iqd, price_usd, compare_price_iqd, shipping_iqd, merge_delivery, delivery_group, category_id, brand_id, images, in_stock, stock_qty, is_featured, is_deal, deal_expires_at, sales_count, condition, created_at";
+  "id, name_ar, name_en, oem_number, price_iqd, price_usd, compare_price_iqd, shipping_iqd, merge_delivery, delivery_group, category_id, brand_id, compatible_models, images, in_stock, stock_qty, is_featured, is_deal, deal_expires_at, sales_count, condition, created_at";
 
 export const categoriesQuery = () =>
   queryOptions({

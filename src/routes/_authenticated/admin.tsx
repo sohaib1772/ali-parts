@@ -11,7 +11,6 @@ import {
   carModelsQuery,
   type CarModel,
 } from "@/lib/queries";
-import { VehicleBar, getSavedVehicle, useSavedVehicle } from "@/components/vehicle-picker";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1283,7 +1282,9 @@ function ProductsAdmin() {
   const { data: categories = [] } = useQuery(categoriesQuery());
   const { data: brands = [] } = useQuery(brandsQuery());
   const { data: carModels = [] } = useQuery(carModelsQuery());
-  const savedVehicle = useSavedVehicle();
+  // The storefront vehicle picker was removed; the product form no longer has a
+  // "my vehicle" quick-add shortcut. CompatModels handles a null savedVehicle.
+  const savedVehicle = null;
 
   const openNew = () => { setForm(emptyProduct); setOpen(true); };
   const openEdit = (p: any) => {

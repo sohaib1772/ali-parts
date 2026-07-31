@@ -1,20 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useDeferredValue, useEffect } from "react";
-import { Search as SearchIcon, Hash } from "lucide-react";
-import { z } from "zod";
+import { useDeferredValue } from "react";
 import { PageShell } from "@/components/page-shell";
 import { ProductCard } from "@/components/product-card";
+import { FilterBar } from "@/components/filter-bar";
 import { searchProductsQuery } from "@/lib/queries";
-import { useSavedVehicle, filterProductsByVehicle } from "@/components/vehicle-picker";
-
-const searchSchema = z.object({
-  q: z.string().optional(),
-  mode: z.enum(["oem"]).optional(),
-});
+import { useStorefrontFilters, applyStorefrontFilters, filterSearchSchema } from "@/lib/storefront-filters";
 
 export const Route = createFileRoute("/search")({
-  validateSearch: searchSchema,
+  validateSearch: filterSearchSchema,
   head: () => ({ meta: [{ title: "البحث — Ali Parts" }] }),
   component: SearchPage,
   pendingMs: 400,
@@ -38,32 +32,18 @@ function SearchPending() {
 }
 
 function SearchPage() {
-  const { q: initialQ, mode } = Route.useSearch();
-  const [q, setQ] = useState(initialQ ?? "");
-  // Debounce the query so we don't fire a request on every keystroke.
-  const [debouncedQ, setDebouncedQ] = useState(q);
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedQ(q), 300);
-    return () => clearTimeout(t);
-  }, [q]);
-  const deferredQ = useDeferredValue(debouncedQ);
+  const { filters } = useStorefrontFilters();
+  const q = filters.q;
+  const deferredQ = useDeferredValue(q);
   const { data: results, isFetching } = useQuery(searchProductsQuery(deferredQ));
-  const vehicle = useSavedVehicle();
-  const filtered = filterProductsByVehicle(results ?? [], vehicle);
+  // Narrow server search results by the active category/brand/model (and re-apply
+  // q client-side, a harmless subset). Null-tolerant, so nothing valid is dropped.
+  const filtered = applyStorefrontFilters(results ?? [], filters);
 
   return (
     <PageShell wide title="بحث">
       <div className="px-4 pt-4">
-        <label className="flex items-center gap-2 bg-card border border-border rounded-2xl px-4 py-3 shadow-card focus-within:border-gold">
-          {mode === "oem" ? <Hash className="size-5 text-gold" /> : <SearchIcon className="size-5 text-muted-foreground" />}
-          <input
-            autoFocus
-            placeholder={mode === "oem" ? "أدخل رقم OEM…" : "ابحث عن قطعة، ماركة، رقم OEM…"}
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            className="flex-1 bg-transparent outline-none text-sm"
-          />
-        </label>
+        <FilterBar />
       </div>
 
       <div className="mt-5 px-4">
@@ -88,9 +68,7 @@ function SearchPage() {
           if (filtered.length > 0) {
             return (
               <>
-                <div className="text-xs text-muted-foreground mb-3">
-                  {vehicle ? `${filtered.length} نتيجة متوافقة مع ${vehicle.brandName} ${vehicle.modelName}` : `${filtered.length} نتيجة`}
-                </div>
+                <div className="text-xs text-muted-foreground mb-3">{filtered.length} نتيجة</div>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                   {filtered.map((p) => <ProductCard key={p.id} product={p} />)}
                 </div>
@@ -99,7 +77,7 @@ function SearchPage() {
           }
           return (
             <div className="text-center text-muted-foreground text-sm py-16">
-              لا توجد نتائج مطابقة. {vehicle && `جرّب تغيير المركبة أو تواصل معنا عبر واتساب.`}
+              لا توجد نتائج مطابقة. جرّب تعديل الفلاتر أو تواصل معنا عبر واتساب.
             </div>
           );
         })()}

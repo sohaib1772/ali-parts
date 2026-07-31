@@ -3,9 +3,12 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Timer, ChevronLeft } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { ProductCard } from "@/components/product-card";
+import { FilterBar } from "@/components/filter-bar";
 import { dealsQuery } from "@/lib/queries";
+import { useStorefrontFilters, applyStorefrontFilters, filterSearchSchema } from "@/lib/storefront-filters";
 
 export const Route = createFileRoute("/deals")({
+  validateSearch: filterSearchSchema,
   loader: ({ context }) => context.queryClient.ensureQueryData(dealsQuery()),
   head: () => ({
     meta: [
@@ -17,7 +20,9 @@ export const Route = createFileRoute("/deals")({
 });
 
 function DealsPage() {
-  const { data: deals } = useSuspenseQuery(dealsQuery());
+  const { data: allDeals } = useSuspenseQuery(dealsQuery());
+  const { filters } = useStorefrontFilters();
+  const deals = applyStorefrontFilters(allDeals, filters);
 
   return (
     <PageShell wide title="عروض لفترة محدودة">
@@ -25,6 +30,9 @@ function DealsPage() {
         <Link to="/" className="inline-flex items-center gap-1 text-xs text-muted-foreground mb-3">
           <ChevronLeft className="size-3.5 rotate-180" /> الرئيسية
         </Link>
+        <div className="mb-4">
+          <FilterBar />
+        </div>
         <div className="flex items-center gap-3 mb-4 p-3 rounded-2xl bg-gold/10 border border-gold/30">
           <div className="size-10 rounded-xl bg-gold/20 border border-gold/40 grid place-items-center">
             <Timer className="size-5 text-gold" />

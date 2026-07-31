@@ -8,7 +8,8 @@ import Autoplay from "embla-carousel-autoplay";
 import { PageShell } from "@/components/page-shell";
 import { FloatingWhatsapp } from "@/components/floating-whatsapp";
 import { ProductCard } from "@/components/product-card";
-import { VehiclePicker, VehicleBar, useSavedVehicle, filterProductsByVehicle } from "@/components/vehicle-picker";
+import { FilterBar } from "@/components/filter-bar";
+import { useStorefrontFilters, applyStorefrontFilters, filterSearchSchema } from "@/lib/storefront-filters";
 import {
   bannersQuery,
   brandsQuery,
@@ -25,6 +26,7 @@ import { thumbUrl } from "@/lib/image-url";
 import { useCachedVideo } from "@/lib/use-cached-video";
 
 export const Route = createFileRoute("/")({
+  validateSearch: filterSearchSchema,
   loader: ({ context }) => {
     // Kick off all fetches in parallel; do NOT await so navigation is instant
     // and each section suspends independently as its data arrives.
@@ -44,28 +46,18 @@ function HomePage() {
   const { data: banners } = useSuspenseQuery(bannersQuery());
   const { data: bestSellers } = useSuspenseQuery(bestSellersQuery());
 
-  const vehicle = useSavedVehicle();
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [mountedVehicle, setMountedVehicle] = useState(false);
-  useEffect(() => { setMountedVehicle(true); }, []);
-  useEffect(() => {
-    if (mountedVehicle && !vehicle) setPickerOpen(true);
-  }, [mountedVehicle, vehicle]);
-
-  // Avoid SSR/client hydration mismatch: only apply the vehicle filter
-  // after mount (vehicle is read from localStorage).
-  const effectiveVehicle = mountedVehicle ? vehicle : null;
-  const filteredDeals = filterProductsByVehicle(deals, effectiveVehicle);
+  const { filters } = useStorefrontFilters();
+  const filteredDeals = applyStorefrontFilters(deals, filters);
   const dealIds = new Set(filteredDeals.slice(0, 4).map((p) => p.id));
-  const filteredFeatured = filterProductsByVehicle(featured, effectiveVehicle).filter(
+  const filteredFeatured = applyStorefrontFilters(featured, filters).filter(
     (p) => !dealIds.has(p.id),
   );
-  const filteredBestSellers = filterProductsByVehicle(bestSellers, effectiveVehicle);
+  const filteredBestSellers = applyStorefrontFilters(bestSellers, filters);
 
   return (
     <PageShell wide>
       <div className="px-4 mt-3">
-        <VehicleBar onOpen={() => setPickerOpen(true)} />
+        <FilterBar />
       </div>
 
       {/* Hero banner */}
@@ -96,25 +88,15 @@ function HomePage() {
       )}
 
       {/* Featured */}
-      <Section title="منتجات مميزة" icon={<Sparkles className="size-4 text-gold" />}>
-        {effectiveVehicle && (
-          <div className="px-4 mb-2">
-            <div className="text-xs text-gold font-semibold">
-              مُفلتر حسب: {effectiveVehicle.brandName} {effectiveVehicle.modelName} ({effectiveVehicle.year})
-            </div>
+      {filteredFeatured.length > 0 && (
+        <Section title="منتجات مميزة" icon={<Sparkles className="size-4 text-gold" />}>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 px-4">
+            {filteredFeatured.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
           </div>
-        )}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 px-4">
-          {filteredFeatured.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
-        {filteredFeatured.length === 0 && (
-          <div className="px-4 text-center text-muted-foreground text-sm py-8">
-            لا توجد منتجات متوافقة مع مركبتك. اختر مركبة أخرى أو تواصل معنا.
-          </div>
-        )}
-      </Section>
+        </Section>
+      )}
 
       {/* Best Sellers — all products */}
       {filteredBestSellers.length > 0 && (
@@ -136,7 +118,6 @@ function HomePage() {
 
       <div className="h-6" />
       <FloatingWhatsapp />
-      <VehiclePicker open={pickerOpen} onOpenChange={setPickerOpen} mandatory={!vehicle} />
     </PageShell>
   );
 }
@@ -156,7 +137,18 @@ function AllProductsInfinite() {
     error,
   } = useInfiniteQuery({ ...productsInfiniteQuery(), enabled });
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const products = data?.pages.flat() ?? [];
+  const { filters } = useStorefrontFilters();
+  const anyFilter = !!(filters.category || filters.brand || filters.model || filters.q.trim());
+  const raw = data?.pages.flat() ?? [];
+  const products = applyStorefrontFilters(raw, filters);
+
+  // When a filter is active, pull the whole (small) catalog so client-side
+  // filtering can see every match, not only the pages scrolled into view.
+  useEffect(() => {
+    if (anyFilter && hasNextPage && !isFetchingNextPage && !isFetchNextPageError) {
+      fetchNextPage();
+    }
+  }, [anyFilter, hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage]);
 
   useEffect(() => {
     if (isFetchNextPageError && error) {
@@ -188,15 +180,21 @@ function AllProductsInfinite() {
     return () => io.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage, isFetchNextPageError]);
 
-  if (!enabled || products.length === 0) return null;
+  if (!enabled || raw.length === 0) return null;
 
   return (
     <Section title="جميع المنتجات" icon={<Sparkles className="size-4 text-gold" />}>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 px-4">
-        {products.map((p) => (
-          <ProductCard key={p.id} product={p} />
-        ))}
-      </div>
+      {products.length === 0 ? (
+        <div className="px-4 text-center text-muted-foreground text-sm py-8">
+          لا توجد منتجات مطابقة للفلتر الحالي.
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 px-4">
+          {products.map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
+        </div>
+      )}
       <div
         ref={sentinelRef}
         className="h-16 flex items-center justify-center text-xs text-muted-foreground"

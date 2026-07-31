@@ -5,7 +5,9 @@ import { useEffect, useRef, useState } from "react";
 import { Flame, ChevronLeft } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { ProductCard } from "@/components/product-card";
+import { FilterBar } from "@/components/filter-bar";
 import { productsInfiniteQuery } from "@/lib/queries";
+import { useStorefrontFilters, applyStorefrontFilters, filterSearchSchema } from "@/lib/storefront-filters";
 
 type ConditionFilter = "all" | "new" | "used";
 
@@ -16,6 +18,7 @@ const FILTER_OPTIONS: { value: ConditionFilter; label: string }[] = [
 ];
 
 export const Route = createFileRoute("/products")({
+  validateSearch: filterSearchSchema,
   loader: ({ context }) => {
     void context.queryClient.prefetchInfiniteQuery(productsInfiniteQuery());
   },
@@ -45,7 +48,18 @@ function AllProductsPage() {
     useInfiniteQuery(productsInfiniteQuery(condition === "all" ? null : condition));
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  const products = data?.pages.flat() ?? [];
+  const { filters } = useStorefrontFilters();
+  const anyFilter = !!(filters.category || filters.brand || filters.model || filters.q.trim());
+  const products = applyStorefrontFilters(data?.pages.flat() ?? [], filters);
+
+  // Client-side filtering only sees loaded pages, so when a filter is active we
+  // pull the whole (small) catalog first — otherwise a match on a not-yet-loaded
+  // page would be invisible. Reuses the existing auto-load-all machinery.
+  useEffect(() => {
+    if (anyFilter && hasNextPage && !isFetchingNextPage && !isFetchNextPageError) {
+      setAutoLoadAll(true);
+    }
+  }, [anyFilter, hasNextPage, isFetchingNextPage, isFetchNextPageError]);
 
   useEffect(() => {
     if (isFetchNextPageError && error) {
@@ -103,6 +117,10 @@ function AllProductsPage() {
                 : `جميع المنتجات المتوفرة (${products.length})`}
             </p>
           </div>
+        </div>
+
+        <div className="mb-4">
+          <FilterBar />
         </div>
 
         <div className="flex gap-2 mb-4">

@@ -3,9 +3,12 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Flame, ChevronLeft, TrendingUp } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { ProductCard } from "@/components/product-card";
+import { FilterBar } from "@/components/filter-bar";
 import { bestSellersQuery } from "@/lib/queries";
+import { useStorefrontFilters, applyStorefrontFilters, filterSearchSchema } from "@/lib/storefront-filters";
 
 export const Route = createFileRoute("/best-sellers")({
+  validateSearch: filterSearchSchema,
   loader: ({ context }) => context.queryClient.ensureQueryData(bestSellersQuery()),
   head: () => ({
     meta: [
@@ -19,9 +22,11 @@ export const Route = createFileRoute("/best-sellers")({
 });
 
 function BestSellersPage() {
-  const { data: products } = useSuspenseQuery(bestSellersQuery());
-  const sold = products.filter((p) => (p.sales_count ?? 0) > 0);
-  const others = products.filter((p) => (p.sales_count ?? 0) === 0);
+  const { data: allProducts } = useSuspenseQuery(bestSellersQuery());
+  const { filters } = useStorefrontFilters();
+  const products = applyStorefrontFilters(allProducts, filters);
+  const sold = products.filter((p) => ((p as { sales_count?: number }).sales_count ?? 0) > 0);
+  const others = products.filter((p) => ((p as { sales_count?: number }).sales_count ?? 0) === 0);
 
   return (
     <PageShell wide title="الأكثر مبيعاً">
@@ -29,6 +34,9 @@ function BestSellersPage() {
         <Link to="/" className="inline-flex items-center gap-1 text-xs text-muted-foreground mb-3">
           <ChevronLeft className="size-3.5 rotate-180" /> الرئيسية
         </Link>
+        <div className="mb-4">
+          <FilterBar />
+        </div>
         <div className="flex items-center gap-3 mb-4 p-3 rounded-2xl bg-destructive/10 border border-destructive/20">
           <div className="size-10 rounded-xl bg-destructive/20 border border-destructive/30 grid place-items-center">
             <Flame className="size-5 text-destructive" />
@@ -54,7 +62,7 @@ function BestSellersPage() {
                     </div>
                   )}
                   <div className="absolute top-2 end-2 z-10 px-2 py-0.5 rounded-full bg-navy/90 text-primary-foreground text-[10px] font-bold">
-                    بيع {p.sales_count}×
+                    بيع {(p as { sales_count?: number }).sales_count}×
                   </div>
                   <ProductCard product={p} />
                 </div>
