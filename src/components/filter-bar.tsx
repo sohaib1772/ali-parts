@@ -211,9 +211,11 @@ export function FilterBar({
           <button
             type="button"
             onClick={clearFilters}
-            className="h-11 px-3 rounded-xl border border-gold/40 bg-gold/10 text-gold text-sm font-bold flex items-center gap-1 shrink-0"
+            aria-label="مسح الفلاتر"
+            title="مسح الفلاتر"
+            className="h-11 w-11 rounded-xl border border-gold/40 bg-gold/10 text-gold flex items-center justify-center shrink-0"
           >
-            <X className="size-4" /> مسح ({activeCount})
+            <X className="size-5" />
           </button>
         )}
       </div>
