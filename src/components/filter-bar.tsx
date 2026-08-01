@@ -68,13 +68,13 @@ function FilterDropdown({
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className={`h-11 px-3 rounded-xl border text-sm font-semibold flex items-center gap-1.5 transition ${
-          value || open ? "border-navy bg-navy/5 text-navy" : "border-border bg-card text-foreground"
+        className={`h-11 px-3 rounded-xl border text-sm font-semibold flex items-center gap-1.5 transition text-navy ${
+          value || open ? "border-navy bg-navy/10" : "border-navy/30 bg-navy/5"
         }`}
       >
-        <span className="text-muted-foreground text-[11px] font-bold">{label}:</span>
+        <span className="text-navy/60 text-[11px] font-bold">{label}:</span>
         <span className="truncate max-w-[7.5rem]">{selected ? selected.label : allLabel}</span>
-        <ChevronDown className={`size-3.5 text-muted-foreground transition ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`size-3.5 text-navy/60 transition ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
