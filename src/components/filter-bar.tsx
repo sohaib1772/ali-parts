@@ -200,7 +200,7 @@ export function FilterBar({
         />
         {showModel && (
           <FilterDropdown
-            label="الموديل"
+            label="نوع السيارة"
             allLabel="الكل"
             value={filters.model}
             options={modelOptions}
