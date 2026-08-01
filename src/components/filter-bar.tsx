@@ -1,18 +1,18 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, ChevronDown, Check, X } from "lucide-react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { categoriesQuery, brandsQuery, carModelsQuery } from "@/lib/queries";
 import { useStorefrontFilters } from "@/lib/storefront-filters";
 
 /**
  * Browse-first storefront filter bar — replaces the old forced vehicle picker.
- * Search + Category + Brand + Model (Year/Engine are later phases). Shared across
- * every listing screen; reads/writes URL params + localStorage via
+ * Category + Brand + Model dropdowns (Year/Engine are later phases). Shared
+ * across every listing screen; reads/writes URL params + localStorage via
  * useStorefrontFilters. Nothing is forced.
  *
- * Layout: desktop = search + dropdowns in one row; phone = search full-width on
- * top with the dropdowns wrapping below. All tap targets are h-11 (44px).
+ * Each filter is an anchored dropdown list (opens directly under its button),
+ * with a search field when the list is long. Dropdowns wrap on phone, sit in a
+ * row on desktop. All tap targets are h-11 (44px).
  */
 
 type Option = { id: string; label: string; sub?: string };
@@ -32,10 +32,29 @@ function FilterDropdown({
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
+  const rootRef = useRef<HTMLDivElement>(null);
   const selected = options.find((o) => o.id === value);
+  const showSearch = options.length > 7;
   const filtered = q.trim()
     ? options.filter((o) => `${o.label} ${o.sub ?? ""}`.toLowerCase().includes(q.trim().toLowerCase()))
     : options;
+
+  // Close the list on an outside click or Escape.
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   const choose = (id: string) => {
     onSelect(id);
@@ -44,46 +63,49 @@ function FilterDropdown({
   };
 
   return (
-    <>
+    <div ref={rootRef} className="relative shrink-0">
       <button
         type="button"
-        onClick={() => setOpen(true)}
-        className={`h-11 px-3 rounded-xl border text-sm font-semibold flex items-center gap-1.5 shrink-0 transition ${
-          value ? "border-navy bg-navy/5 text-navy" : "border-border bg-card text-foreground"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className={`h-11 px-3 rounded-xl border text-sm font-semibold flex items-center gap-1.5 transition ${
+          value || open ? "border-navy bg-navy/5 text-navy" : "border-border bg-card text-foreground"
         }`}
       >
         <span className="text-muted-foreground text-[11px] font-bold">{label}:</span>
         <span className="truncate max-w-[7.5rem]">{selected ? selected.label : allLabel}</span>
-        <ChevronDown className="size-3.5 text-muted-foreground" />
+        <ChevronDown className={`size-3.5 text-muted-foreground transition ${open ? "rotate-180" : ""}`} />
       </button>
 
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl max-h-[82vh] p-0 flex flex-col" dir="rtl">
-          <SheetHeader className="px-5 pt-5 pb-2">
-            <SheetTitle className="text-center">{label}</SheetTitle>
-          </SheetHeader>
-          <div className="px-5 pb-3">
-            <label className="flex items-center gap-2 bg-muted/40 border border-border rounded-xl px-3 h-11 focus-within:border-gold">
-              <Search className="size-4 text-muted-foreground" />
-              <input
-                autoFocus
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="ابحث…"
-                className="flex-1 bg-transparent outline-none text-sm"
-              />
-            </label>
-          </div>
-          <div className="overflow-y-auto px-3 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-1">
+      {open && (
+        <div
+          dir="rtl"
+          className="absolute z-50 top-full start-0 mt-1 w-60 max-w-[80vw] rounded-xl border border-border bg-card shadow-lg overflow-hidden"
+        >
+          {showSearch && (
+            <div className="p-2 border-b border-border">
+              <label className="flex items-center gap-2 bg-muted/40 rounded-lg px-2 h-9 focus-within:ring-1 focus-within:ring-gold">
+                <Search className="size-4 text-muted-foreground shrink-0" />
+                <input
+                  autoFocus
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="ابحث…"
+                  className="flex-1 bg-transparent outline-none text-sm"
+                />
+              </label>
+            </div>
+          )}
+          <div className="max-h-64 overflow-y-auto py-1">
             <button
               type="button"
               onClick={() => choose("")}
-              className={`w-full flex items-center justify-between gap-2 px-3 h-11 rounded-xl text-sm font-semibold ${
-                !value ? "bg-navy text-primary-foreground" : "hover:bg-muted"
+              className={`w-full flex items-center justify-between gap-2 px-3 h-10 text-sm ${
+                !value ? "bg-navy/10 text-navy font-bold" : "hover:bg-muted"
               }`}
             >
               {allLabel}
-              {!value && <Check className="size-4" />}
+              {!value && <Check className="size-4 text-navy shrink-0" />}
             </button>
             {filtered.map((o) => {
               const sel = o.id === value;
@@ -92,25 +114,25 @@ function FilterDropdown({
                   key={o.id}
                   type="button"
                   onClick={() => choose(o.id)}
-                  className={`w-full flex items-center justify-between gap-2 px-3 min-h-11 py-2 rounded-xl text-start ${
-                    sel ? "bg-navy text-primary-foreground" : "hover:bg-muted"
+                  className={`w-full flex items-center justify-between gap-2 px-3 min-h-10 py-1.5 text-start ${
+                    sel ? "bg-navy/10 text-navy font-bold" : "hover:bg-muted"
                   }`}
                 >
                   <span className="min-w-0">
-                    <span className="block text-sm font-semibold truncate">{o.label}</span>
-                    {o.sub && <span className={`block text-[11px] truncate ${sel ? "text-primary-foreground/70" : "text-muted-foreground"}`}>{o.sub}</span>}
+                    <span className="block text-sm truncate">{o.label}</span>
+                    {o.sub && <span className="block text-[11px] text-muted-foreground truncate">{o.sub}</span>}
                   </span>
-                  {sel && <Check className="size-4 shrink-0" />}
+                  {sel && <Check className="size-4 shrink-0 text-navy" />}
                 </button>
               );
             })}
             {filtered.length === 0 && (
-              <div className="text-center text-xs text-muted-foreground py-6">لا توجد نتائج</div>
+              <div className="text-center text-xs text-muted-foreground py-4">لا توجد نتائج</div>
             )}
           </div>
-        </SheetContent>
-      </Sheet>
-    </>
+        </div>
+      )}
+    </div>
   );
 }
 
