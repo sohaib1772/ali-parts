@@ -1816,10 +1816,13 @@ function TaxonomyAdmin() {
   const qc = useQueryClient();
   const { data: categories = [] } = useQuery(categoriesQuery());
   const { data: brands = [] } = useQuery(brandsQuery());
+  const { data: carModels = [] } = useQuery(carModelsQuery());
   const [catOpen, setCatOpen] = useState(false);
   const [catForm, setCatForm] = useState<{ id?: string; name_ar: string; name_en: string; icon: string; image_url: string }>({ name_ar: "", name_en: "", icon: "", image_url: "" });
   const [brandOpen, setBrandOpen] = useState(false);
   const [brandForm, setBrandForm] = useState<{ id?: string; name_ar: string; name_en: string; logo_url: string }>({ name_ar: "", name_en: "", logo_url: "" });
+  const [modelOpen, setModelOpen] = useState(false);
+  const [modelForm, setModelForm] = useState<{ id?: string; brand_id: string; name_ar: string; name_en: string }>({ brand_id: "", name_ar: "", name_en: "" });
 
   const openCat = (c?: any) => {
     setCatForm({
@@ -1896,6 +1899,33 @@ function TaxonomyAdmin() {
     else qc.invalidateQueries({ queryKey: ["brands"] });
   };
 
+  const openModel = (m?: any) => {
+    setModelForm({ id: m?.id, brand_id: m?.brand_id ?? "", name_ar: m?.name_ar ?? "", name_en: m?.name_en ?? "" });
+    setModelOpen(true);
+  };
+  const saveModel = async () => {
+    if (!modelForm.brand_id) { toast.error("اختر الماركة"); return; }
+    if (!modelForm.name_ar.trim()) { toast.error("اسم نوع السيارة مطلوب"); return; }
+    const payload = {
+      brand_id: modelForm.brand_id,
+      name_ar: modelForm.name_ar,
+      name_en: modelForm.name_en || modelForm.name_ar,
+    };
+    const res = modelForm.id
+      ? await supabase.from("car_models").update(payload).eq("id", modelForm.id)
+      : await supabase.from("car_models").insert(payload);
+    if (res.error) { toast.error(res.error.message); return; }
+    toast.success(modelForm.id ? "تم التحديث" : "تمت الإضافة");
+    setModelOpen(false);
+    qc.invalidateQueries({ queryKey: ["car_models"] });
+  };
+  const removeModel = async (id: string) => {
+    if (!confirm("حذف نوع السيارة؟")) return;
+    const { error } = await supabase.from("car_models").delete().eq("id", id);
+    if (error) toast.error(error.message);
+    else qc.invalidateQueries({ queryKey: ["car_models"] });
+  };
+
   return (
     <div className="space-y-6">
       <section>
@@ -1965,6 +1995,49 @@ function TaxonomyAdmin() {
             <Field label="الاسم بالعربي *"><Input value={brandForm.name_ar} onChange={(e) => setBrandForm({ ...brandForm, name_ar: e.target.value })} /></Field>
             <Field label="الاسم بالإنجليزي"><Input value={brandForm.name_en} onChange={(e) => setBrandForm({ ...brandForm, name_en: e.target.value })} /></Field>
             <Button className="w-full" onClick={saveBrand}>حفظ</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <section>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-bold">أنواع السيارات</h3>
+          <Button size="sm" onClick={() => openModel()}><Plus className="size-4 me-1" /> جديد</Button>
+        </div>
+        <div className="space-y-2 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
+          {carModels.map((m) => {
+            const brand = brands.find((b) => b.id === m.brand_id);
+            return (
+              <div key={m.id} className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
+                <span className="flex-1 text-sm font-semibold truncate">
+                  {m.name_ar}
+                  {brand && <span className="text-xs text-muted-foreground font-normal"> — {brand.name_ar}</span>}
+                </span>
+                <Button size="icon" variant="ghost" onClick={() => openModel(m)}><Pencil className="size-4" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => removeModel(m.id)}><Trash2 className="size-4 text-destructive" /></Button>
+              </div>
+            );
+          })}
+          {carModels.length === 0 && <div className="text-sm text-muted-foreground py-2">لا توجد أنواع سيارات مسجلة</div>}
+        </div>
+      </section>
+
+      <Dialog open={modelOpen} onOpenChange={setModelOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{modelForm.id ? "تعديل نوع سيارة" : "إضافة نوع سيارة"}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <Field label="الماركة *">
+              <Select value={modelForm.brand_id || "__none__"} onValueChange={(v) => setModelForm({ ...modelForm, brand_id: v === "__none__" ? "" : v })}>
+                <SelectTrigger><SelectValue placeholder="اختر الماركة" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">اختر الماركة</SelectItem>
+                  {brands.map((b) => <SelectItem key={b.id} value={b.id}>{b.name_ar}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="الاسم بالعربي *"><Input value={modelForm.name_ar} onChange={(e) => setModelForm({ ...modelForm, name_ar: e.target.value })} placeholder="مثال: ماليبو" /></Field>
+            <Field label="الاسم بالإنجليزي"><Input value={modelForm.name_en} onChange={(e) => setModelForm({ ...modelForm, name_en: e.target.value })} placeholder="Malibu" dir="ltr" /></Field>
+            <Button className="w-full" onClick={saveModel}>حفظ</Button>
           </div>
         </DialogContent>
       </Dialog>
