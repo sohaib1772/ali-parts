@@ -3500,7 +3500,12 @@ function ReplacementsAdmin() {
     queryKey: ["admin", "replacement-profiles", userIds.sort().join(",")],
     enabled: userIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_public_profiles", { _ids: userIds });
+      // Direct profiles read (admins + staff can, per RLS) so we get the phone —
+      // get_public_profiles is the public function and deliberately omits it.
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, phone")
+        .in("id", userIds);
       if (error) throw error;
       return (data ?? []) as any[];
     },
@@ -3658,9 +3663,18 @@ function ReplacementCard({
       </div>
 
       {profile && (
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex items-center gap-2 text-xs flex-wrap">
           <UserIcon className="size-3.5 text-muted-foreground" />
           <span className="font-semibold">{profile.full_name ?? "بدون اسم"}</span>
+          {profile.phone && (
+            <a
+              href={`tel:${profile.phone}`}
+              dir="ltr"
+              className="ms-auto inline-flex items-center gap-1 font-mono font-semibold text-navy hover:text-gold"
+            >
+              <Phone className="size-3" /> {profile.phone}
+            </a>
+          )}
         </div>
       )}
 
