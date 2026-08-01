@@ -50,6 +50,7 @@ import { broadcastPricesChanged } from "@/lib/price-sync";
 import { normalizePhone } from "@/lib/phone-auth";
 import { getExternalApiConfig, testExternalApi } from "@/lib/external-api.functions";
 import { validateExternalApiConfig, type ExternalApiEndpoint } from "@/lib/external-api";
+import { isFaststartMp4 } from "@/lib/mp4-faststart";
 import {
   sendAdminBroadcast,
   adminBroadcastAudienceCount,
@@ -432,8 +433,13 @@ function BlockLogAdmin() {
  */
 const STAFF_TAB_ENABLED = false;
 
-/** Banner videos must stay small — customers are on Iraqi mobile data. */
-const MAX_BANNER_VIDEO_BYTES = 3 * 1024 * 1024;
+/**
+ * Banner video cap. Raised to 50MB now that playback is fully deferred
+ * (preload="none" → 0 bytes on home load) and progressive-streaming (faststart
+ * MP4 + HTTP range requests), so a customer only downloads what they actually
+ * watch after tapping — never on page load.
+ */
+const MAX_BANNER_VIDEO_BYTES = 50 * 1024 * 1024;
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
@@ -1764,6 +1770,19 @@ function BannersAdmin() {
                     toast.error("حجم الفيديو كبير جداً", {
                       description: `الحد الأقصى ${Math.round(MAX_BANNER_VIDEO_BYTES / (1024 * 1024))} ميغابايت. حجم الملف ${(f.size / (1024 * 1024)).toFixed(1)} ميغابايت — يرجى ضغطه قبل الرفع حتى لا يستهلك بيانات الزبائن.`,
                       duration: 9000,
+                    });
+                    e.target.value = "";
+                    return;
+                  }
+                  // MP4 must be "faststart" (moov atom at the front) so it streams
+                  // on tap instead of forcing a full download first. WebM streams
+                  // inherently, so it is exempt.
+                  const isMp4 = /^video\/mp4$/i.test(f.type) || /\.mp4$/i.test(f.name);
+                  if (isMp4 && !(await isFaststartMp4(f))) {
+                    toast.error("الفيديو غير مهيأ للتشغيل الفوري", {
+                      description:
+                        "هذا الفيديو يحتاج تحميله كاملاً قبل التشغيل. أعد تصديره كـ MP4 مع خيار \"faststart\" أو \"web optimized\" (يضع فهرس الفيديو في البداية) ليبدأ فوراً عند الضغط.",
+                      duration: 12000,
                     });
                     e.target.value = "";
                     return;

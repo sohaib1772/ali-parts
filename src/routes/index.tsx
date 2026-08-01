@@ -23,7 +23,6 @@ import type { Banner, Product } from "@/lib/queries";
 import { formatIQD } from "@/lib/format";
 import { useAdjustedPrice } from "@/lib/admin";
 import { thumbUrl } from "@/lib/image-url";
-import { useCachedVideo } from "@/lib/use-cached-video";
 
 export const Route = createFileRoute("/")({
   validateSearch: filterSearchSchema,
@@ -318,7 +317,6 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   // Hide the whole section when no video has been uploaded.
   const current = banners.find((b) => !!(b as any).video_url) ?? null;
   const videoUrl = (current as any)?.video_url as string | undefined;
-  const cachedVideoUrl = useCachedVideo(videoUrl);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const heroRef = useRef<HTMLDivElement | null>(null);
   const userWantsSoundRef = useRef(false);
@@ -388,7 +386,11 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
       {mounted && (
         <video
           ref={videoRef}
-          src={cachedVideoUrl ?? videoUrl}
+          // Stream the hero straight from the network URL (faststart MP4 + range
+          // requests) so it starts on tap and loads progressively. Deliberately
+          // NOT routed through useCachedVideo: that can swap to a whole-file blob,
+          // which defeats progressive streaming and is wasteful for a large video.
+          src={videoUrl}
           // Banners created video-only have image_url = '' (empty string, not
           // NULL), so `image_url || undefined` produced NO poster and the
           // fallback <img> above never rendered either — the user stared at an
