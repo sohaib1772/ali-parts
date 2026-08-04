@@ -133,6 +133,40 @@ export function useGlobalPriceAdjustment(): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+export const DEFAULT_POINTS_CARD_TEXT = "كل 100 نقطة = 1,000 دينار خصم عند الشراء";
+
+/**
+ * Loyalty points configuration, read from app_settings with fallbacks that
+ * exactly match the server-side (place_order / handle_order_status_change)
+ * defaults. Keep these in lockstep with migration 20260801160000.
+ *   redeemRate  — IQD per point (≥1, guards divide-by-zero)
+ *   earnPer1000 — points earned per full 1000 IQD, on delivery
+ *   maxRedeemPct— max % of an order coverable by points (0–100)
+ *   minRedeem   — minimum points per redemption
+ *   cardText    — editable Arabic description on the account card
+ */
+export function usePointsConfig() {
+  const { data } = useQuery(settingsQuery());
+  const redeemRate = (() => {
+    const n = Number(data?.points_redeem_iqd_per_point);
+    return Number.isFinite(n) && n >= 1 ? n : 10;
+  })();
+  const earnPer1000 = (() => {
+    const n = Number(data?.points_earn_per_1000_iqd);
+    return Number.isFinite(n) && n >= 0 ? n : 10;
+  })();
+  const maxRedeemPct = (() => {
+    const n = Number(data?.points_max_redeem_pct);
+    return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 50;
+  })();
+  const minRedeem = (() => {
+    const n = Number(data?.points_min_redeem);
+    return Number.isFinite(n) && n >= 0 ? Math.trunc(n) : 100;
+  })();
+  const cardText = data?.points_card_text?.trim() || DEFAULT_POINTS_CARD_TEXT;
+  return { redeemRate, earnPer1000, maxRedeemPct, minRedeem, cardText };
+}
+
 export function useAdjustedPrice() {
   const adj = useGlobalPriceAdjustment();
   return (price: number | string | null | undefined) =>

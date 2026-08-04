@@ -6,7 +6,8 @@ import { PageShell } from "@/components/page-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 import { profileQuery } from "@/lib/queries";
-import { useAdminAccessStatus } from "@/lib/admin";
+import { useAdminAccessStatus, usePointsConfig } from "@/lib/admin";
+import { formatIQD } from "@/lib/format";
 import { uploadAvatar } from "@/lib/avatar";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ function AccountPage() {
   const { user, userId } = useAuth();
   const { data: profile } = useQuery(profileQuery(userId));
   const { hasAnyAccess, isLoading: adminAccessLoading } = useAdminAccessStatus();
+  const pointsCfg = usePointsConfig();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -219,8 +221,11 @@ function AccountPage() {
           </div>
           <div className="flex-1">
             <div className="text-xs font-bold opacity-70">رصيد نقاطك</div>
-            <div className="text-2xl font-black leading-tight">{(profile as any)?.points_balance ?? 0} نقطة</div>
-            <div className="text-[10px] opacity-70">كل 100 نقطة = 1,000 دينار خصم عند الشراء</div>
+            <div className="text-2xl font-black leading-tight">
+              {(profile as any)?.points_balance ?? 0} نقطة
+              <span className="text-xs font-bold opacity-70"> ≈ {formatIQD(Number((profile as any)?.points_balance ?? 0) * pointsCfg.redeemRate)}</span>
+            </div>
+            <div className="text-[10px] opacity-70">{pointsCfg.cardText}</div>
           </div>
         </div>
 

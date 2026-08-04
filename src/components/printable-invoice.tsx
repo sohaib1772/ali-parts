@@ -593,7 +593,10 @@ export function printOnlyThisInvoice(sourceId: string) {
  */
 function InvoiceBody({ order, items, customer }: { order: any; items: any[]; customer?: Customer }) {
   const addr = (order.address ?? {}) as Record<string, string | undefined>;
-  const pointsDiscount = Number(order.points_used ?? 0) * 10;
+  // Rate-independent: the discount actually applied to this order is
+  // subtotal + shipping − total, so it stays correct even after the admin
+  // changes the points rate (never recompute as points_used × current_rate).
+  const pointsDiscount = Math.max(0, Number(order.subtotal_iqd ?? 0) + Number(order.shipping_iqd ?? 0) - Number(order.total_iqd ?? 0));
   const registeredPhone = customer?.phone?.trim() || null;
   const registeredName = customer?.full_name?.trim() || null;
   const primaryPhone = (addr.phone?.trim() || registeredPhone) ?? "-";

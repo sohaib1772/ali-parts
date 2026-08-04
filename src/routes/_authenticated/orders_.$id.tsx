@@ -281,7 +281,10 @@ function OrderDetail() {
           {Number((order as any).points_used ?? 0) > 0 && (
             <div className="flex justify-between text-sm py-1">
               <span className="text-muted-foreground">خصم نقاط ({(order as any).points_used})</span>
-              <span className="text-success">- {formatIQD(Number((order as any).points_used) * 10)}</span>
+              {/* Rate-independent: the discount is what was actually applied
+                  (subtotal + shipping − total), so past receipts stay correct
+                  even after the admin changes the points rate. */}
+              <span className="text-success">- {formatIQD(Math.max(0, Number(order.subtotal_iqd ?? 0) + Number(order.shipping_iqd ?? 0) - Number(order.total_iqd ?? 0)))}</span>
             </div>
           )}
           <div className="border-t border-border mt-2 pt-3 flex justify-between items-baseline">

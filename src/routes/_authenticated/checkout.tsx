@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/use-auth";
 import { addressesQuery, cartQuery, profileQuery } from "@/lib/queries";
 import { ProfileCompletionDialog } from "@/components/profile-completion";
 import { formatIQD } from "@/lib/format";
-import { useAdjustedPrice } from "@/lib/admin";
+import { useAdjustedPrice, usePointsConfig } from "@/lib/admin";
 import { computeShipping, shipmentCount as computeShipmentCount } from "@/lib/shipping";
 import { toast } from "sonner";
 
@@ -46,12 +46,22 @@ function CheckoutPage() {
     }
   }, [items.length, shipmentCount, alertShown]);
 
+  const pointsCfg = usePointsConfig();
   const pointsBalance = Number((profile as any)?.points_balance ?? 0);
-  const maxPointsBySubtotal = Math.floor(subtotal / 10); // 100 points = 1000 IQD, so max = subtotal/10
-  const maxPoints = Math.max(0, Math.min(pointsBalance, maxPointsBySubtotal));
+  // Mirror place_order's server-side clamps exactly (the server stays the source
+  // of truth): balance, the subtotal's worth in points, and the %-cap of the
+  // whole order.
+  const maxBySubtotal = Math.floor(subtotal / pointsCfg.redeemRate);
+  const maxByCap = Math.floor(((subtotal + shippingCost) * pointsCfg.maxRedeemPct) / 100 / pointsCfg.redeemRate);
+  const maxPoints = Math.max(0, Math.min(pointsBalance, maxBySubtotal, maxByCap));
   const parsedPoints = Math.max(0, Math.min(maxPoints, Math.floor(Number(pointsInput) || 0)));
-  const pointsDiscount = parsedPoints * 10; // 1 point = 10 IQD
+  // Below the configured minimum, redemption doesn't apply (server rejects a
+  // sub-min request, so we send 0 and show a hint instead of failing the order).
+  const belowMin = parsedPoints > 0 && parsedPoints < pointsCfg.minRedeem;
+  const effectivePoints = belowMin ? 0 : parsedPoints;
+  const pointsDiscount = effectivePoints * pointsCfg.redeemRate;
   const total = Math.max(0, subtotal + shippingCost - pointsDiscount);
+  const earnPreview = Math.floor(subtotal / 1000) * pointsCfg.earnPer1000;
 
   // Delivery requires a contact phone. Browsing is free (no gate), but an order
   // cannot be placed until the user's profile has a phone number.
@@ -74,7 +84,7 @@ function CheckoutPage() {
           city: activeAddr.city, area: activeAddr.area, street: activeAddr.street, notes: activeAddr.notes,
         },
         p_payment: payment,
-        p_points_used: parsedPoints,
+        p_points_used: effectivePoints,
         p_notes: orderNote.trim() || "",
       });
       if (error) throw error;
@@ -140,7 +150,7 @@ function CheckoutPage() {
         {pointsBalance > 0 && subtotal > 0 && (
           <Section title="استخدام نقاط الولاء" icon={<Sparkles className="size-4 text-gold" />}>
             <div className="text-xs text-muted-foreground mb-2">
-              رصيدك: <span className="font-bold text-navy">{pointsBalance} نقطة</span> · كل 100 نقطة = 1,000 دينار
+              رصيدك: <span className="font-bold text-navy">{pointsBalance} نقطة</span> (≈ {formatIQD(pointsBalance * pointsCfg.redeemRate)}) · كل نقطة = {pointsCfg.redeemRate} د.ع
             </div>
             <div className="flex gap-2">
               <input
@@ -161,7 +171,16 @@ function CheckoutPage() {
                 استخدم الحد الأقصى ({maxPoints})
               </button>
             </div>
-            {parsedPoints > 0 && (
+            <div className="mt-1.5 text-[11px] text-muted-foreground">
+              الحد الأقصى لهذا الطلب: {maxPoints} نقطة (خصم حتى {pointsCfg.maxRedeemPct}% من الطلب)
+              {pointsCfg.minRedeem > 0 && <> · الحد الأدنى للاستبدال: {pointsCfg.minRedeem} نقطة</>}
+            </div>
+            {belowMin && (
+              <div className="mt-2 text-xs text-destructive font-bold">
+                الحد الأدنى للاستبدال هو {pointsCfg.minRedeem} نقطة — لن يُطبّق الخصم.
+              </div>
+            )}
+            {effectivePoints > 0 && (
               <div className="mt-2 text-xs text-success font-bold">خصم: {formatIQD(pointsDiscount)}</div>
             )}
           </Section>
@@ -182,16 +201,16 @@ function CheckoutPage() {
           <div className="text-xs font-bold text-gold mb-3">ملخص الطلب</div>
           <div className="flex justify-between text-sm py-1"><span className="text-muted-foreground">{items.length} منتج</span><span>{formatIQD(subtotal)}</span></div>
           <div className="flex justify-between text-sm py-1"><span className="text-muted-foreground">التوصيل</span><span>{formatIQD(shippingCost)}</span></div>
-          {parsedPoints > 0 && (
-            <div className="flex justify-between text-sm py-1"><span className="text-muted-foreground">خصم نقاط ({parsedPoints})</span><span className="text-success">- {formatIQD(pointsDiscount)}</span></div>
+          {effectivePoints > 0 && (
+            <div className="flex justify-between text-sm py-1"><span className="text-muted-foreground">خصم نقاط ({effectivePoints})</span><span className="text-success">- {formatIQD(pointsDiscount)}</span></div>
           )}
           <div className="border-t border-border mt-2 pt-3 flex justify-between items-baseline">
             <span className="font-bold">الإجمالي</span>
             <span className="text-2xl font-black text-navy">{formatIQD(total)}</span>
           </div>
-          {subtotal > 0 && (
+          {subtotal > 0 && earnPreview > 0 && (
             <div className="mt-2 text-[11px] text-muted-foreground">
-              ستكسب <span className="font-bold text-gold">{Math.floor(subtotal / 10000) * 100} نقطة</span> عند تسليم الطلب
+              ستكسب <span className="font-bold text-gold">{earnPreview} نقطة</span> عند تسليم الطلب
             </div>
           )}
         </div>

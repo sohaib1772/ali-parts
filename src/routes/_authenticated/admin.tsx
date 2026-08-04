@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Upload, ShieldAlert, Package, Image as ImageIcon, Tags, Settings as SettingsIcon, ClipboardList, Phone, MapPin, User as UserIcon, Copy, StickyNote, Receipt, Search as SearchIcon, Ban, CheckCircle2, History, Users as UsersIcon, KeyRound, Loader2, Repeat, Boxes, ArrowUp, ArrowDown, UserPlus, ShieldCheck, Webhook } from "lucide-react";
-import { BellRing, MailCheck, MailX, Clock, Megaphone } from "lucide-react";
+import { BellRing, MailCheck, MailX, Clock, Megaphone, Sparkles } from "lucide-react";
 import { Film, Trash } from "lucide-react";
 import { clearVideoCache, getVideoCacheSize } from "@/lib/use-cached-video";
 import { Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw } from "lucide-react";
@@ -2960,6 +2960,11 @@ function SettingsAdmin() {
   const [shipAramexName, setShipAramexName] = useState("");
   const [shipAramexCost, setShipAramexCost] = useState("");
   const [priceAdjust, setPriceAdjust] = useState<string | null>(null);
+  const [ptsRedeem, setPtsRedeem] = useState<string | null>(null);
+  const [ptsEarn, setPtsEarn] = useState<string | null>(null);
+  const [ptsCapPct, setPtsCapPct] = useState<string | null>(null);
+  const [ptsMin, setPtsMin] = useState<string | null>(null);
+  const [ptsCardText, setPtsCardText] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const waVal = wa || settings.whatsapp_number || "";
   const phoneVal = phone || settings.phone_number || "";
@@ -2981,6 +2986,12 @@ function SettingsAdmin() {
     priceAdjust !== null
       ? priceAdjust
       : String(settings.global_price_adjustment_iqd ?? "0");
+  const DEFAULT_POINTS_CARD = "كل 100 نقطة = 1,000 دينار خصم عند الشراء";
+  const ptsRedeemVal = ptsRedeem !== null ? ptsRedeem : String(settings.points_redeem_iqd_per_point ?? "10");
+  const ptsEarnVal = ptsEarn !== null ? ptsEarn : String(settings.points_earn_per_1000_iqd ?? "10");
+  const ptsCapPctVal = ptsCapPct !== null ? ptsCapPct : String(settings.points_max_redeem_pct ?? "50");
+  const ptsMinVal = ptsMin !== null ? ptsMin : String(settings.points_min_redeem ?? "100");
+  const ptsCardTextVal = ptsCardText !== null ? ptsCardText : String(settings.points_card_text ?? DEFAULT_POINTS_CARD);
 
   const upsert = async (rows: { key: string; value: string }[]) => {
     const { error } = await supabase
@@ -3017,6 +3028,13 @@ function SettingsAdmin() {
               : Math.trunc(Number(priceAdjustVal)) || 0,
           ),
         },
+        // Loyalty points config. Validated/clamped so the server never divides
+        // by zero and the cap stays 0–100.
+        { key: "points_redeem_iqd_per_point", value: String(Math.max(1, Math.trunc(Number(ptsRedeemVal)) || 10)) },
+        { key: "points_earn_per_1000_iqd", value: String(Math.max(0, Math.trunc(Number(ptsEarnVal)) || 0)) },
+        { key: "points_max_redeem_pct", value: String(Math.min(100, Math.max(0, Math.trunc(Number(ptsCapPctVal)) || 0))) },
+        { key: "points_min_redeem", value: String(Math.max(0, Math.trunc(Number(ptsMinVal)) || 0)) },
+        { key: "points_card_text", value: ptsCardTextVal.trim() || DEFAULT_POINTS_CARD },
       ]);
       toast.success("تم حفظ الإعدادات");
       qc.invalidateQueries({ queryKey: ["app_settings"] });
@@ -3111,6 +3129,31 @@ function SettingsAdmin() {
           يُضاف هذا المبلغ (أو يُطرح إذا كان سالباً) إلى سعر كل منتج عند عرضه للزبائن.
           مثال: 1000 يعني رفع كل الأسعار 1000 د.ع، و -1000 يعني خصم 1000 د.ع. لا يغيّر
           الأسعار الأصلية المحفوظة في قاعدة البيانات.
+        </p>
+      </div>
+      <div className="bg-muted/30 border border-border rounded-2xl p-3 space-y-3 md:col-span-2">
+        <div className="text-sm font-bold text-gold flex items-center gap-2">
+          <Sparkles className="size-4" /> نظام نقاط الولاء
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="قيمة النقطة بالدينار عند الاستبدال">
+            <Input type="number" value={ptsRedeemVal} onChange={(e) => setPtsRedeem(e.target.value)} inputMode="numeric" dir="ltr" placeholder="10" min={1} />
+          </Field>
+          <Field label="النقاط المكتسبة لكل 1000 دينار">
+            <Input type="number" value={ptsEarnVal} onChange={(e) => setPtsEarn(e.target.value)} inputMode="numeric" dir="ltr" placeholder="10" min={0} />
+          </Field>
+          <Field label="أقصى نسبة خصم بالنقاط من الطلب %">
+            <Input type="number" value={ptsCapPctVal} onChange={(e) => setPtsCapPct(e.target.value)} inputMode="numeric" dir="ltr" placeholder="50" min={0} max={100} />
+          </Field>
+          <Field label="أقل عدد نقاط للاستبدال">
+            <Input type="number" value={ptsMinVal} onChange={(e) => setPtsMin(e.target.value)} inputMode="numeric" dir="ltr" placeholder="100" min={0} />
+          </Field>
+        </div>
+        <Field label="وصف بطاقة النقاط (يظهر للزبون)">
+          <Input value={ptsCardTextVal} onChange={(e) => setPtsCardText(e.target.value)} placeholder="كل 100 نقطة = 1,000 دينار خصم عند الشراء" />
+        </Field>
+        <p className="text-xs text-muted-foreground">
+          تغيير «قيمة النقطة» يُعيد تقييم رصيد كل الزبائن مباشرة عند الاستبدال (رصيدهم بالنقاط لا يتغيّر، لكن قيمته بالدينار تتغيّر). «النقاط المكتسبة» تؤثّر فقط على الطلبات المستقبلية.
         </p>
       </div>
       <div className="md:col-span-2"><ExchangeRateSettings /></div>
