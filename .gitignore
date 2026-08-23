@@ -56,3 +56,5 @@ supabase/.branches/
 *.jks
 *.keystore
 android/key.properties
+
+package-lock.json
