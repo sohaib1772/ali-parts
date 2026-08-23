@@ -96,7 +96,7 @@ const config: CapacitorConfig = {
   webDir: WEB_DIR,
   ...(server ? { server } : {}),
   ios: {
-    contentInset: 'always',
+    contentInset: 'never',
     backgroundColor: '#0A192F',
   },
   android: {

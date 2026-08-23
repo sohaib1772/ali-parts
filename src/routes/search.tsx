@@ -63,7 +63,7 @@ function SearchPage() {
             value={qLocal}
             onChange={(e) => setQLocal(e.target.value)}
             placeholder="ابحث عن قطعة، اسم أو رقم OEM…"
-            className="flex-1 bg-transparent outline-none text-sm"
+            className="flex-1 bg-transparent outline-none text-base md:text-sm"
             inputMode="search"
           />
           {qLocal && (
