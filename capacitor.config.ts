@@ -110,7 +110,7 @@ const config: CapacitorConfig = {
     // `resize: 'native'` shrinks the entire WebView, so `inset-0` / 100vh recompute
     // above the keyboard and the shell content stays reachable.
     Keyboard: {
-      resize: KeyboardResize.Native,
+      resize: KeyboardResize.None,
       resizeOnFullScreen: true,
     },
   },

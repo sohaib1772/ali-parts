@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 import { useUnreadCounts } from "@/lib/notifications";
+import { useIsKeyboardOpen } from "@/lib/use-keyboard";
 
 const items = [
   { to: "/", label: "الرئيسية", icon: Home },
@@ -15,6 +16,7 @@ const items = [
 ] as const;
 
 export function BottomNav() {
+  const isKeyboardOpen = useIsKeyboardOpen();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { userId } = useAuth();
   // Unread ORDER notifications (read_at IS NULL, order_id set) — per-user and
@@ -64,6 +66,9 @@ export function BottomNav() {
       supabase.removeChannel(ch);
     };
   }, [userId, qc]);
+
+  if (isKeyboardOpen) return null;
+
   return (
     <nav className="sticky bottom-0 inset-x-0 z-40 border-t border-border/60 bg-card/95 backdrop-blur-lg pb-[env(safe-area-inset-bottom)] shadow-luxe">
       <div className="w-full grid grid-cols-5 md:max-w-md md:mx-auto">
