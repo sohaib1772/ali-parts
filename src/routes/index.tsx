@@ -88,7 +88,7 @@ function HomePage() {
 
       {/* Featured */}
       {filteredFeatured.length > 0 && (
-        <Section title="منتجات مميزة" icon={<Sparkles className="size-4 text-gold" />}>
+        <Section title="منتوجاتت مميزة" icon={<Sparkles className="size-4 text-gold" />}>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 px-4">
             {filteredFeatured.map((p) => (
               <ProductCard key={p.id} product={p} />
