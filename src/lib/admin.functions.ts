@@ -100,42 +100,67 @@ export const moderatorListUsers = createServerFn({ method: "GET" })
   });
 
 async function listUsersImpl(context: { supabase: any; userId: string }) {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const perPage = 200;
-    const all: Array<{
+    let all: Array<{
       id: string;
       email: string | null;
       phone: string | null;
       created_at: string | null;
       last_sign_in_at: string | null;
     }> = [];
-    for (let page = 1; page <= 20; page++) {
-      const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
-      if (error) throw new Error(error.message);
-      const users = data?.users ?? [];
-      for (const u of users) {
-        all.push({
-          id: u.id,
-          email: u.email ?? null,
-          phone: (u.user_metadata as any)?.phone ?? u.phone ?? null,
-          created_at: u.created_at ?? null,
-          last_sign_in_at: u.last_sign_in_at ?? null,
-        });
+
+    let fetchedFromAuth = false;
+
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const perPage = 200;
+      for (let page = 1; page <= 20; page++) {
+        const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+        if (error) throw new Error(error.message);
+        const users = data?.users ?? [];
+        for (const u of users) {
+          all.push({
+            id: u.id,
+            email: u.email ?? null,
+            phone: (u.user_metadata as any)?.phone ?? u.phone ?? null,
+            created_at: u.created_at ?? null,
+            last_sign_in_at: u.last_sign_in_at ?? null,
+          });
+        }
+        if (users.length < perPage) break;
       }
-      if (users.length < perPage) break;
+      fetchedFromAuth = true;
+    } catch (err) {
+      console.warn("[adminListUsers] Service role admin auth listing failed or key missing, falling back to profiles table:", err);
     }
 
-    // Enrich with profile info (full_name, is_blocked)
-    const ids = all.map((u) => u.id);
-    let profileMap = new Map<string, { full_name: string | null; phone: string | null; is_blocked: boolean | null }>();
-    if (ids.length > 0) {
+    let profileMap = new Map<string, { full_name: string | null; phone: string | null; is_blocked: boolean | null; created_at?: string | null }>();
+
+    if (fetchedFromAuth) {
+      // Enrich with profile info (full_name, is_blocked)
+      const ids = all.map((u) => u.id);
+      if (ids.length > 0) {
+        const { data: profiles } = await context.supabase
+          .from("profiles")
+          .select("id, full_name, phone, is_blocked")
+          .in("id", ids);
+        for (const p of profiles ?? []) {
+          profileMap.set(p.id, { full_name: p.full_name, phone: p.phone, is_blocked: p.is_blocked });
+        }
+      }
+    } else {
+      // Fallback: fetch all profiles directly using admin's context
       const { data: profiles } = await context.supabase
         .from("profiles")
-        .select("id, full_name, phone, is_blocked")
-        .in("id", ids);
+        .select("id, full_name, phone, is_blocked, created_at");
       for (const p of profiles ?? []) {
-        profileMap.set(p.id, { full_name: p.full_name, phone: p.phone, is_blocked: p.is_blocked });
+        profileMap.set(p.id, { full_name: p.full_name, phone: p.phone, is_blocked: p.is_blocked, created_at: p.created_at });
+        all.push({
+          id: p.id,
+          email: null,
+          phone: p.phone ?? null,
+          created_at: p.created_at ?? null,
+          last_sign_in_at: p.created_at ?? null,
+        });
       }
     }
 
