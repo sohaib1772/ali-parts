@@ -186,6 +186,32 @@
   }
 }
 
+/* Instantly hide Bottom Navigation Bar when typing on mobile / keyboard open */
+body[data-keyboard="open"] .bottom-nav-wrapper,
+body[data-keyboard="open"] .bottom-nav,
+body[data-keyboard="open"] nav,
+body:has(input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="hidden"]):not([readonly]):focus) .bottom-nav-wrapper,
+body:has(input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="hidden"]):not([readonly]):focus) .bottom-nav,
+body:has(input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="hidden"]):not([readonly]):focus) nav,
+body:has(textarea:not([readonly]):focus) .bottom-nav-wrapper,
+body:has(textarea:not([readonly]):focus) .bottom-nav,
+body:has(textarea:not([readonly]):focus) nav {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Hide Floating WhatsApp button when filter dialog/modal is open */
+body[data-filter-modal="open"] .floating-whatsapp-btn,
+body[data-filter-modal="open"] a[aria-label="تواصل واتساب"],
+body:has([data-filter-dialog="open"]) .floating-whatsapp-btn,
+body:has([data-filter-dialog="open"]) a[aria-label="تواصل واتساب"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
 @utility bg-gradient-navy { background-image: var(--gradient-navy); }
 @utility bg-gradient-gold { background-image: var(--gradient-gold); }
 @utility bg-gradient-hero { background-image: var(--gradient-hero); }

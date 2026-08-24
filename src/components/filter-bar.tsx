@@ -5,162 +5,42 @@ import { categoriesQuery, brandsQuery, carModelsQuery } from "@/lib/queries";
 import { useStorefrontFilters } from "@/lib/storefront-filters";
 
 /**
- * Browse-first storefront filter bar — replaces the old forced vehicle picker.
- * Category + Brand + Model dropdowns (Year/Engine are later phases). Shared
- * across every listing screen; reads/writes URL params + localStorage via
- * useStorefrontFilters. Nothing is forced.
- *
- * Each filter is an anchored dropdown list (opens directly under its button),
- * with a search field when the list is long. Dropdowns wrap on phone, sit in a
- * row on desktop. All tap targets are h-11 (44px).
+ * Browse-first storefront filter bar.
+ * Unified 3-column filter buttons + Centered Luxury Dialog Modal for all selections.
  */
 
 type Option = { id: string; label: string; sub?: string };
-
-function FilterDropdown({
-  label,
-  allLabel,
-  value,
-  options,
-  onSelect,
-}: {
-  label: string;
-  allLabel: string;
-  value: string;
-  options: Option[];
-  onSelect: (id: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [q, setQ] = useState("");
-  const rootRef = useRef<HTMLDivElement>(null);
-  const selected = options.find((o) => o.id === value);
-  const showSearch = options.length > 7;
-  const filtered = q.trim()
-    ? options.filter((o) => `${o.label} ${o.sub ?? ""}`.toLowerCase().includes(q.trim().toLowerCase()))
-    : options;
-
-  // Close the list on an outside click or Escape.
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  const choose = (id: string) => {
-    onSelect(id);
-    setOpen(false);
-    setQ("");
-  };
-
-  return (
-    <div ref={rootRef} className="relative shrink-0">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        className={`h-11 px-3 rounded-xl border border-navy bg-navy text-primary-foreground text-sm font-semibold flex items-center gap-1.5 transition ${
-          open ? "ring-2 ring-gold/60" : ""
-        }`}
-      >
-        <span className="text-primary-foreground/60 text-[11px] font-bold">{label}:</span>
-        <span className={`truncate max-w-[7.5rem] ${value ? "text-gold" : ""}`}>
-          {selected ? selected.label : allLabel}
-        </span>
-        <ChevronDown className={`size-3.5 text-primary-foreground/70 transition ${open ? "rotate-180" : ""}`} />
-      </button>
-
-      {open && (
-        <div
-          dir="rtl"
-          className="absolute z-50 top-full start-0 mt-1 w-60 max-w-[80vw] rounded-xl border border-border bg-card shadow-lg overflow-hidden"
-        >
-          {showSearch && (
-            <div className="p-2 border-b border-border">
-              <label className="flex items-center gap-2 bg-muted/40 rounded-lg px-2 h-9 focus-within:ring-1 focus-within:ring-gold">
-                <Search className="size-4 text-muted-foreground shrink-0" />
-                <input
-                  autoFocus
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="ابحث…"
-                  className="flex-1 bg-transparent outline-none text-sm"
-                />
-              </label>
-            </div>
-          )}
-          <div className="max-h-64 overflow-y-auto py-1">
-            <button
-              type="button"
-              onClick={() => choose("")}
-              className={`w-full flex items-center justify-between gap-2 px-3 h-10 text-sm ${
-                !value ? "bg-navy/10 text-navy font-bold" : "hover:bg-muted"
-              }`}
-            >
-              {allLabel}
-              {!value && <Check className="size-4 text-navy shrink-0" />}
-            </button>
-            {filtered.map((o) => {
-              const sel = o.id === value;
-              return (
-                <button
-                  key={o.id}
-                  type="button"
-                  onClick={() => choose(o.id)}
-                  className={`w-full flex items-center justify-between gap-2 px-3 min-h-10 py-1.5 text-start ${
-                    sel ? "bg-navy/10 text-navy font-bold" : "hover:bg-muted"
-                  }`}
-                >
-                  <span className="min-w-0">
-                    <span className="block text-sm truncate">{o.label}</span>
-                    {o.sub && <span className="block text-[11px] text-muted-foreground truncate">{o.sub}</span>}
-                  </span>
-                  {sel && <Check className="size-4 shrink-0 text-navy" />}
-                </button>
-              );
-            })}
-            {filtered.length === 0 && (
-              <div className="text-center text-xs text-muted-foreground py-4">لا توجد نتائج</div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 export function FilterBar({
   showModel = true,
   categoryOverride,
 }: {
   showModel?: boolean;
-  /** On the category route the category IS the URL path, so its selection must
-   *  navigate rather than write filter state. When provided, the Category
-   *  dropdown reflects `value` and calls `onChange` (empty id = "all"). */
   categoryOverride?: { value: string; onChange: (id: string) => void };
 }) {
+  const [activeMenu, setActiveMenu] = useState<"category" | "brand" | "model" | null>(null);
+  const [menuSearch, setMenuSearch] = useState("");
+
   const { data: categories = [] } = useQuery(categoriesQuery());
   const { data: brands = [] } = useQuery(brandsQuery());
   const { data: models = [] } = useQuery(carModelsQuery());
-  const { filters, setFilter, clearFilters, activeCount } = useStorefrontFilters();
+  const { filters, setFilter, clearFilters } = useStorefrontFilters();
 
   const categoryValue = categoryOverride ? categoryOverride.value : filters.category;
   const onSelectCategory = categoryOverride
     ? categoryOverride.onChange
     : (id: string) => setFilter({ category: id });
 
-  const categoryOptions: Option[] = categories.map((c) => ({ id: c.id, label: c.name_ar }));
-  const brandOptions: Option[] = brands.map((b) => ({ id: b.id, label: b.name_ar, sub: b.name_en }));
-  // Model depends on Brand: only that brand's models when a brand is picked.
+  const categoryOptions: Option[] = useMemo(
+    () => categories.map((c) => ({ id: c.id, label: c.name_ar })),
+    [categories],
+  );
+
+  const brandOptions: Option[] = useMemo(
+    () => brands.map((b) => ({ id: b.id, label: b.name_ar, sub: b.name_en })),
+    [brands],
+  );
+
   const modelOptions: Option[] = useMemo(
     () =>
       (filters.brand ? models.filter((m) => m.brand_id === filters.brand) : models).map((m) => ({
@@ -172,55 +52,336 @@ export function FilterBar({
   );
 
   const onSelectBrand = (id: string) => {
-    // Changing brand invalidates a model that belongs to a different brand.
     const modelStillValid = !!filters.model && models.find((m) => m.id === filters.model)?.brand_id === id;
     setFilter({ brand: id, model: id && modelStillValid ? filters.model : "" });
   };
+
   const onSelectModel = (id: string) => {
-    // Picking a model implies its brand — set both so the pair stays consistent.
     const brandId = models.find((m) => m.id === id)?.brand_id ?? "";
     setFilter({ model: id, ...(id && brandId ? { brand: brandId } : {}) });
   };
 
+  const selectedCategory = categoryOptions.find((c) => c.id === categoryValue);
+  const selectedBrand = brandOptions.find((b) => b.id === filters.brand);
+  const selectedModel = modelOptions.find((m) => m.id === filters.model);
+
+  const hasAnyFilterActive = Boolean(categoryValue || filters.brand || filters.model);
+
+  // Close modal on Escape and sync data-filter-modal attribute on body
+  useEffect(() => {
+    if (!activeMenu) {
+      document.body.removeAttribute("data-filter-modal");
+      return;
+    }
+    document.body.setAttribute("data-filter-modal", "open");
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setActiveMenu(null);
+        setMenuSearch("");
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.removeAttribute("data-filter-modal");
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [activeMenu]);
+
+  const toggleMenu = (menu: "category" | "brand" | "model") => {
+    if (activeMenu === menu) {
+      setActiveMenu(null);
+      setMenuSearch("");
+    } else {
+      setActiveMenu(menu);
+      setMenuSearch("");
+    }
+  };
+
+  // Get active menu data
+  const currentMenuConfig = useMemo(() => {
+    if (activeMenu === "category") {
+      return {
+        title: "اختر التصنيف",
+        value: categoryValue,
+        options: categoryOptions,
+        onSelect: (id: string) => {
+          onSelectCategory(id);
+          setActiveMenu(null);
+          setMenuSearch("");
+        },
+      };
+    }
+    if (activeMenu === "brand") {
+      return {
+        title: "اختر الماركة",
+        value: filters.brand,
+        options: brandOptions,
+        onSelect: (id: string) => {
+          onSelectBrand(id);
+          setActiveMenu(null);
+          setMenuSearch("");
+        },
+      };
+    }
+    if (activeMenu === "model") {
+      return {
+        title: "اختر نوع السيارة",
+        value: filters.model,
+        options: modelOptions,
+        onSelect: (id: string) => {
+          onSelectModel(id);
+          setActiveMenu(null);
+          setMenuSearch("");
+        },
+      };
+    }
+    return null;
+  }, [activeMenu, categoryValue, categoryOptions, filters.brand, brandOptions, filters.model, modelOptions]);
+
+  const filteredOptions = useMemo(() => {
+    if (!currentMenuConfig) return [];
+    const q = menuSearch.trim().toLowerCase();
+    if (!q) return currentMenuConfig.options;
+    return currentMenuConfig.options.filter((o) =>
+      `${o.label} ${o.sub ?? ""}`.toLowerCase().includes(q),
+    );
+  }, [currentMenuConfig, menuSearch]);
+
+  const showSearchInMenu = (currentMenuConfig?.options.length ?? 0) > 5;
+
   return (
-    <div dir="rtl" className="w-full">
-      {/* Dropdown filters — wrap on phone, inline row on desktop. */}
-      <div className="flex flex-wrap items-center gap-2">
-        <FilterDropdown
-          label="التصنيف"
-          allLabel="الكل"
-          value={categoryValue}
-          options={categoryOptions}
-          onSelect={onSelectCategory}
-        />
-        <FilterDropdown
-          label="الماركة"
-          allLabel="الكل"
-          value={filters.brand}
-          options={brandOptions}
-          onSelect={onSelectBrand}
-        />
-        {showModel && (
-          <FilterDropdown
-            label="نوع السيارة"
-            allLabel="الكل"
-            value={filters.model}
-            options={modelOptions}
-            onSelect={onSelectModel}
+    <div dir="rtl" className="w-full space-y-2">
+      {/* 3-column equal grid of filter trigger buttons */}
+      <div className={`grid gap-1.5 w-full ${showModel ? "grid-cols-3" : "grid-cols-2"}`}>
+        {/* 1. Category Button */}
+        <button
+          type="button"
+          onClick={() => toggleMenu("category")}
+          aria-expanded={activeMenu === "category"}
+          className={`w-full min-w-0 h-10 px-2 rounded-xl border transition-all flex items-center justify-between gap-1 overflow-hidden select-none ${
+            categoryValue
+              ? "bg-navy border-gold/70 text-gold shadow-sm ring-1 ring-gold/40"
+              : "bg-navy/95 border-border/40 text-primary-foreground/90 hover:bg-navy"
+          } ${activeMenu === "category" ? "ring-2 ring-gold" : ""}`}
+        >
+          <div className="min-w-0 flex-1 flex items-center gap-1 overflow-hidden text-start">
+            <span className="text-primary-foreground/50 text-[10px] shrink-0 font-medium">التصنيف:</span>
+            <span className={`truncate text-xs font-bold block flex-1 ${categoryValue ? "text-gold" : "text-primary-foreground"}`}>
+              {selectedCategory ? selectedCategory.label : "الكل"}
+            </span>
+          </div>
+          <ChevronDown
+            className={`size-3 shrink-0 transition-transform duration-200 ${
+              categoryValue ? "text-gold" : "text-primary-foreground/60"
+            } ${activeMenu === "category" ? "rotate-180" : ""}`}
           />
-        )}
-        {activeCount > 0 && (
+        </button>
+
+        {/* 2. Brand Button */}
+        <button
+          type="button"
+          onClick={() => toggleMenu("brand")}
+          aria-expanded={activeMenu === "brand"}
+          className={`w-full min-w-0 h-10 px-2 rounded-xl border transition-all flex items-center justify-between gap-1 overflow-hidden select-none ${
+            filters.brand
+              ? "bg-navy border-gold/70 text-gold shadow-sm ring-1 ring-gold/40"
+              : "bg-navy/95 border-border/40 text-primary-foreground/90 hover:bg-navy"
+          } ${activeMenu === "brand" ? "ring-2 ring-gold" : ""}`}
+        >
+          <div className="min-w-0 flex-1 flex items-center gap-1 overflow-hidden text-start">
+            <span className="text-primary-foreground/50 text-[10px] shrink-0 font-medium">الماركة:</span>
+            <span className={`truncate text-xs font-bold block flex-1 ${filters.brand ? "text-gold" : "text-primary-foreground"}`}>
+              {selectedBrand ? selectedBrand.label : "الكل"}
+            </span>
+          </div>
+          <ChevronDown
+            className={`size-3 shrink-0 transition-transform duration-200 ${
+              filters.brand ? "text-gold" : "text-primary-foreground/60"
+            } ${activeMenu === "brand" ? "rotate-180" : ""}`}
+          />
+        </button>
+
+        {/* 3. Model Button */}
+        {showModel && (
           <button
             type="button"
-            onClick={clearFilters}
-            aria-label="مسح الفلاتر"
-            title="مسح الفلاتر"
-            className="h-11 w-11 rounded-xl border border-gold/40 bg-gold/10 text-gold flex items-center justify-center shrink-0"
+            onClick={() => toggleMenu("model")}
+            aria-expanded={activeMenu === "model"}
+            className={`w-full min-w-0 h-10 px-2 rounded-xl border transition-all flex items-center justify-between gap-1 overflow-hidden select-none ${
+              filters.model
+                ? "bg-navy border-gold/70 text-gold shadow-sm ring-1 ring-gold/40"
+                : "bg-navy/95 border-border/40 text-primary-foreground/90 hover:bg-navy"
+            } ${activeMenu === "model" ? "ring-2 ring-gold" : ""}`}
           >
-            <X className="size-5" />
+            <div className="min-w-0 flex-1 flex items-center gap-1 overflow-hidden text-start">
+              <span className="text-primary-foreground/50 text-[10px] shrink-0 font-medium">السيارة:</span>
+              <span className={`truncate text-xs font-bold block flex-1 ${filters.model ? "text-gold" : "text-primary-foreground"}`}>
+                {selectedModel ? selectedModel.label : "الكل"}
+              </span>
+            </div>
+            <ChevronDown
+              className={`size-3 shrink-0 transition-transform duration-200 ${
+                filters.model ? "text-gold" : "text-primary-foreground/60"
+              } ${activeMenu === "model" ? "rotate-180" : ""}`}
+            />
           </button>
         )}
       </div>
+
+      {/* Centered Luxury Dialog Modal (100% Centered on Screen, No Horizontal Clipping) */}
+      {currentMenuConfig && (
+        <div data-filter-dialog="open" className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          {/* Dark Blurred Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
+            onClick={() => {
+              setActiveMenu(null);
+              setMenuSearch("");
+            }}
+          />
+
+          {/* Centered Modal Content */}
+          <div
+            dir="rtl"
+            className="relative z-10 w-full max-w-sm max-h-[75vh] flex flex-col rounded-3xl border border-border bg-card shadow-2xl overflow-hidden animate-in zoom-in-95 fade-in duration-150"
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-gradient-navy text-primary-foreground">
+              <div className="flex items-center gap-2">
+                <span className="size-2 rounded-full bg-gold animate-pulse" />
+                <span className="text-sm font-bold">{currentMenuConfig.title}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveMenu(null);
+                  setMenuSearch("");
+                }}
+                className="size-7 rounded-full bg-white/10 hover:bg-white/20 text-white grid place-items-center transition"
+                aria-label="إغلاق"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {/* Search Input inside modal if options are many */}
+            {showSearchInMenu && (
+              <div className="p-3 border-b border-border bg-muted/20">
+                <label className="flex items-center gap-2 bg-background border border-border rounded-xl px-3 h-10 focus-within:border-gold shadow-sm">
+                  <Search className="size-4 text-muted-foreground shrink-0" />
+                  <input
+                    autoFocus
+                    value={menuSearch}
+                    onChange={(e) => setMenuSearch(e.target.value)}
+                    placeholder="ابحث هنا…"
+                    className="flex-1 bg-transparent outline-none text-base md:text-sm font-medium"
+                  />
+                  {menuSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setMenuSearch("")}
+                      className="text-muted-foreground"
+                    >
+                      <X className="size-4" />
+                    </button>
+                  )}
+                </label>
+              </div>
+            )}
+
+            {/* Options List */}
+            <div className="overflow-y-auto py-1 divide-y divide-border/20 flex-1">
+              {/* Option: All */}
+              <button
+                type="button"
+                onClick={() => currentMenuConfig.onSelect("")}
+                className={`w-full flex items-center justify-between gap-3 px-5 py-3 text-sm transition-colors ${
+                  !currentMenuConfig.value
+                    ? "bg-gold/10 text-gold font-extrabold"
+                    : "hover:bg-muted text-foreground"
+                }`}
+              >
+                <span>الكل</span>
+                {!currentMenuConfig.value && <Check className="size-4 text-gold shrink-0" strokeWidth={2.5} />}
+              </button>
+
+              {/* Filtered Options */}
+              {filteredOptions.map((o) => {
+                const isSelected = o.id === currentMenuConfig.value;
+                return (
+                  <button
+                    key={o.id}
+                    type="button"
+                    onClick={() => currentMenuConfig.onSelect(o.id)}
+                    className={`w-full flex items-center justify-between gap-3 px-5 py-3 text-start transition-colors ${
+                      isSelected
+                        ? "bg-gold/10 text-gold font-extrabold"
+                        : "hover:bg-muted text-foreground"
+                    }`}
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold truncate">{o.label}</span>
+                      {o.sub && (
+                        <span className="block text-xs text-muted-foreground truncate" dir="ltr">
+                          {o.sub}
+                        </span>
+                      )}
+                    </span>
+                    {isSelected && <Check className="size-4 shrink-0 text-gold" strokeWidth={2.5} />}
+                  </button>
+                );
+              })}
+
+              {filteredOptions.length === 0 && (
+                <div className="text-center text-xs text-muted-foreground py-10">لا توجد نتائج مطابقة</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Active Filter Chips: easily removable with X */}
+      {hasAnyFilterActive && (
+        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+          {categoryValue && (
+            <button
+              type="button"
+              onClick={() => onSelectCategory("")}
+              className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full bg-gold/15 text-gold border border-gold/30 hover:bg-gold/25 transition"
+            >
+              <span className="truncate max-w-[8rem]">{selectedCategory?.label || "التصنيف"}</span>
+              <X className="size-3 shrink-0" />
+            </button>
+          )}
+          {filters.brand && (
+            <button
+              type="button"
+              onClick={() => onSelectBrand("")}
+              className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full bg-gold/15 text-gold border border-gold/30 hover:bg-gold/25 transition"
+            >
+              <span className="truncate max-w-[8rem]">{selectedBrand?.label || "الماركة"}</span>
+              <X className="size-3 shrink-0" />
+            </button>
+          )}
+          {filters.model && (
+            <button
+              type="button"
+              onClick={() => onSelectModel("")}
+              className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full bg-gold/15 text-gold border border-gold/30 hover:bg-gold/25 transition"
+            >
+              <span className="truncate max-w-[8rem]">{selectedModel?.label || "نوع السيارة"}</span>
+              <X className="size-3 shrink-0" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="text-[10px] text-muted-foreground hover:text-destructive underline px-1 py-0.5"
+          >
+            مسح الكل
+          </button>
+        </div>
+      )}
     </div>
   );
 }

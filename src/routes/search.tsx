@@ -5,8 +5,9 @@ import { Search as SearchIcon, X } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { ProductCard } from "@/components/product-card";
 import { FilterBar } from "@/components/filter-bar";
-import { searchProductsQuery } from "@/lib/queries";
+import { storefrontSearchQuery } from "@/lib/queries";
 import { useStorefrontFilters, applyStorefrontFilters, filterSearchSchema } from "@/lib/storefront-filters";
+import { useMemo } from "react";
 
 export const Route = createFileRoute("/search")({
   validateSearch: filterSearchSchema,
@@ -48,10 +49,17 @@ function SearchPage() {
   }, [qLocal]);
 
   const deferredQ = useDeferredValue(q);
-  const { data: results, isFetching } = useQuery(searchProductsQuery(deferredQ));
-  // Narrow server search results by the active category/brand/model (and re-apply
-  // q client-side, a harmless subset). Null-tolerant, so nothing valid is dropped.
-  const filtered = applyStorefrontFilters(results ?? [], filters);
+  const searchFilterParams = useMemo(() => ({
+    q: deferredQ,
+    category: filters.category,
+    brand: filters.brand,
+    model: filters.model,
+  }), [deferredQ, filters.category, filters.brand, filters.model]);
+
+  const hasAnyFilter = Boolean(deferredQ.trim() || filters.category || filters.brand || filters.model);
+  const { data: results, isFetching } = useQuery(storefrontSearchQuery(searchFilterParams));
+  // Narrow server search results by active category/brand/model client-side
+  const filtered = applyStorefrontFilters(results ?? [], { ...filters, q: deferredQ });
 
   return (
     <PageShell wide title="بحث">
@@ -84,10 +92,14 @@ function SearchPage() {
               ))}
             </div>
           );
-          if (!q.trim()) {
+          if (!hasAnyFilter) {
             return (
-              <div className="text-center text-muted-foreground text-sm py-16">
-                ابدأ بكتابة اسم القطعة أو رقمها للبحث
+              <div className="text-center text-muted-foreground text-sm py-16 space-y-2">
+                <SearchIcon className="size-10 mx-auto text-muted-foreground/30 mb-2" />
+                <div className="font-bold text-foreground text-base">ابحث عن القطع أو اختر تصنيفاً</div>
+                <div className="text-xs text-muted-foreground max-w-xs mx-auto">
+                  اختر التصنيف، الماركة أو نوع السيارة من الفلاتر أعلاه، أو اكتب اسم القطعة أو رقمها.
+                </div>
               </div>
             );
           }
@@ -97,7 +109,10 @@ function SearchPage() {
           if (filtered.length > 0) {
             return (
               <>
-                <div className="text-xs text-muted-foreground mb-3">{filtered.length} نتيجة</div>
+                <div className="text-xs text-muted-foreground mb-3 flex items-center justify-between">
+                  <span>{filtered.length} نتيجة</span>
+                  {isFetching && <span className="text-gold animate-pulse text-[11px]">جاري التحديث…</span>}
+                </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                   {filtered.map((p) => <ProductCard key={p.id} product={p} />)}
                 </div>
@@ -105,8 +120,11 @@ function SearchPage() {
             );
           }
           return (
-            <div className="text-center text-muted-foreground text-sm py-16">
-              لا توجد نتائج مطابقة. جرّب تعديل الفلاتر أو تواصل معنا عبر واتساب.
+            <div className="text-center text-muted-foreground text-sm py-16 space-y-2">
+              <div className="font-bold text-foreground">لا توجد نتائج مطابقة</div>
+              <div className="text-xs text-muted-foreground max-w-xs mx-auto">
+                جرّب تغيير الصنف أو نوع السيارة أو البحث برقم الـ OEM، أو تواصل معنا مباشرة عبر واتساب للمساعدة.
+              </div>
             </div>
           );
         })()}

@@ -49,7 +49,7 @@ export function PageShell({
           {children}
         </main>
         {showNav && (
-          <div className="shrink-0">
+          <div className="shrink-0 bottom-nav-wrapper">
             <BottomNav />
           </div>
         )}

@@ -19,7 +19,7 @@ export function FloatingWhatsapp() {
       target="_blank"
       rel="noreferrer"
       aria-label="تواصل واتساب"
-      className="fixed z-50 bottom-[calc(5rem+env(safe-area-inset-bottom))] start-4 size-14 rounded-full bg-whatsapp text-white grid place-items-center shadow-luxe animate-pulse hover:animate-none hover:scale-105 transition"
+      className="floating-whatsapp-btn fixed z-50 bottom-[calc(5rem+env(safe-area-inset-bottom))] start-4 size-14 rounded-full bg-whatsapp text-white grid place-items-center shadow-luxe animate-pulse hover:animate-none hover:scale-105 transition"
     >
       <WhatsappIcon className="size-7" />
     </a>

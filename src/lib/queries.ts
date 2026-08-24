@@ -219,6 +219,54 @@ export const searchProductsQuery = (q: string) =>
     enabled: q.trim().length > 0,
   });
 
+export const storefrontSearchQuery = (filters: {
+  q?: string;
+  category?: string;
+  brand?: string;
+  model?: string;
+}) => {
+  const q = (filters.q ?? "").trim();
+  const category = filters.category ?? "";
+  const brand = filters.brand ?? "";
+  const model = filters.model ?? "";
+  const hasFilter = Boolean(q || category || brand || model);
+
+  return queryOptions({
+    queryKey: ["products", "storefront-search", q, category, brand, model],
+    staleTime: 60_000,
+    queryFn: async () => {
+      if (!hasFilter) return [] as Product[];
+
+      let req = supabase
+        .from("products")
+        .select(PRODUCT_LIST_COLUMNS);
+
+      if (q) {
+        const pattern = `%${q}%`;
+        req = req.or(`name_ar.ilike.${pattern},oem_number.ilike.${pattern},name_en.ilike.${pattern}`);
+      }
+
+      if (category) {
+        req = req.eq("category_id", category);
+      }
+
+      if (brand) {
+        req = req.eq("brand_id", brand);
+      }
+
+      req = req
+        .order("in_stock", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(60);
+
+      const { data, error } = await req;
+      if (error) throw error;
+      return (data ?? []) as Product[];
+    },
+    enabled: hasFilter,
+  });
+};
+
 export const cartQuery = (userId: string | null) =>
   queryOptions({
     queryKey: ["cart", userId],
