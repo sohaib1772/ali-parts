@@ -20,6 +20,27 @@ export function FilterBar({
 }) {
   const [activeMenu, setActiveMenu] = useState<"category" | "brand" | "model" | null>(null);
   const [menuSearch, setMenuSearch] = useState("");
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !activeMenu) return;
+    const update = () => {
+      if (window.visualViewport) {
+        setViewportHeight(window.visualViewport.height);
+      } else {
+        setViewportHeight(window.innerHeight);
+      }
+    };
+    update();
+    window.visualViewport?.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("scroll", update);
+    window.addEventListener("resize", update);
+    return () => {
+      window.visualViewport?.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [activeMenu]);
 
   const { data: categories = [] } = useQuery(categoriesQuery());
   const { data: brands = [] } = useQuery(brandsQuery());
@@ -266,14 +287,17 @@ export function FilterBar({
             onTouchMove={(e) => e.preventDefault()}
           />
 
-          {/* Modal Content Card */}
+          {/* Modal Content Card (Dynamically constrained to visible area above keyboard) */}
           <div
             dir="rtl"
-            className="filter-modal-card relative z-10 w-full max-w-sm max-h-[calc(100dvh-6rem)] md:max-h-[75vh] flex flex-col rounded-3xl border border-border bg-card shadow-2xl overflow-hidden animate-in zoom-in-95 fade-in duration-150"
-            style={{ touchAction: "none" }}
+            className="filter-modal-card relative z-10 w-full max-w-sm flex flex-col rounded-3xl border border-border bg-card shadow-2xl overflow-hidden animate-in zoom-in-95 fade-in duration-150"
+            style={{
+              touchAction: "none",
+              maxHeight: viewportHeight ? `${Math.max(160, viewportHeight - 48)}px` : "min(46dvh, calc(100dvh - 310px))",
+            }}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-gradient-navy text-primary-foreground shrink-0">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-gradient-navy text-primary-foreground shrink-0">
               <div className="flex items-center gap-2">
                 <span className="size-2 rounded-full bg-gold animate-pulse" />
                 <span className="text-sm font-bold">{currentMenuConfig.title}</span>
@@ -293,10 +317,11 @@ export function FilterBar({
 
             {/* Search Input inside modal if options are many */}
             {showSearchInMenu && (
-              <div className="p-3 border-b border-border bg-muted/20 shrink-0">
-                <label className="flex items-center gap-2 bg-background border border-border rounded-xl px-3 h-10 focus-within:border-gold shadow-sm">
+              <div className="p-2.5 border-b border-border bg-muted/20 shrink-0">
+                <label className="flex items-center gap-2 bg-background border border-border rounded-xl px-3 h-9 focus-within:border-gold shadow-sm">
                   <Search className="size-4 text-muted-foreground shrink-0" />
                   <input
+                    autoFocus
                     value={menuSearch}
                     onChange={(e) => setMenuSearch(e.target.value)}
                     placeholder="ابحث هنا…"
