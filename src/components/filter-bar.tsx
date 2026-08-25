@@ -242,11 +242,11 @@ export function FilterBar({
         )}
       </div>
 
-      {/* Centered Luxury Dialog Modal (100% Centered on Screen, No Horizontal Clipping) */}
+      {/* Centered Luxury Dialog Modal (Positioned safely above keyboard on mobile) */}
       {currentMenuConfig && (
         <div
           data-filter-dialog="open"
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[60] flex items-start pt-[calc(env(safe-area-inset-top)+1.5rem)] md:items-center md:pt-4 justify-center p-4"
           onTouchMove={(e) => {
             // Only allow touch scroll inside the scrollable list, block everywhere else
             const target = e.target as HTMLElement;
@@ -266,14 +266,14 @@ export function FilterBar({
             onTouchMove={(e) => e.preventDefault()}
           />
 
-          {/* Centered Modal Content */}
+          {/* Modal Content Card */}
           <div
             dir="rtl"
-            className="relative z-10 w-full max-w-sm max-h-[75vh] flex flex-col rounded-3xl border border-border bg-card shadow-2xl overflow-hidden animate-in zoom-in-95 fade-in duration-150"
+            className="filter-modal-card relative z-10 w-full max-w-sm max-h-[calc(100dvh-6rem)] md:max-h-[75vh] flex flex-col rounded-3xl border border-border bg-card shadow-2xl overflow-hidden animate-in zoom-in-95 fade-in duration-150"
             style={{ touchAction: "none" }}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-gradient-navy text-primary-foreground">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-gradient-navy text-primary-foreground shrink-0">
               <div className="flex items-center gap-2">
                 <span className="size-2 rounded-full bg-gold animate-pulse" />
                 <span className="text-sm font-bold">{currentMenuConfig.title}</span>
@@ -293,11 +293,10 @@ export function FilterBar({
 
             {/* Search Input inside modal if options are many */}
             {showSearchInMenu && (
-              <div className="p-3 border-b border-border bg-muted/20">
+              <div className="p-3 border-b border-border bg-muted/20 shrink-0">
                 <label className="flex items-center gap-2 bg-background border border-border rounded-xl px-3 h-10 focus-within:border-gold shadow-sm">
                   <Search className="size-4 text-muted-foreground shrink-0" />
                   <input
-                    autoFocus
                     value={menuSearch}
                     onChange={(e) => setMenuSearch(e.target.value)}
                     placeholder="ابحث هنا…"

@@ -212,6 +212,12 @@ body:has([data-filter-dialog="open"]) a[aria-label="تواصل واتساب"] {
   opacity: 0 !important;
 }
 
+/* Ensure filter modal stays above keyboard on mobile */
+body[data-keyboard="open"] .filter-modal-card,
+body:has([data-filter-dialog="open"] input:focus) .filter-modal-card {
+  max-height: calc(100dvh - 19rem) !important;
+}
+
 @utility bg-gradient-navy { background-image: var(--gradient-navy); }
 @utility bg-gradient-gold { background-image: var(--gradient-gold); }
 @utility bg-gradient-hero { background-image: var(--gradient-hero); }
