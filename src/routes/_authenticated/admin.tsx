@@ -772,46 +772,75 @@ function UsersAdmin() {
   const [pw, setPw] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const { data, isLoading, refetch, isFetching } = useQuery({
+  const { data, isLoading, refetch, isFetching, error: queryError } = useQuery({
     queryKey: ["admin", "users"],
     queryFn: async () => {
+      // Attempt 1: serverFn (works on web/desktop where cookies flow through)
+      let serverErr: string | null = null;
       try {
         const res = await adminListUsers();
         if (res && Array.isArray(res.users) && res.users.length > 0) return res;
-      } catch (err) {
-        console.warn("[UsersAdmin] adminListUsers serverFn failed, falling back to direct Supabase query:", err);
+        // Server returned empty — might be auth issue on native, continue to fallback
+        serverErr = "Server returned 0 users";
+      } catch (err: any) {
+        serverErr = err?.message ?? String(err);
+        console.warn("[UsersAdmin] adminListUsers serverFn failed:", serverErr);
       }
 
-      // Direct client query fallback using active Supabase admin session
-      const { data: profs, error: profErr } = await supabase
-        .from("profiles")
-        .select("id, full_name, phone, is_blocked, created_at, points_balance")
-        .order("created_at", { ascending: false });
+      // Attempt 2: Direct client-side Supabase query using the logged-in admin session
+      // This works on native apps where the Supabase client has a valid JWT
+      let clientErr: string | null = null;
+      try {
+        const { data: profs, error: profErr } = await supabase
+          .from("profiles")
+          .select("id, full_name, phone, is_blocked, created_at, points_balance")
+          .order("created_at", { ascending: false });
 
-      if (profErr) {
-        console.error("[UsersAdmin] direct profiles fetch error:", profErr);
-        throw new Error(profErr.message);
+        if (profErr) {
+          clientErr = profErr.message;
+          console.error("[UsersAdmin] direct profiles fetch error:", profErr);
+        } else if (profs && profs.length > 0) {
+          const mapped = profs.map((p: any) => ({
+            id: p.id,
+            email: null,
+            phone: p.phone ?? null,
+            profile_phone: p.phone ?? null,
+            full_name: p.full_name ?? null,
+            is_blocked: p.is_blocked ?? false,
+            created_at: p.created_at ?? null,
+            last_sign_in_at: p.created_at ?? null,
+            is_active: false,
+          }));
+          return { total: mapped.length, active: 0, users: mapped };
+        } else {
+          clientErr = "profiles query returned empty";
+        }
+      } catch (err: any) {
+        clientErr = err?.message ?? String(err);
+        console.error("[UsersAdmin] direct profiles fetch threw:", clientErr);
       }
 
-      const mapped = (profs ?? []).map((p: any) => ({
-        id: p.id,
-        email: null,
-        phone: p.phone ?? null,
-        profile_phone: p.phone ?? null,
-        full_name: p.full_name ?? null,
-        is_blocked: p.is_blocked ?? false,
-        created_at: p.created_at ?? null,
-        last_sign_in_at: p.created_at ?? null,
-        is_active: false,
-      }));
+      // Attempt 3: Try with auth.getUser() to verify we have a valid session
+      try {
+        const { data: sessionData } = await supabase.auth.getUser();
+        if (!sessionData?.user) {
+          throw new Error(`لم يتم التعرف على جلسة المستخدم. الرجاء تسجيل الخروج وإعادة الدخول. (server: ${serverErr}, client: ${clientErr})`);
+        }
+      } catch {
+        // ignore session check error
+      }
 
-      return {
-        total: mapped.length,
-        active: 0,
-        users: mapped,
-      };
+      // All attempts failed — throw a descriptive error
+      throw new Error(
+        `تعذر جلب المستخدمين.\n` +
+        `السيرفر: ${serverErr ?? "لم يُحاول"}\n` +
+        `قاعدة البيانات: ${clientErr ?? "لم يُحاول"}\n` +
+        `الرجاء التأكد من صلاحيات الأدمن أو تسجيل الخروج وإعادة الدخول.`
+      );
     },
     refetchInterval: 30_000,
+    retry: 2,
+    retryDelay: 1000,
   });
 
   const users = data?.users ?? [];
@@ -889,6 +918,18 @@ function UsersAdmin() {
 
       {isLoading ? (
         <div className="text-center text-sm text-muted-foreground py-8">جاري التحميل…</div>
+      ) : queryError ? (
+        <div className="bg-destructive/10 border border-destructive/30 rounded-2xl p-4 space-y-2">
+          <div className="text-sm font-bold text-destructive">⚠️ خطأ في جلب المستخدمين</div>
+          <div className="text-xs text-destructive/80 whitespace-pre-wrap" dir="ltr">{(queryError as Error).message}</div>
+          <button
+            onClick={() => refetch()}
+            className="text-xs bg-destructive text-white rounded-lg px-3 py-1.5 font-bold mt-1"
+            disabled={isFetching}
+          >
+            {isFetching ? "جاري المحاولة…" : "إعادة المحاولة"}
+          </button>
+        </div>
       ) : filtered.length === 0 ? (
         <div className="text-center text-sm text-muted-foreground py-8">لا يوجد مستخدمون مطابقون</div>
       ) : (

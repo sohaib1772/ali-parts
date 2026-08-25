@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import WebKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -7,7 +8,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Clear WKWebView network/disk cache on launch so server updates (https://maktabali.com) reflect immediately
+        // Note: Cookies & LocalStorage are preserved so user login sessions are NOT affected
+        let dataStore = WKWebsiteDataStore.default()
+        let cacheTypes = Set([WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache])
+        dataStore.removeData(ofTypes: cacheTypes, modifiedSince: Date.distantPast, completionHandler: {})
+
+        URLCache.shared.removeAllCachedResponses()
+        URLCache.shared.diskCapacity = 0
+        URLCache.shared.memoryCapacity = 0
+
         return true
     }
 

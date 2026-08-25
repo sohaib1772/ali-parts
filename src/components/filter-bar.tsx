@@ -67,13 +67,23 @@ export function FilterBar({
 
   const hasAnyFilterActive = Boolean(categoryValue || filters.brand || filters.model);
 
-  // Close modal on Escape and sync data-filter-modal attribute on body
+  // Close modal on Escape, sync data-filter-modal, and LOCK body scroll on iOS
   useEffect(() => {
     if (!activeMenu) {
       document.body.removeAttribute("data-filter-modal");
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.touchAction = "";
       return;
     }
+    // Lock body scrolling so iOS doesn't scroll behind the modal
     document.body.setAttribute("data-filter-modal", "open");
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.width = "100%";
+    document.body.style.touchAction = "none";
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setActiveMenu(null);
@@ -83,6 +93,10 @@ export function FilterBar({
     document.addEventListener("keydown", onKey);
     return () => {
       document.body.removeAttribute("data-filter-modal");
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.touchAction = "";
       document.removeEventListener("keydown", onKey);
     };
   }, [activeMenu]);
@@ -230,7 +244,18 @@ export function FilterBar({
 
       {/* Centered Luxury Dialog Modal (100% Centered on Screen, No Horizontal Clipping) */}
       {currentMenuConfig && (
-        <div data-filter-dialog="open" className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div
+          data-filter-dialog="open"
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+          onTouchMove={(e) => {
+            // Only allow touch scroll inside the scrollable list, block everywhere else
+            const target = e.target as HTMLElement;
+            const scrollable = target.closest("[data-scroll-region]");
+            if (!scrollable) {
+              e.preventDefault();
+            }
+          }}
+        >
           {/* Dark Blurred Backdrop */}
           <div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
@@ -238,12 +263,14 @@ export function FilterBar({
               setActiveMenu(null);
               setMenuSearch("");
             }}
+            onTouchMove={(e) => e.preventDefault()}
           />
 
           {/* Centered Modal Content */}
           <div
             dir="rtl"
             className="relative z-10 w-full max-w-sm max-h-[75vh] flex flex-col rounded-3xl border border-border bg-card shadow-2xl overflow-hidden animate-in zoom-in-95 fade-in duration-150"
+            style={{ touchAction: "none" }}
           >
             {/* Modal Header */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-gradient-navy text-primary-foreground">
@@ -289,8 +316,12 @@ export function FilterBar({
               </div>
             )}
 
-            {/* Options List */}
-            <div className="overflow-y-auto py-1 divide-y divide-border/20 flex-1">
+            {/* Options List — scrollable with proper iOS touch isolation */}
+            <div
+              data-scroll-region
+              className="overflow-y-auto py-1 divide-y divide-border/20 flex-1"
+              style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y", overscrollBehavior: "contain" } as React.CSSProperties}
+            >
               {/* Option: All */}
               <button
                 type="button"
