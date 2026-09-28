@@ -46,6 +46,7 @@ const AudienceInput = z.object({
 const SendInput = AudienceInput.extend({
   title: z.string().trim().min(1, "العنوان مطلوب").max(BROADCAST_TITLE_MAX),
   body: z.string().trim().max(BROADCAST_BODY_MAX).default(""),
+  image_url: z.string().url().nullable().optional(),
 });
 
 /** How many recipients the current audience resolves to. Drives the count the
@@ -79,6 +80,7 @@ export const sendAdminBroadcast = createServerFn({ method: "POST" })
       p_audience: data.audience,
       // Omitted rather than nulled, so the SQL DEFAULT applies.
       p_user_id: data.user_id ?? undefined,
+      p_image_url: data.image_url ?? undefined,
     });
     if (error) throw new Error(error.message);
 

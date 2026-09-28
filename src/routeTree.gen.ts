@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as ReelsRouteImport } from './routes/reels'
+import { Route as ReelRouteImport } from './routes/reel'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OffersRouteImport } from './routes/offers'
@@ -22,6 +24,8 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ReelsIdRouteImport } from './routes/reels.$id'
+import { Route as ReelIdRouteImport } from './routes/reel.$id'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
 import { Route as OrderSuccessIdRouteImport } from './routes/order-success.$id'
 import { Route as CategoryIdRouteImport } from './routes/category.$id'
@@ -46,6 +50,16 @@ const TermsRoute = TermsRouteImport.update({
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReelsRoute = ReelsRouteImport.update({
+  id: '/reels',
+  path: '/reels',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReelRoute = ReelRouteImport.update({
+  id: '/reel',
+  path: '/reel',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProductsRoute = ProductsRouteImport.update({
@@ -101,6 +115,16 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ReelsIdRoute = ReelsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ReelsRoute,
+} as any)
+const ReelIdRoute = ReelIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ReelRoute,
 } as any)
 const ProductIdRoute = ProductIdRouteImport.update({
   id: '/product/$id',
@@ -192,6 +216,8 @@ export interface FileRoutesByFullPath {
   '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
   '/products': typeof ProductsRoute
+  '/reel': typeof ReelRouteWithChildren
+  '/reels': typeof ReelsRouteWithChildren
   '/search': typeof SearchRoute
   '/terms': typeof TermsRoute
   '/account': typeof AuthenticatedAccountRoute
@@ -207,6 +233,8 @@ export interface FileRoutesByFullPath {
   '/category/$id': typeof CategoryIdRoute
   '/order-success/$id': typeof OrderSuccessIdRoute
   '/product/$id': typeof ProductIdRoute
+  '/reel/$id': typeof ReelIdRoute
+  '/reels/$id': typeof ReelsIdRoute
   '/orders/$id': typeof AuthenticatedOrdersIdRoute
   '/replacements/$id': typeof AuthenticatedReplacementsIdRoute
 }
@@ -221,6 +249,8 @@ export interface FileRoutesByTo {
   '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
   '/products': typeof ProductsRoute
+  '/reel': typeof ReelRouteWithChildren
+  '/reels': typeof ReelsRouteWithChildren
   '/search': typeof SearchRoute
   '/terms': typeof TermsRoute
   '/account': typeof AuthenticatedAccountRoute
@@ -236,6 +266,8 @@ export interface FileRoutesByTo {
   '/category/$id': typeof CategoryIdRoute
   '/order-success/$id': typeof OrderSuccessIdRoute
   '/product/$id': typeof ProductIdRoute
+  '/reel/$id': typeof ReelIdRoute
+  '/reels/$id': typeof ReelsIdRoute
   '/orders/$id': typeof AuthenticatedOrdersIdRoute
   '/replacements/$id': typeof AuthenticatedReplacementsIdRoute
 }
@@ -252,6 +284,8 @@ export interface FileRoutesById {
   '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
   '/products': typeof ProductsRoute
+  '/reel': typeof ReelRouteWithChildren
+  '/reels': typeof ReelsRouteWithChildren
   '/search': typeof SearchRoute
   '/terms': typeof TermsRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
@@ -267,6 +301,8 @@ export interface FileRoutesById {
   '/category/$id': typeof CategoryIdRoute
   '/order-success/$id': typeof OrderSuccessIdRoute
   '/product/$id': typeof ProductIdRoute
+  '/reel/$id': typeof ReelIdRoute
+  '/reels/$id': typeof ReelsIdRoute
   '/_authenticated/orders_/$id': typeof AuthenticatedOrdersIdRoute
   '/_authenticated/replacements_/$id': typeof AuthenticatedReplacementsIdRoute
 }
@@ -283,6 +319,8 @@ export interface FileRouteTypes {
     | '/offers'
     | '/privacy'
     | '/products'
+    | '/reel'
+    | '/reels'
     | '/search'
     | '/terms'
     | '/account'
@@ -298,6 +336,8 @@ export interface FileRouteTypes {
     | '/category/$id'
     | '/order-success/$id'
     | '/product/$id'
+    | '/reel/$id'
+    | '/reels/$id'
     | '/orders/$id'
     | '/replacements/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -312,6 +352,8 @@ export interface FileRouteTypes {
     | '/offers'
     | '/privacy'
     | '/products'
+    | '/reel'
+    | '/reels'
     | '/search'
     | '/terms'
     | '/account'
@@ -327,6 +369,8 @@ export interface FileRouteTypes {
     | '/category/$id'
     | '/order-success/$id'
     | '/product/$id'
+    | '/reel/$id'
+    | '/reels/$id'
     | '/orders/$id'
     | '/replacements/$id'
   id:
@@ -342,6 +386,8 @@ export interface FileRouteTypes {
     | '/offers'
     | '/privacy'
     | '/products'
+    | '/reel'
+    | '/reels'
     | '/search'
     | '/terms'
     | '/_authenticated/account'
@@ -357,6 +403,8 @@ export interface FileRouteTypes {
     | '/category/$id'
     | '/order-success/$id'
     | '/product/$id'
+    | '/reel/$id'
+    | '/reels/$id'
     | '/_authenticated/orders_/$id'
     | '/_authenticated/replacements_/$id'
   fileRoutesById: FileRoutesById
@@ -373,6 +421,8 @@ export interface RootRouteChildren {
   OffersRoute: typeof OffersRoute
   PrivacyRoute: typeof PrivacyRoute
   ProductsRoute: typeof ProductsRoute
+  ReelRoute: typeof ReelRouteWithChildren
+  ReelsRoute: typeof ReelsRouteWithChildren
   SearchRoute: typeof SearchRoute
   TermsRoute: typeof TermsRoute
   CategoryIdRoute: typeof CategoryIdRoute
@@ -394,6 +444,20 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reels': {
+      id: '/reels'
+      path: '/reels'
+      fullPath: '/reels'
+      preLoaderRoute: typeof ReelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reel': {
+      id: '/reel'
+      path: '/reel'
+      fullPath: '/reel'
+      preLoaderRoute: typeof ReelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/products': {
@@ -472,6 +536,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/reels/$id': {
+      id: '/reels/$id'
+      path: '/$id'
+      fullPath: '/reels/$id'
+      preLoaderRoute: typeof ReelsIdRouteImport
+      parentRoute: typeof ReelsRoute
+    }
+    '/reel/$id': {
+      id: '/reel/$id'
+      path: '/$id'
+      fullPath: '/reel/$id'
+      preLoaderRoute: typeof ReelIdRouteImport
+      parentRoute: typeof ReelRoute
     }
     '/product/$id': {
       id: '/product/$id'
@@ -614,6 +692,26 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface ReelRouteChildren {
+  ReelIdRoute: typeof ReelIdRoute
+}
+
+const ReelRouteChildren: ReelRouteChildren = {
+  ReelIdRoute: ReelIdRoute,
+}
+
+const ReelRouteWithChildren = ReelRoute._addFileChildren(ReelRouteChildren)
+
+interface ReelsRouteChildren {
+  ReelsIdRoute: typeof ReelsIdRoute
+}
+
+const ReelsRouteChildren: ReelsRouteChildren = {
+  ReelsIdRoute: ReelsIdRoute,
+}
+
+const ReelsRouteWithChildren = ReelsRoute._addFileChildren(ReelsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
@@ -626,6 +724,8 @@ const rootRouteChildren: RootRouteChildren = {
   OffersRoute: OffersRoute,
   PrivacyRoute: PrivacyRoute,
   ProductsRoute: ProductsRoute,
+  ReelRoute: ReelRouteWithChildren,
+  ReelsRoute: ReelsRouteWithChildren,
   SearchRoute: SearchRoute,
   TermsRoute: TermsRoute,
   CategoryIdRoute: CategoryIdRoute,

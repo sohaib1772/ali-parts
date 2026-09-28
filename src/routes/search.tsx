@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useDeferredValue, useEffect, useState } from "react";
-import { Search as SearchIcon, X } from "lucide-react";
+import { Search as SearchIcon, X, RefreshCw } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { ProductCard } from "@/components/product-card";
 import { FilterBar } from "@/components/filter-bar";
@@ -36,14 +36,12 @@ function SearchPending() {
 function SearchPage() {
   const { filters, setFilter } = useStorefrontFilters();
   const q = filters.q;
-  // Local, debounced input so the search page has its own field (the FilterBar
-  // no longer carries a search box) without pushing a URL update per keystroke.
   const [qLocal, setQLocal] = useState(q);
   useEffect(() => setQLocal(q), [q]);
   useEffect(() => {
     const t = setTimeout(() => {
       if (qLocal.trim() !== q.trim()) setFilter({ q: qLocal });
-    }, 300);
+    }, 250);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qLocal]);
@@ -57,7 +55,11 @@ function SearchPage() {
   }), [deferredQ, filters.category, filters.brand, filters.model]);
 
   const hasAnyFilter = Boolean(deferredQ.trim() || filters.category || filters.brand || filters.model);
-  const { data: results, isFetching } = useQuery(storefrontSearchQuery(searchFilterParams));
+  const { data: results, isFetching, isLoading, error, refetch } = useQuery({
+    ...storefrontSearchQuery(searchFilterParams),
+    placeholderData: keepPreviousData,
+  });
+
   // Narrow server search results by active category/brand/model client-side
   const filtered = applyStorefrontFilters(results ?? [], { ...filters, q: deferredQ });
 
@@ -92,6 +94,7 @@ function SearchPage() {
               ))}
             </div>
           );
+
           if (!hasAnyFilter) {
             return (
               <div className="text-center text-muted-foreground text-sm py-16 space-y-2">
@@ -103,9 +106,27 @@ function SearchPage() {
               </div>
             );
           }
-          if (isFetching) {
+
+          if (isLoading && !results) {
             return <SkeletonGrid n={4} />;
           }
+
+          if (error) {
+            return (
+              <div className="text-center text-sm py-12 space-y-3">
+                <div className="text-destructive font-bold">تعذّر تحميل نتائج البحث</div>
+                <button
+                  type="button"
+                  onClick={() => refetch()}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gold/15 text-gold text-xs font-bold hover:bg-gold/25 transition"
+                >
+                  <RefreshCw className="size-3.5" />
+                  إعادة المحاولة
+                </button>
+              </div>
+            );
+          }
+
           if (filtered.length > 0) {
             return (
               <>
@@ -119,6 +140,7 @@ function SearchPage() {
               </>
             );
           }
+
           return (
             <div className="text-center text-muted-foreground text-sm py-16 space-y-2">
               <div className="font-bold text-foreground">لا توجد نتائج مطابقة</div>

@@ -19,28 +19,6 @@ export function FilterBar({
   categoryOverride?: { value: string; onChange: (id: string) => void };
 }) {
   const [activeMenu, setActiveMenu] = useState<"category" | "brand" | "model" | null>(null);
-  const [menuSearch, setMenuSearch] = useState("");
-  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !activeMenu) return;
-    const update = () => {
-      if (window.visualViewport) {
-        setViewportHeight(window.visualViewport.height);
-      } else {
-        setViewportHeight(window.innerHeight);
-      }
-    };
-    update();
-    window.visualViewport?.addEventListener("resize", update);
-    window.visualViewport?.addEventListener("scroll", update);
-    window.addEventListener("resize", update);
-    return () => {
-      window.visualViewport?.removeEventListener("resize", update);
-      window.visualViewport?.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
-  }, [activeMenu]);
 
   const { data: categories = [] } = useQuery(categoriesQuery());
   const { data: brands = [] } = useQuery(brandsQuery());
@@ -108,7 +86,6 @@ export function FilterBar({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setActiveMenu(null);
-        setMenuSearch("");
       }
     };
     document.addEventListener("keydown", onKey);
@@ -123,13 +100,7 @@ export function FilterBar({
   }, [activeMenu]);
 
   const toggleMenu = (menu: "category" | "brand" | "model") => {
-    if (activeMenu === menu) {
-      setActiveMenu(null);
-      setMenuSearch("");
-    } else {
-      setActiveMenu(menu);
-      setMenuSearch("");
-    }
+    setActiveMenu((prev) => (prev === menu ? null : menu));
   };
 
   // Get active menu data
@@ -142,7 +113,6 @@ export function FilterBar({
         onSelect: (id: string) => {
           onSelectCategory(id);
           setActiveMenu(null);
-          setMenuSearch("");
         },
       };
     }
@@ -154,7 +124,6 @@ export function FilterBar({
         onSelect: (id: string) => {
           onSelectBrand(id);
           setActiveMenu(null);
-          setMenuSearch("");
         },
       };
     }
@@ -166,23 +135,11 @@ export function FilterBar({
         onSelect: (id: string) => {
           onSelectModel(id);
           setActiveMenu(null);
-          setMenuSearch("");
         },
       };
     }
     return null;
   }, [activeMenu, categoryValue, categoryOptions, filters.brand, brandOptions, filters.model, modelOptions]);
-
-  const filteredOptions = useMemo(() => {
-    if (!currentMenuConfig) return [];
-    const q = menuSearch.trim().toLowerCase();
-    if (!q) return currentMenuConfig.options;
-    return currentMenuConfig.options.filter((o) =>
-      `${o.label} ${o.sub ?? ""}`.toLowerCase().includes(q),
-    );
-  }, [currentMenuConfig, menuSearch]);
-
-  const showSearchInMenu = (currentMenuConfig?.options.length ?? 0) > 5;
 
   return (
     <div dir="rtl" className="w-full space-y-2">
@@ -263,13 +220,12 @@ export function FilterBar({
         )}
       </div>
 
-      {/* Centered Luxury Dialog Modal (Positioned safely above keyboard on mobile) */}
+      {/* Luxury Centered Dialog Modal (No keyboard, full height for options list) */}
       {currentMenuConfig && (
         <div
           data-filter-dialog="open"
-          className="fixed inset-0 z-[60] flex items-start pt-[calc(env(safe-area-inset-top)+1.5rem)] md:items-center md:pt-4 justify-center p-4"
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
           onTouchMove={(e) => {
-            // Only allow touch scroll inside the scrollable list, block everywhere else
             const target = e.target as HTMLElement;
             const scrollable = target.closest("[data-scroll-region]");
             if (!scrollable) {
@@ -279,35 +235,26 @@ export function FilterBar({
         >
           {/* Dark Blurred Backdrop */}
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
-            onClick={() => {
-              setActiveMenu(null);
-              setMenuSearch("");
-            }}
+            className="fixed inset-0 bg-black/65 backdrop-blur-sm animate-in fade-in duration-150"
+            onClick={() => setActiveMenu(null)}
             onTouchMove={(e) => e.preventDefault()}
           />
 
-          {/* Modal Content Card (Dynamically constrained to visible area above keyboard) */}
+          {/* Modal Content Card (Spacious, beautifully centered, displays many options) */}
           <div
             dir="rtl"
-            className="filter-modal-card relative z-10 w-full max-w-sm flex flex-col rounded-3xl border border-border bg-card shadow-2xl overflow-hidden animate-in zoom-in-95 fade-in duration-150"
-            style={{
-              touchAction: "none",
-              maxHeight: viewportHeight ? `${Math.max(160, viewportHeight - 48)}px` : "min(46dvh, calc(100dvh - 310px))",
-            }}
+            className="filter-modal-card relative z-10 w-full max-w-sm max-h-[72vh] flex flex-col rounded-3xl border border-border bg-card shadow-2xl overflow-hidden animate-in zoom-in-95 fade-in duration-150"
+            style={{ touchAction: "none" }}
           >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-gradient-navy text-primary-foreground shrink-0">
+            {/* Modal Header (Fixed height, always visible) */}
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-gradient-navy text-primary-foreground shrink-0">
               <div className="flex items-center gap-2">
                 <span className="size-2 rounded-full bg-gold animate-pulse" />
                 <span className="text-sm font-bold">{currentMenuConfig.title}</span>
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  setActiveMenu(null);
-                  setMenuSearch("");
-                }}
+                onClick={() => setActiveMenu(null)}
                 className="size-7 rounded-full bg-white/10 hover:bg-white/20 text-white grid place-items-center transition"
                 aria-label="إغلاق"
               >
@@ -315,35 +262,10 @@ export function FilterBar({
               </button>
             </div>
 
-            {/* Search Input inside modal if options are many */}
-            {showSearchInMenu && (
-              <div className="p-2.5 border-b border-border bg-muted/20 shrink-0">
-                <label className="flex items-center gap-2 bg-background border border-border rounded-xl px-3 h-9 focus-within:border-gold shadow-sm">
-                  <Search className="size-4 text-muted-foreground shrink-0" />
-                  <input
-                    autoFocus
-                    value={menuSearch}
-                    onChange={(e) => setMenuSearch(e.target.value)}
-                    placeholder="ابحث هنا…"
-                    className="flex-1 bg-transparent outline-none text-base md:text-sm font-medium"
-                  />
-                  {menuSearch && (
-                    <button
-                      type="button"
-                      onClick={() => setMenuSearch("")}
-                      className="text-muted-foreground"
-                    >
-                      <X className="size-4" />
-                    </button>
-                  )}
-                </label>
-              </div>
-            )}
-
-            {/* Options List — scrollable with proper iOS touch isolation */}
+            {/* Options List — scrollable with proper touch isolation */}
             <div
               data-scroll-region
-              className="overflow-y-auto py-1 divide-y divide-border/20 flex-1"
+              className="overflow-y-auto py-1 divide-y divide-border/20 flex-1 min-h-0"
               style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y", overscrollBehavior: "contain" } as React.CSSProperties}
             >
               {/* Option: All */}
@@ -356,28 +278,28 @@ export function FilterBar({
                     : "hover:bg-muted text-foreground"
                 }`}
               >
-                <span>الكل</span>
+                <span className="font-bold">الكل</span>
                 {!currentMenuConfig.value && <Check className="size-4 text-gold shrink-0" strokeWidth={2.5} />}
               </button>
 
-              {/* Filtered Options */}
-              {filteredOptions.map((o) => {
+              {/* Options */}
+              {currentMenuConfig.options.map((o) => {
                 const isSelected = o.id === currentMenuConfig.value;
                 return (
                   <button
                     key={o.id}
                     type="button"
                     onClick={() => currentMenuConfig.onSelect(o.id)}
-                    className={`w-full flex items-center justify-between gap-3 px-5 py-3 text-start transition-colors ${
+                    className={`w-full flex items-center justify-between gap-3 px-5 py-2.5 text-start transition-colors ${
                       isSelected
                         ? "bg-gold/10 text-gold font-extrabold"
                         : "hover:bg-muted text-foreground"
                     }`}
                   >
                     <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-semibold truncate">{o.label}</span>
+                      <span className="block text-sm font-semibold truncate leading-tight">{o.label}</span>
                       {o.sub && (
-                        <span className="block text-xs text-muted-foreground truncate" dir="ltr">
+                        <span className="block text-[11px] text-muted-foreground truncate leading-tight mt-0.5" dir="ltr">
                           {o.sub}
                         </span>
                       )}
@@ -387,8 +309,8 @@ export function FilterBar({
                 );
               })}
 
-              {filteredOptions.length === 0 && (
-                <div className="text-center text-xs text-muted-foreground py-10">لا توجد نتائج مطابقة</div>
+              {currentMenuConfig.options.length === 0 && (
+                <div className="text-center text-xs text-muted-foreground py-10">لا توجد خيارات متاحة</div>
               )}
             </div>
           </div>
@@ -430,7 +352,12 @@ export function FilterBar({
           )}
           <button
             type="button"
-            onClick={clearFilters}
+            onClick={() => {
+              clearFilters();
+              if (categoryOverride) {
+                categoryOverride.onChange("");
+              }
+            }}
             className="text-[10px] text-muted-foreground hover:text-destructive underline px-1 py-0.5"
           >
             مسح الكل

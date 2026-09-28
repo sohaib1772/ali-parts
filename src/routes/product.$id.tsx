@@ -379,7 +379,7 @@ function ProductPage() {
             </span>
             {available ? (
               <span className="inline-flex items-center gap-1 text-success text-xs font-bold bg-success/10 border border-success/30 px-2.5 py-1 rounded-full">
-                <CheckCircle2 className="size-3.5" /> متوفر · {stockQty} قطعة
+                <CheckCircle2 className="size-3.5" /> متوفر
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 text-destructive text-xs font-bold bg-destructive/10 border border-destructive/30 px-2.5 py-1 rounded-full">
@@ -396,43 +396,45 @@ function ProductPage() {
           </div>
         )}
 
-        <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs font-bold text-gold">الجهة <span className="text-muted-foreground font-normal">(اختياري)</span></div>
-            {side && (
+        {(product.has_side_options ?? true) && (
+          <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs font-bold text-gold">الجهة <span className="text-muted-foreground font-normal">(اختياري)</span></div>
+              {side && (
+                <button
+                  type="button"
+                  onClick={() => setSide(null)}
+                  className="text-[10px] font-bold text-muted-foreground hover:text-destructive"
+                >
+                  إلغاء الاختيار
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
-                onClick={() => setSide(null)}
-                className="text-[10px] font-bold text-muted-foreground hover:text-destructive"
+                onClick={() => setSide("LH")}
+                className={`h-11 rounded-xl font-black text-sm border-2 transition ${side === "LH" ? "bg-navy text-primary-foreground border-navy" : "bg-card text-navy border-border"}`}
               >
-                إلغاء الاختيار
+                LH · يسار
               </button>
-            )}
+              <button
+                type="button"
+                onClick={() => setSide("RH")}
+                className={`h-11 rounded-xl font-black text-sm border-2 transition ${side === "RH" ? "bg-navy text-primary-foreground border-navy" : "bg-card text-navy border-border"}`}
+              >
+                RH · يمين
+              </button>
+              <button
+                type="button"
+                onClick={() => setSide("PAIR")}
+                className={`h-11 rounded-xl font-black text-sm border-2 transition ${side === "PAIR" ? "bg-gradient-gold text-navy border-gold" : "bg-card text-navy border-border"}`}
+              >
+                تخم · طقم
+              </button>
+            </div>
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => setSide("LH")}
-              className={`h-11 rounded-xl font-black text-sm border-2 transition ${side === "LH" ? "bg-navy text-primary-foreground border-navy" : "bg-card text-navy border-border"}`}
-            >
-              LH · يسار
-            </button>
-            <button
-              type="button"
-              onClick={() => setSide("RH")}
-              className={`h-11 rounded-xl font-black text-sm border-2 transition ${side === "RH" ? "bg-navy text-primary-foreground border-navy" : "bg-card text-navy border-border"}`}
-            >
-              RH · يمين
-            </button>
-            <button
-              type="button"
-              onClick={() => setSide("PAIR")}
-              className={`h-11 rounded-xl font-black text-sm border-2 transition ${side === "PAIR" ? "bg-gradient-gold text-navy border-gold" : "bg-card text-navy border-border"}`}
-            >
-              تخم · طقم
-            </button>
-          </div>
-        </div>
+        )}
 
         {product.compatible_models && product.compatible_models.length > 0 && (
           <Suspense fallback={<CompatibleModelsSkeleton count={product.compatible_models.length} />}>
@@ -554,7 +556,7 @@ function ProductPage() {
           <div className="flex-shrink-0">
             {available ? (
               <span className="inline-flex items-center gap-1 text-success text-xs font-bold bg-success/10 border border-success/30 px-2 py-1 rounded-full">
-                <CheckCircle2 className="size-3.5" /> {stockQty} قطعة
+                <CheckCircle2 className="size-3.5" /> متوفر
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 text-destructive text-xs font-bold bg-destructive/10 border border-destructive/30 px-2 py-1 rounded-full">
@@ -808,23 +810,52 @@ function CompatibleModelsSkeleton({ count }: { count: number }) {
   );
 }
 
+const isUuidOrId = (str: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str.trim()) ||
+  /^[0-9a-f-]{20,}$/i.test(str.trim());
+
 function CompatibleModels({ modelIds }: { modelIds: string[] }) {
-  const { data: models } = useSuspenseQuery(carModelsQuery());
-  const { data: brands } = useSuspenseQuery(brandsQuery());
+  const { data: models = [] } = useSuspenseQuery(carModelsQuery());
+  const { data: brands = [] } = useSuspenseQuery(brandsQuery());
+
+  const items = modelIds
+    .map((mid) => {
+      const cleanMid = String(mid).trim();
+      const model = models.find(
+        (x) => x.id === cleanMid || x.name_ar === cleanMid || x.name_en === cleanMid,
+      );
+      if (model) {
+        const brand = brands.find((b) => b.id === model.brand_id);
+        const brandName = brand?.name_ar || brand?.name_en || "";
+        const modelName = model.name_ar || model.name_en || "";
+        return `${brandName ? brandName + " " : ""}${modelName}`.trim();
+      }
+      // If it's a UUID/database ID and not found, never display it to the user!
+      if (isUuidOrId(cleanMid)) {
+        return null;
+      }
+      return cleanMid;
+    })
+    .filter((label): label is string => !!label && label.length > 0);
+
+  const uniqueItems = Array.from(new Set(items));
+
+  if (uniqueItems.length === 0) {
+    return null;
+  }
+
   return (
     <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
       <div className="text-xs font-bold text-gold mb-2">السيارات المتوافقة</div>
       <div className="flex flex-wrap gap-2">
-        {modelIds.map((mid) => {
-          const model = models.find((x) => x.id === mid);
-          const brand = model ? brands.find((b) => b.id === model.brand_id) : null;
-          const label = model
-            ? `${brand ? (brand.name_ar || brand.name_en) + " " : ""}${model.name_ar || model.name_en}`
-            : mid;
-          return (
-            <span key={mid} className="text-xs px-2.5 py-1 rounded-full bg-navy text-primary-foreground">{label}</span>
-          );
-        })}
+        {uniqueItems.map((label, idx) => (
+          <span
+            key={idx}
+            className="text-xs px-2.5 py-1 rounded-full bg-navy text-primary-foreground font-medium"
+          >
+            {label}
+          </span>
+        ))}
       </div>
     </div>
   );

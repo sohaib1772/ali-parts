@@ -21,6 +21,7 @@ function p(over: Partial<Product>): Product {
     stock_qty: 1,
     is_featured: false,
     is_deal: false,
+    specs: over.specs ?? null,
   } as Product;
 }
 
@@ -54,6 +55,22 @@ describe("applyStorefrontFilters — null-tolerant, catalog-safe", () => {
     expect(out).toContain(universal); // null brand → shown
     expect(out).toContain(malibu); // matching brand → shown
     expect(out).not.toContain(otherBrand); // different brand → hidden
+  });
+
+  it("BRAND filter matches multi-brand product when brand is in specs.brand_ids", () => {
+    const multiBrandPart = p({
+      id: "multi-brand",
+      brand_id: "brand-gmc",
+      specs: { brand_ids: [BRAND, "brand-gmc"] },
+    });
+    const outChevy = applyStorefrontFilters([multiBrandPart], { ...EMPTY_FILTERS, brand: BRAND });
+    expect(outChevy).toContain(multiBrandPart);
+
+    const outGmc = applyStorefrontFilters([multiBrandPart], { ...EMPTY_FILTERS, brand: "brand-gmc" });
+    expect(outGmc).toContain(multiBrandPart);
+
+    const outFord = applyStorefrontFilters([multiBrandPart], { ...EMPTY_FILTERS, brand: "brand-ford" });
+    expect(outFord).not.toContain(multiBrandPart);
   });
 
   it("CATEGORY narrows to the chosen category (strict, real data)", () => {

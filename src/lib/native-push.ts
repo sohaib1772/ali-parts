@@ -75,14 +75,41 @@ export async function registerNativePush(
       await PushNotifications.addListener("registration", (token) => {
         const platform = Capacitor.getPlatform() === "ios" ? "ios" : "android";
         void supabase
-          .rpc("register_device_token", { p_token: token.value, p_platform: platform })
+          .rpc("register_device_token", {
+            p_token: token.value,
+            p_platform: platform,
+            p_device_info: {
+              client: "capacitor",
+              platform,
+              user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+            },
+          })
           .then(({ error }) => {
-            if (error) console.error("[push] register_device_token failed", error.message);
+            if (error) {
+              console.error("[push] register_device_token failed", error.message);
+              void supabase.rpc("log_notification_event", {
+                p_event_type: "token_registration_failed",
+                p_status: "failure",
+                p_platform: platform,
+                p_title: "فشل تسجيل التوكن في السيرفر",
+                p_message: "فشلت استجابة RPC register_device_token في التطبيق.",
+                p_error_details: error.message,
+              });
+            }
           });
       });
 
       await PushNotifications.addListener("registrationError", (err) => {
         console.error("[push] registration error", err);
+        const platform = Capacitor.getPlatform() === "ios" ? "ios" : "android";
+        void supabase.rpc("log_notification_event", {
+          p_event_type: "fcm_token_failed",
+          p_status: "failure",
+          p_platform: platform,
+          p_title: "خطأ في تسجيل إشعارات الجهاز",
+          p_message: "حدث خطأ أثناء تسجيل الـ Push في نظام التشغيل.",
+          p_error_details: typeof err === "object" ? JSON.stringify(err) : String(err),
+        });
       });
 
       // Tapped from the system tray while backgrounded/closed -> deep-link.
@@ -102,7 +129,17 @@ export async function registerNativePush(
     if (receive === "prompt" || receive === "prompt-with-rationale") {
       receive = (await PushNotifications.requestPermissions()).receive;
     }
-    if (receive !== "granted") return;
+    if (receive !== "granted") {
+      const platform = Capacitor.getPlatform() === "ios" ? "ios" : "android";
+      void supabase.rpc("log_notification_event", {
+        p_event_type: "permission_denied",
+        p_status: "warning",
+        p_platform: platform,
+        p_title: "رفض إذن الإشعارات",
+        p_message: `قام المستخدم برفض أو تعطيل إذن الإشعارات (${receive}).`,
+      });
+      return;
+    }
 
     // Triggers the 'registration' listener above with the FCM token.
     await PushNotifications.register();

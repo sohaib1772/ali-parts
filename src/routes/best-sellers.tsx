@@ -12,10 +12,10 @@ export const Route = createFileRoute("/best-sellers")({
   loader: ({ context }) => context.queryClient.ensureQueryData(bestSellersQuery()),
   head: () => ({
     meta: [
-      { title: "الأكثر مبيعاً | الساير" },
-      { name: "description", content: "أعلى قطع الغيار مبيعاً في متجر الساير حسب المبيعات الفعلية." },
-      { property: "og:title", content: "الأكثر مبيعاً | الساير" },
-      { property: "og:description", content: "أعلى قطع الغيار مبيعاً في متجر الساير." },
+      { title: "الأكثر مبيعاً — Ali Parts" },
+      { name: "description", content: "أعلى قطع الغيار مبيعاً في متجر Ali Parts حسب المبيعات الفعلية." },
+      { property: "og:title", content: "الأكثر مبيعاً — Ali Parts" },
+      { property: "og:description", content: "أعلى قطع الغيار مبيعاً في متجر Ali Parts." },
     ],
   }),
   component: BestSellersPage,

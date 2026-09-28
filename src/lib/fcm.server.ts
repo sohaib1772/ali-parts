@@ -49,6 +49,8 @@ async function getClient(): Promise<{ projectId: string; jwt: JWT }> {
 export type FcmPayload = {
   title: string;
   body: string;
+  /** Optional image URL to display in the push notification (rich push). */
+  image?: string;
   /** Attached as FCM `data` (all values coerced to strings). Drives the
    *  client's tap deep-link — see deepLinkForPush in native-push.ts. */
   data?: Record<string, string>;
@@ -75,11 +77,27 @@ export async function sendFcmToUser(
 
   const { data: rows, error } = await supabaseAdmin
     .from("device_tokens")
-    .select("token")
+    .select("token, platform")
     .eq("user_id", userId);
   if (error) throw new Error(error.message);
-  const tokens = (rows ?? []).map((r: { token: string }) => r.token);
-  if (tokens.length === 0) return { sent: 0, removed: 0, tokens: 0 };
+
+  const deviceList = (rows ?? []) as Array<{ token: string; platform: string | null }>;
+  if (deviceList.length === 0) {
+    try {
+      await supabaseAdmin.from("notification_logs").insert({
+        user_id: userId,
+        event_type: "no_tokens_found",
+        status: "warning",
+        platform: "server",
+        title: payload.title,
+        message: "تعذر إرسال الإشعار لعدم وجود أي جهاز مسجل لهذا المستخدم.",
+        metadata: { payload },
+      });
+    } catch (logErr) {
+      console.warn("[fcm] failed to insert no_tokens log:", logErr);
+    }
+    return { sent: 0, removed: 0, tokens: 0 };
+  }
 
   const { projectId, jwt } = await getClient();
   const accessToken = (await jwt.getAccessToken()).token; // cached by JWT client
@@ -89,15 +107,52 @@ export async function sendFcmToUser(
   const dead: string[] = [];
 
   await Promise.all(
-    tokens.map(async (token) => {
+    deviceList.map(async (device) => {
+      const token = device.token;
+      const platform = device.platform ?? "android";
+      const preview =
+        token.length > 14
+          ? `${token.slice(0, 8)}...${token.slice(-6)}`
+          : token.slice(0, 8);
+
       const message = {
         message: {
           token,
-          notification: { title: payload.title, body: payload.body },
+          notification: {
+            title: payload.title,
+            body: payload.body,
+            ...(payload.image ? { image: payload.image } : {}),
+          },
           data: payload.data ?? {},
-          android: { priority: "HIGH" as const, notification: { sound: "default" } },
+          android: {
+            priority: "HIGH" as const,
+            notification: {
+              sound: "default",
+              defaultSound: true,
+              defaultVibrateTimings: true,
+              ...(payload.image ? { image: payload.image } : {}),
+            },
+          },
+          apns: {
+            payload: {
+              aps: {
+                alert: {
+                  title: payload.title,
+                  body: payload.body,
+                },
+                sound: "default",
+                badge: 1,
+              },
+            },
+            headers: {
+              "apns-priority": "10",
+              "apns-push-type": "alert",
+            },
+            ...(payload.image ? { fcm_options: { image: payload.image } } : {}),
+          },
         },
       };
+
       try {
         const res = await fetch(url, {
           method: "POST",
@@ -107,18 +162,68 @@ export async function sendFcmToUser(
           },
           body: JSON.stringify(message),
         });
+
         if (res.ok) {
           sent++;
+          try {
+            await supabaseAdmin.from("notification_logs").insert({
+              user_id: userId,
+              event_type: "push_send_success",
+              status: "success",
+              platform,
+              token_preview: preview,
+              title: payload.title,
+              message: `تم تسليم إشعار FCM بنجاح إلى جهاز ${platform === "ios" ? "iPhone" : platform === "android" ? "Android" : "المتصفح"}.`,
+              metadata: { payload },
+            });
+          } catch (e) {
+            console.warn("[fcm] log success insert error:", e);
+          }
           return;
         }
+
         const text = await res.text().catch(() => "");
-        if (isDeadTokenError(res.status, text)) {
+        const isDead = isDeadTokenError(res.status, text);
+        if (isDead) {
           dead.push(token);
         } else {
           console.error("[fcm] send failed", res.status, text.slice(0, 300));
         }
+
+        try {
+          await supabaseAdmin.from("notification_logs").insert({
+            user_id: userId,
+            event_type: isDead ? "push_token_unregistered" : "push_send_failed",
+            status: isDead ? "warning" : "failure",
+            platform,
+            token_preview: preview,
+            title: payload.title,
+            message: isDead
+              ? "فشل الإرسال: رمز الجهاز غير مسجل أو منتهي الصلاحية (UNREGISTERED) - تم حذف الرمز تلقائياً."
+              : `فشل إرسال الإشعار من خادم FCM (كود: ${res.status}).`,
+            error_details: `HTTP ${res.status}: ${text}`,
+            metadata: { payload, httpStatus: res.status, rawResponse: text },
+          });
+        } catch (e) {
+          console.warn("[fcm] log failure insert error:", e);
+        }
       } catch (err) {
         console.error("[fcm] network error", err);
+        try {
+          await supabaseAdmin.from("notification_logs").insert({
+            user_id: userId,
+            event_type: "push_network_error",
+            status: "failure",
+            platform,
+            token_preview: preview,
+            title: payload.title,
+            message: "خطأ اتصال أثناء التخاطب مع خوادم Google Firebase.",
+            error_details: err instanceof Error ? `${err.name}: ${err.message}` : String(err),
+            metadata: { payload },
+          });
+        } catch (e) {
+          console.warn("[fcm] log network error insert error:", e);
+        }
       }
     }),
   );
@@ -127,5 +232,5 @@ export async function sendFcmToUser(
     await supabaseAdmin.from("device_tokens").delete().in("token", dead);
   }
 
-  return { sent, removed: dead.length, tokens: tokens.length };
+  return { sent, removed: dead.length, tokens: deviceList.length };
 }

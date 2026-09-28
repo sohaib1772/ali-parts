@@ -269,6 +269,70 @@ export async function uploadMediaFile(
 }
 
 /**
+ * Extracts the first frame (at 0.1s) of a video file as a JPEG File.
+ * Useful for banners or reels where no cover image was uploaded.
+ */
+export async function extractVideoThumbnail(file: File): Promise<File> {
+  const url = URL.createObjectURL(file);
+  try {
+    const video = document.createElement("video");
+    video.src = url;
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    video.style.position = "fixed";
+    video.style.opacity = "0";
+    video.style.pointerEvents = "none";
+    document.body.appendChild(video);
+
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error("Timeout loading video frame")), 10000);
+      video.onloadeddata = () => {
+        clearTimeout(timeout);
+        resolve();
+      };
+      video.onerror = () => {
+        clearTimeout(timeout);
+        reject(new Error("Error loading video"));
+      };
+    });
+
+    const targetTime = Math.min(0.1, video.duration > 0 ? video.duration / 2 : 0);
+    if (targetTime > 0) {
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(() => resolve(), 3000);
+        video.onseeked = () => {
+          clearTimeout(timeout);
+          resolve();
+        };
+        video.currentTime = targetTime;
+      });
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 360;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Could not get canvas 2D context");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", 0.85),
+    );
+
+    if (video.parentNode) {
+      document.body.removeChild(video);
+    }
+    if (!blob) throw new Error("Failed to convert video frame to blob");
+
+    const baseName = file.name.replace(/\.[^/.]+$/, "");
+    return new File([blob], `${baseName}_thumb.jpg`, { type: "image/jpeg" });
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/**
  * Re-encode a video in the browser using MediaRecorder + captureStream at a
  * bounded bitrate and width. This can cut phone-recorded clips (often
  * 20–50 Mbps) down to a few megabytes so the upload is dramatically faster.

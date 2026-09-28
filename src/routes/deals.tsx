@@ -12,7 +12,7 @@ export const Route = createFileRoute("/deals")({
   loader: ({ context }) => context.queryClient.ensureQueryData(dealsQuery()),
   head: () => ({
     meta: [
-      { title: "عروض لفترة محدودة | الساير" },
+      { title: "عروض لفترة محدودة — Ali Parts" },
       { name: "description", content: "أسعار خاصة على قطع غيار السيارات لفترة قصيرة." },
     ],
   }),

@@ -144,7 +144,7 @@ export function ProductCard({ product }: { product: Product }) {
             <span className="text-base font-extrabold text-navy">{formatIQD(adjust(product.price_iqd))}</span>
             {available ? (
               <span className="ms-auto text-[10px] font-bold text-success">
-                متوفر · {stockQty} قطعة
+                متوفر
               </span>
             ) : (
               <span className="ms-auto text-[10px] font-bold text-destructive">غير متوفر</span>

@@ -88,7 +88,7 @@ function AccountPage() {
   const signOut = async () => {
     await qc.cancelQueries();
     qc.clear();
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
     toast.success("تم تسجيل الخروج");
     navigate({ to: "/auth", replace: true });
   };

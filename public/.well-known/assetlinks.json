@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.mkteb.ali.chevrolet",
+      "sha256_cert_fingerprints": [
+        "F5:FC:61:DC:01:A9:40:BA:1F:9F:82:4A:AB:A2:5E:38:BC:7F:8A:23:BB:0C:3E:D5:06:E4:09:CB:BF:2D:37:FC"
+      ]
+    }
+  }
+]

@@ -1,0 +1,34 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "<APPLE_TEAM_ID>.com.mkteb.ali.chevrolet",
+        "paths": [
+          "/reels*",
+          "/reel*",
+          "/offers*",
+          "/product/*"
+        ],
+        "components": [
+          {
+            "/": "/reels*",
+            "comment": "Reels deep link"
+          },
+          {
+            "/": "/reel*",
+            "comment": "Reel deep link"
+          },
+          {
+            "/": "/offers*",
+            "comment": "Offers deep link"
+          },
+          {
+            "/": "/product/*",
+            "comment": "Product details deep link"
+          }
+        ]
+      }
+    ]
+  }
+}

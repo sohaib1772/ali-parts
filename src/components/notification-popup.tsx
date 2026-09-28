@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Bell, X, ShieldAlert } from "lucide-react";
 
@@ -7,10 +8,12 @@ type Notif = {
   title: string | null;
   body: string | null;
   type: string | null;
+  order_id?: string | null;
   created_at: string;
 };
 
 export function NotificationPopup() {
+  const navigate = useNavigate();
   const [notif, setNotif] = useState<Notif | null>(null);
 
   useEffect(() => {
@@ -30,7 +33,7 @@ export function NotificationPopup() {
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${uid}` },
           (payload) => {
-            const row = payload.new as Notif & { read_at: string | null };
+            const row = payload.new as Notif & { read_at: string | null; order_id: string | null };
             if (!mounted) return;
             if (row.read_at) return;
             try {
@@ -43,6 +46,7 @@ export function NotificationPopup() {
               title: row.title,
               body: row.body,
               type: row.type,
+              order_id: row.order_id,
               created_at: row.created_at,
             });
           },
@@ -75,6 +79,32 @@ export function NotificationPopup() {
         .update({ read_at: new Date().toISOString() })
         .eq("id", id);
     } catch { /* noop */ }
+  };
+
+  const handleView = async () => {
+    if (!notif) return;
+    const { order_id, type } = notif;
+    await dismiss();
+    if (type === "admin_new_order") {
+      navigate({ to: "/admin" });
+    } else if (order_id) {
+      navigate({ to: "/orders/$id", params: { id: order_id } });
+    } else if (type === "promo" || type === "banner_comment" || type === "banner_reply") {
+      navigate({ to: "/offers" });
+    } else if (type === "new_product" || type === "product" || (notif as any).product_id) {
+      const pid = (notif as any).product_id;
+      if (pid) {
+        navigate({ to: "/product/$id", params: { id: pid } });
+      } else {
+        navigate({ to: "/products" });
+      }
+    } else if (type === "replacement_status") {
+      navigate({ to: "/replacements" });
+    } else if (type === "account_status") {
+      navigate({ to: "/account" });
+    } else {
+      navigate({ to: "/notifications" });
+    }
   };
 
   if (!notif) return null;
@@ -129,13 +159,24 @@ export function NotificationPopup() {
         {notif.body && (
           <p className="text-sm text-muted-foreground leading-relaxed">{notif.body}</p>
         )}
-        <button
-          type="button"
-          onClick={dismiss}
-          className="mt-5 w-full rounded-full bg-primary text-primary-foreground py-2.5 font-bold text-sm"
-        >
-          تم
-        </button>
+        <div className="mt-5 flex items-center gap-3">
+          {!isBlock && (
+            <button
+              type="button"
+              onClick={handleView}
+              className="flex-1 rounded-full border border-border bg-background py-2.5 font-bold text-sm text-foreground hover:bg-muted"
+            >
+              عرض
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={dismiss}
+            className="flex-1 rounded-full bg-primary text-primary-foreground py-2.5 font-bold text-sm"
+          >
+            تم
+          </button>
+        </div>
       </div>
     </div>
   );

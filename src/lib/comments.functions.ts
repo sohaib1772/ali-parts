@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const AddBannerCommentInput = z.object({
   bannerId: z.string().uuid(),
   content: z.string().trim().min(1).max(1000),
+  parentId: z.string().uuid().optional().nullable(),
   isAdminReply: z.boolean().optional().default(false),
 });
 
@@ -35,12 +36,20 @@ export const addBannerComment = createServerFn({ method: "POST" })
 
     let isAdminReply = false;
     if (data.isAdminReply) {
-      const { data: isAdmin, error } = await context.supabase.rpc("has_role", {
+      const { data: isAdmin } = await context.supabase.rpc("has_role", {
         _user_id: context.userId,
         _role: "admin",
       });
-      if (error) throw new Error(error.message);
-      isAdminReply = !!isAdmin;
+      if (isAdmin) {
+        isAdminReply = true;
+      } else {
+        const { data: staff } = await context.supabase
+          .from("staff_permissions")
+          .select("user_id")
+          .eq("user_id", context.userId)
+          .maybeSingle();
+        isAdminReply = !!staff;
+      }
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -49,6 +58,7 @@ export const addBannerComment = createServerFn({ method: "POST" })
       .insert({
         banner_id: data.bannerId,
         user_id: context.userId,
+        parent_id: data.parentId || null,
         content,
         is_admin_reply: isAdminReply,
       })
@@ -56,5 +66,21 @@ export const addBannerComment = createServerFn({ method: "POST" })
       .single();
 
     if (error) throw new Error(error.message);
+
+    // Dispatch in-app and push notifications for comment / reply
+    try {
+      const { dispatchCommentNotification } = await import("./comments-notify.server");
+      await dispatchCommentNotification({
+        bannerId: data.bannerId,
+        commentId: row.id,
+        authorId: context.userId,
+        parentId: data.parentId || null,
+        content,
+        isAdminReply,
+      });
+    } catch (notifErr) {
+      console.warn("[comments] Failed to dispatch comment notification:", notifErr);
+    }
+
     return row;
   });

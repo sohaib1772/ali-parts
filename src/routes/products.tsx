@@ -24,8 +24,8 @@ export const Route = createFileRoute("/products")({
   },
   head: () => ({
     meta: [
-      { title: "المنتجات | الساير" },
-      { name: "description", content: "تصفح جميع قطع الغيار المتوفرة في متجر الساير." },
+      { title: "المنتجات — Ali Parts" },
+      { name: "description", content: "تصفح جميع قطع الغيار المتوفرة في متجر Ali Parts." },
     ],
   }),
   component: AllProductsPage,

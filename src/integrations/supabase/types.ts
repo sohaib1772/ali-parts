@@ -293,10 +293,13 @@ export type Database = {
           image_url: string
           is_active: boolean
           link: string | null
+          manual_likes_count: number
+          manual_views_count: number
           sort_order: number | null
           subtitle_ar: string | null
           title_ar: string | null
           video_url: string | null
+          views_count: number
         }
         Insert: {
           created_at?: string
@@ -305,10 +308,13 @@ export type Database = {
           image_url: string
           is_active?: boolean
           link?: string | null
+          manual_likes_count?: number
+          manual_views_count?: number
           sort_order?: number | null
           subtitle_ar?: string | null
           title_ar?: string | null
           video_url?: string | null
+          views_count?: number
         }
         Update: {
           created_at?: string
@@ -317,10 +323,13 @@ export type Database = {
           image_url?: string
           is_active?: boolean
           link?: string | null
+          manual_likes_count?: number
+          manual_views_count?: number
           sort_order?: number | null
           subtitle_ar?: string | null
           title_ar?: string | null
           video_url?: string | null
+          views_count?: number
         }
         Relationships: []
       }
@@ -679,12 +688,16 @@ export type Database = {
           deal_expires_at: string | null
           delivery_group: string | null
           description_ar: string | null
+          dialect_names: string | null
+          has_side_options: boolean
           id: string
           images: string[] | null
           in_stock: boolean
           is_deal: boolean
           is_featured: boolean
+          max_merge_qty: number | null
           merge_delivery: boolean
+          merge_with_groups: string[] | null
           name_ar: string
           name_en: string | null
           oem_number: string | null
@@ -705,12 +718,16 @@ export type Database = {
           deal_expires_at?: string | null
           delivery_group?: string | null
           description_ar?: string | null
+          dialect_names?: string | null
+          has_side_options?: boolean
           id?: string
           images?: string[] | null
           in_stock?: boolean
           is_deal?: boolean
           is_featured?: boolean
+          max_merge_qty?: number | null
           merge_delivery?: boolean
+          merge_with_groups?: string[] | null
           name_ar: string
           name_en?: string | null
           oem_number?: string | null
@@ -731,12 +748,16 @@ export type Database = {
           deal_expires_at?: string | null
           delivery_group?: string | null
           description_ar?: string | null
+          dialect_names?: string | null
+          has_side_options?: boolean
           id?: string
           images?: string[] | null
           in_stock?: boolean
           is_deal?: boolean
           is_featured?: boolean
+          max_merge_qty?: number | null
           merge_delivery?: boolean
+          merge_with_groups?: string[] | null
           name_ar?: string
           name_en?: string | null
           oem_number?: string | null

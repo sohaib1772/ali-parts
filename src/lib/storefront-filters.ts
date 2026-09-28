@@ -175,8 +175,18 @@ export function useStorefrontFilters() {
 export function applyStorefrontFilters(products: Product[], filters: StorefrontFilters): Product[] {
   const q = filters.q.trim().toLowerCase();
   return products.filter((p) => {
-    if (filters.category && p.category_id !== filters.category) return false;
-    if (filters.brand && p.brand_id && p.brand_id !== filters.brand) return false;
+    if (filters.category) {
+      const catIds: string[] = Array.isArray((p.specs as any)?.category_ids) && (p.specs as any).category_ids.length > 0
+        ? (p.specs as any).category_ids
+        : (p.category_id ? [p.category_id] : []);
+      if (!catIds.includes(filters.category)) return false;
+    }
+    if (filters.brand) {
+      const brandIds: string[] = Array.isArray((p.specs as any)?.brand_ids) && (p.specs as any).brand_ids.length > 0
+        ? (p.specs as any).brand_ids
+        : (p.brand_id ? [p.brand_id] : []);
+      if (brandIds.length > 0 && !brandIds.includes(filters.brand)) return false;
+    }
     if (filters.model) {
       const cm = p.compatible_models;
       const universal = !cm || cm.length === 0;

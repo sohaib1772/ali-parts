@@ -1,5 +1,6 @@
 import { queryOptions, infiniteQueryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { buildSearchOrClause } from "@/lib/arabic-search";
 
 export type Product = {
   id: string;
@@ -11,6 +12,10 @@ export type Product = {
   price_usd: number;
   compare_price_iqd: number | null;
   shipping_iqd: number | null;
+  merge_delivery?: boolean | null;
+  delivery_group?: string | null;
+  merge_with_groups?: string[] | null;
+  max_merge_qty?: number | null;
   category_id: string | null;
   brand_id: string | null;
   compatible_models?: string[] | null;
@@ -23,6 +28,7 @@ export type Product = {
   deal_expires_at?: string | null;
   created_at?: string | null;
   condition?: "new" | "used" | null;
+  has_side_options?: boolean | null;
 };
 
 export type Category = { id: string; name_ar: string; name_en: string; icon: string | null; image_url: string | null; sort_order: number | null };
@@ -32,10 +38,10 @@ export type Banner = { id: string; title_ar: string | null; subtitle_ar: string 
 
 // Slim projection for product lists (cards). Excludes heavy fields like
 // `description_ar` and `specs` that are only needed on the product detail page.
-// `compatible_models` IS included: the storefront FilterBar's Model filter matches
-// against it client-side, so list rows must carry it (it's a small uuid[]).
+// `compatible_models` and `specs` ARE included: the storefront FilterBar matches
+// against them client-side for multi-brand and model support.
 const PRODUCT_LIST_COLUMNS =
-  "id, name_ar, name_en, oem_number, price_iqd, price_usd, compare_price_iqd, shipping_iqd, merge_delivery, delivery_group, category_id, brand_id, compatible_models, images, in_stock, stock_qty, is_featured, is_deal, deal_expires_at, sales_count, condition, created_at";
+  "id, name_ar, name_en, oem_number, price_iqd, price_usd, compare_price_iqd, shipping_iqd, merge_delivery, delivery_group, merge_with_groups, max_merge_qty, category_id, brand_id, compatible_models, images, in_stock, stock_qty, is_featured, is_deal, deal_expires_at, sales_count, condition, has_side_options, created_at, specs";
 
 export const categoriesQuery = () =>
   queryOptions({
@@ -205,11 +211,11 @@ export const searchProductsQuery = (q: string) =>
     staleTime: 60_000,
     queryFn: async () => {
       if (!q.trim()) return [] as Product[];
-      const pattern = `%${q}%`;
+      const orClause = buildSearchOrClause(q);
       const { data, error } = await supabase
         .from("products")
         .select(PRODUCT_LIST_COLUMNS)
-        .or(`name_ar.ilike.${pattern},oem_number.ilike.${pattern},name_en.ilike.${pattern}`)
+        .or(orClause)
         .order("in_stock", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(40);
@@ -242,8 +248,8 @@ export const storefrontSearchQuery = (filters: {
         .select(PRODUCT_LIST_COLUMNS);
 
       if (q) {
-        const pattern = `%${q}%`;
-        req = req.or(`name_ar.ilike.${pattern},oem_number.ilike.${pattern},name_en.ilike.${pattern}`);
+        const orClause = buildSearchOrClause(q);
+        req = req.or(orClause);
       }
 
       if (category) {
@@ -251,13 +257,17 @@ export const storefrontSearchQuery = (filters: {
       }
 
       if (brand) {
-        req = req.eq("brand_id", brand);
+        req = req.or(`brand_id.eq.${brand},specs->brand_ids.cs.["${brand}"]`);
+      }
+
+      if (model) {
+        req = req.contains("compatible_models", [model]);
       }
 
       req = req
         .order("in_stock", { ascending: false })
         .order("created_at", { ascending: false })
-        .limit(60);
+        .limit(200);
 
       const { data, error } = await req;
       if (error) throw error;

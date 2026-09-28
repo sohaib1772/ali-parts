@@ -1,9 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useSearch, useParams } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Sparkles, Volume2, VolumeX, ChevronLeft, X, Heart, MessageCircle,
-  Send, Trash2, Pencil, Shield, Ban, Check, Search as SearchIcon, Users as UsersIcon,
+  Send, Trash2, Pencil, Shield, Ban, Check, Search as SearchIcon, Users as UsersIcon, Reply,
+  Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageShell } from "@/components/page-shell";
@@ -19,6 +20,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCachedVideo, usePrefetchNearbyVideo, setPrefetchPaused } from "@/lib/use-cached-video";
+import { isYouTubeUrl, getYouTubeVideoId, getYouTubeMaxResThumbnail, safeYouTubeThumbnailUrl } from "@/lib/youtube";
+import { z } from "zod";
 
 function CommentsSkeleton({ count = 5 }: { count?: number }) {
   return (
@@ -37,7 +40,13 @@ function CommentsSkeleton({ count = 5 }: { count?: number }) {
   );
 }
 
+export const offersSearchSchema = z.object({
+  id: z.string().optional(),
+  bannerId: z.string().optional(),
+});
+
 export const Route = createFileRoute("/offers")({
+  validateSearch: offersSearchSchema,
   head: () => ({
     meta: [
       { title: "العروض الحصرية — Ali Parts" },
@@ -64,34 +73,101 @@ type CommentRow = {
   profile?: { full_name: string | null; avatar_url: string | null; is_blocked: boolean | null } | null;
 };
 
-function OffersPage() {
+export function OffersPage() {
   const { data: banners } = useSuspenseQuery(bannersQuery());
   const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const feedRef = useRef<HTMLDivElement | null>(null);
+  const hasScrolledToTarget = useRef(false);
+
+  // Extract target ID from search params or route params or window location
+  const search = useSearch({ strict: false }) as { id?: string; bannerId?: string } | undefined;
+  const params = useParams({ strict: false }) as { id?: string } | undefined;
+  const targetId =
+    search?.id ||
+    search?.bannerId ||
+    params?.id ||
+    (typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("id") ||
+        new URLSearchParams(window.location.search).get("bannerId")
+      : null);
+
+  useEffect(() => {
+    if (!targetId || !banners || banners.length === 0 || hasScrolledToTarget.current) return;
+    const targetIdx = banners.findIndex((b) => b.id === targetId);
+    if (targetIdx !== -1) {
+      hasScrolledToTarget.current = true;
+      setActiveIndex(targetIdx);
+      setTimeout(() => {
+        const el = feedRef.current?.children[targetIdx] as HTMLElement | undefined;
+        el?.scrollIntoView({ behavior: "smooth" });
+      }, 150);
+    }
+  }, [targetId, banners]);
+
   const handleActive = useCallback((index: number) => {
     setActiveIndex((current) => (current === index ? current : index));
   }, []);
+
+  const handleNext = useCallback(
+    (currentIndex: number) => {
+      if (!banners || banners.length <= 1) return;
+      const next = (currentIndex + 1) % banners.length;
+      const el = feedRef.current?.children[next] as HTMLElement | undefined;
+      el?.scrollIntoView({ behavior: "smooth" });
+    },
+    [banners],
+  );
+
+  const activeBannerId = banners[activeIndex]?.id || targetId || "";
+
+  const handleOpenApp = () => {
+    const isAndroid = typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
+    if (isAndroid) {
+      const intentUrl = activeBannerId
+        ? `intent://maktabali.com/reels?id=${activeBannerId}#Intent;scheme=https;package=com.mkteb.ali.chevrolet;end`
+        : `intent://maktabali.com/reels#Intent;scheme=https;package=com.mkteb.ali.chevrolet;end`;
+      window.location.href = intentUrl;
+    } else {
+      const appUrl = activeBannerId
+        ? `com.mkteb.ali.chevrolet://reels?id=${activeBannerId}`
+        : `com.mkteb.ali.chevrolet://reels`;
+      window.location.href = appUrl;
+    }
+  };
 
   return (
     <PageShell showHeader={false} showNav={false}>
       <div className="fixed inset-0 bg-black overflow-hidden">
         <Link
           to="/"
-          className="absolute top-4 start-4 z-30 size-10 rounded-full bg-black/40 backdrop-blur text-white grid place-items-center border border-white/20"
+          className="absolute top-4 start-4 z-30 size-10 rounded-full bg-black/40 backdrop-blur text-white grid place-items-center border border-white/20 hover:bg-black/60 transition-colors"
           aria-label="رجوع"
         >
           <ChevronLeft className="size-5 rtl:rotate-180" />
         </Link>
         <div className="absolute top-4 inset-x-0 z-20 flex justify-center pointer-events-none">
-          <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white bg-black/40 border border-white/20 rounded-full px-3 py-1 backdrop-blur">
-            <Sparkles className="size-3" /> ريلز العروض
+          <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white bg-black/40 border border-white/20 rounded-full px-3 py-1 backdrop-blur shadow-sm">
+            <Sparkles className="size-3 text-amber-400" /> ريلز العروض
           </div>
         </div>
+        <button
+          onClick={handleOpenApp}
+          className="absolute top-4 end-4 z-30 h-10 px-3.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/25 active:scale-95 transition-all cursor-pointer"
+          title="مشاهدة في تطبيق مكتب علي"
+        >
+          <Smartphone className="size-4" />
+          <span>فتح في التطبيق</span>
+        </button>
 
         {banners.length === 0 ? (
           <div className="h-full grid place-items-center text-white/70 text-sm">لا توجد عروض حالياً.</div>
         ) : (
-          <div className="h-full overflow-y-auto snap-y snap-mandatory scroll-smooth" style={{ scrollbarWidth: "none" }}>
+          <div
+            ref={feedRef}
+            className="h-full overflow-y-auto snap-y snap-mandatory scroll-smooth"
+            style={{ scrollbarWidth: "none" }}
+          >
             {banners.map((b, index) => (
               <ReelItem
                 key={b.id}
@@ -99,6 +175,7 @@ function OffersPage() {
                 index={index}
                 shouldLoad={Math.abs(index - activeIndex) <= 1}
                 onActive={handleActive}
+                onNext={() => handleNext(index)}
                 onOpenComments={() => setOpenCommentsFor(b.id)}
               />
             ))}
@@ -121,12 +198,14 @@ function ReelItem({
   index,
   shouldLoad,
   onActive,
+  onNext,
   onOpenComments,
 }: {
   banner: Banner;
   index: number;
   shouldLoad: boolean;
   onActive: (index: number) => void;
+  onNext?: () => void;
   onOpenComments: () => void;
 }) {
   const [muted, setMuted] = useState<boolean>(() => {
@@ -192,6 +271,11 @@ function ReelItem({
   const likes = useLikes(banner.id, userId, shouldLoad);
   const commentsCount = useCommentsCount(banner.id, shouldLoad);
 
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const [scrubTime, setScrubTime] = useState(0);
+
   const lastTapRef = useRef<number>(0);
   const [burst, setBurst] = useState(0);
   const singleTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -229,34 +313,62 @@ function ReelItem({
       className="relative w-full h-[100dvh] snap-start snap-always bg-black"
     >
       {video && shouldLoad ? (
-        <video
-          ref={videoRef}
-          src={cachedVideo ?? video}
-          poster={banner.image_url || undefined}
-          autoPlay
-          muted={muted}
-          loop
-          playsInline
-          preload="auto"
-          disableRemotePlayback
-          className="absolute inset-0 w-full h-full object-contain"
-          onClick={handleMediaTap}
-          onVolumeChange={(e) => {
-            const el = e.currentTarget;
-            setMuted(el.muted);
-          }}
-          onWaiting={() => setPrefetchPaused(true)}
-          onStalled={() => setPrefetchPaused(true)}
-          onPlaying={() => setPrefetchPaused(false)}
-          onCanPlayThrough={() => setPrefetchPaused(false)}
-          onPause={() => setPrefetchPaused(false)}
-        />
-      ) : banner.image_url ? (
+        isYouTubeUrl(video) ? (
+          <div className="absolute inset-0 w-full h-full overflow-hidden bg-black" onClick={handleMediaTap}>
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${getYouTubeVideoId(video)}?autoplay=1&mute=${muted ? 1 : 0}&controls=0&loop=1&playlist=${getYouTubeVideoId(video)}&playsinline=1&modestbranding=1&rel=0&iv_load_policy=3&enablejsapi=1`}
+              title={banner.title_ar ?? "YouTube Reel"}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              className="absolute inset-0 w-full h-full pointer-events-none scale-[1.35] object-cover"
+            />
+          </div>
+        ) : (
+          <video
+            ref={videoRef}
+            src={cachedVideo ?? video}
+            poster={banner.image_url || undefined}
+            autoPlay
+            muted={muted}
+            playsInline
+            preload="auto"
+            disableRemotePlayback
+            className="absolute inset-0 w-full h-full object-contain"
+            onClick={handleMediaTap}
+            onTimeUpdate={(e) => {
+              if (!isScrubbing) setCurrentTime(e.currentTarget.currentTime);
+            }}
+            onLoadedMetadata={(e) => {
+              setDuration(e.currentTarget.duration || 0);
+            }}
+            onDurationChange={(e) => {
+              setDuration(e.currentTarget.duration || 0);
+            }}
+            onEnded={() => {
+              if (onNext) onNext();
+            }}
+            onVolumeChange={(e) => {
+              const el = e.currentTarget;
+              setMuted(el.muted);
+            }}
+            onWaiting={() => setPrefetchPaused(true)}
+            onStalled={() => setPrefetchPaused(true)}
+            onPlaying={() => setPrefetchPaused(false)}
+            onCanPlayThrough={() => setPrefetchPaused(false)}
+            onPause={() => setPrefetchPaused(false)}
+          />
+        )
+      ) : banner.image_url || (video && isYouTubeUrl(video)) ? (
         <img
-          src={banner.image_url}
+          src={safeYouTubeThumbnailUrl(banner.image_url, video)}
           alt={banner.title_ar ?? ""}
           className="absolute inset-0 w-full h-full object-contain"
           onClick={handleMediaTap}
+          onError={(e) => {
+            if (video && isYouTubeUrl(video)) {
+              const yid = getYouTubeVideoId(video);
+              if (yid) (e.currentTarget as HTMLImageElement).src = `https://i.ytimg.com/vi/${yid}/hqdefault.jpg`;
+            }
+          }}
         />
       ) : (
         <div className="absolute inset-0 bg-black" />
@@ -328,7 +440,7 @@ function ReelItem({
       </div>
 
       {/* caption */}
-      <div className="absolute inset-x-0 bottom-0 p-4 pb-6 text-white z-10">
+      <div className="absolute inset-x-0 bottom-0 p-4 pb-7 text-white z-10">
         {banner.title_ar && <h2 className="text-xl font-black leading-tight drop-shadow">{banner.title_ar}</h2>}
         {banner.subtitle_ar && <p className="text-sm text-white/90 mt-1 drop-shadow">{banner.subtitle_ar}</p>}
         {banner.link && (
@@ -340,8 +452,73 @@ function ReelItem({
           </a>
         )}
       </div>
+
+      {/* interactive seek/progress bar */}
+      {video && !isYouTubeUrl(video) && duration > 0 && (
+        <div className="absolute inset-x-0 bottom-0 z-30 select-none pb-safe">
+          {isScrubbing && (
+            <div className="flex justify-center mb-2 pointer-events-none">
+              <div className="px-3 py-1 rounded-full bg-black/85 border border-gold/60 text-white font-bold text-xs tracking-wider backdrop-blur shadow-lg">
+                {formatReelTime(scrubTime)} / {formatReelTime(duration)}
+              </div>
+            </div>
+          )}
+          <div
+            className="group relative h-6 flex items-end cursor-pointer"
+            onPointerDown={(e) => {
+              setIsScrubbing(true);
+              const rect = e.currentTarget.getBoundingClientRect();
+              const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+              const t = duration * ratio;
+              setScrubTime(t);
+              if (videoRef.current) videoRef.current.currentTime = t;
+              e.currentTarget.setPointerCapture(e.pointerId);
+            }}
+            onPointerMove={(e) => {
+              if (!isScrubbing) return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+              const t = duration * ratio;
+              setScrubTime(t);
+              if (videoRef.current) videoRef.current.currentTime = t;
+            }}
+            onPointerUp={(e) => {
+              setIsScrubbing(false);
+              const rect = e.currentTarget.getBoundingClientRect();
+              const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+              const t = duration * ratio;
+              if (videoRef.current) {
+                videoRef.current.currentTime = t;
+                setCurrentTime(t);
+                videoRef.current.play().catch(() => {});
+              }
+              try {
+                e.currentTarget.releasePointerCapture(e.pointerId);
+              } catch {}
+            }}
+          >
+            <div className="w-full h-1 group-hover:h-2 bg-white/25 transition-all duration-150 relative">
+              <div
+                className="h-full bg-gold transition-all duration-75 relative"
+                style={{
+                  width: `${((isScrubbing ? scrubTime : currentTime) / duration) * 100}%`,
+                }}
+              >
+                <div className="absolute end-0 top-1/2 -translate-y-1/2 size-3 rounded-full bg-white border-2 border-gold shadow opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+function formatReelTime(sec: number) {
+  if (!Number.isFinite(sec) || sec < 0) return "00:00";
+  const m = Math.floor(sec / 60).toString().padStart(2, "0");
+  const s = Math.floor(sec % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
 }
 
 /* ---------- hooks ---------- */
@@ -653,11 +830,12 @@ function UsersPanel() {
 
 function CommentsBody({ bannerId }: { bannerId: string }) {
   const { userId } = useAuth();
-  const isAdmin = useIsAdmin();
-  const { canBlock } = useAdminAccessStatus();
+  const { isAdmin, hasAnyAccess, canBlock } = useAdminAccessStatus();
+  const canPostAsOffice = isAdmin || hasAnyAccess;
   const qc = useQueryClient();
   const [text, setText] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<{ id: string; name: string } | null>(null);
   const [asAdmin, setAsAdmin] = useState(false);
   const PAGE_SIZE = 10;
   const [limit, setLimit] = useState(PAGE_SIZE);
@@ -710,8 +888,8 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
   }, [bannerId, qc]);
 
   const addOrEdit = useMutation({
-    mutationFn: async (vars: { body: string; editingId: string | null; asAdmin: boolean }) => {
-      const body = vars.body;
+    mutationFn: async (vars: { body: string; editingId: string | null; parentId?: string | null; asAdmin: boolean }) => {
+      const body = vars.body.trim();
       if (!body) throw new Error("empty");
       if (!userId) throw new Error("auth");
       const { containsProfanity } = await import("@/lib/profanity");
@@ -727,7 +905,8 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
           data: {
             bannerId,
             content: body,
-            isAdminReply: isAdmin && vars.asAdmin,
+            parentId: vars.parentId || null,
+            isAdminReply: canPostAsOffice && vars.asAdmin,
           },
         });
       }
@@ -750,7 +929,7 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
           user_id: userId,
           parent_id: null,
           content: body,
-          is_admin_reply: isAdmin && vars.asAdmin,
+          is_admin_reply: canPostAsOffice && vars.asAdmin,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           profile: prevProfile,
@@ -765,6 +944,7 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
       // Clear the input immediately so the UI feels instant.
       setText("");
       setEditingId(null);
+      setReplyingTo(null);
       setAsAdmin(false);
       return { previous, isEdit: !!vars.editingId };
     },
@@ -838,7 +1018,12 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
               currentUserId={userId}
               isAdmin={isAdmin}
               canBlock={canBlock}
-              onEdit={() => { setEditingId(c.id); setText(c.content); }}
+              onReply={() => {
+                setEditingId(null);
+                const commenterName = c.is_admin_reply ? "مكتب علي شوفرليت" : (c.profile?.full_name || "مستخدم");
+                setReplyingTo({ id: c.id, name: commenterName });
+              }}
+              onEdit={() => { setEditingId(c.id); setReplyingTo(null); setText(c.content); }}
               onDelete={() => del.mutate(c.id)}
               onBlock={() => {
                 const blocked = !!c.profile?.is_blocked;
@@ -867,31 +1052,50 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
 
       {userId ? (
         <div className="border-t p-3 space-y-2 bg-background">
-          {isAdmin && !editingId && (
-            <label className="flex items-center gap-2 text-xs">
+          {replyingTo && !editingId && (
+            <div className="flex items-center justify-between text-xs bg-muted/70 px-3 py-1.5 rounded-lg border border-border">
+              <span className="text-muted-foreground inline-flex items-center gap-1.5">
+                <Reply className="size-3 text-gold" />
+                الرد على: <strong className="text-foreground">{replyingTo.name}</strong>
+              </span>
+              <button
+                type="button"
+                onClick={() => setReplyingTo(null)}
+                className="text-muted-foreground hover:text-foreground"
+                aria-label="إلغاء الرد"
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
+          )}
+          {canPostAsOffice && !editingId && (
+            <label className="flex items-center gap-2 text-xs cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={asAdmin}
                 onChange={(e) => setAsAdmin(e.target.checked)}
-                className="size-4"
+                className="size-4 rounded"
               />
-              <span className="inline-flex items-center gap-1"><Shield className="size-3 text-gold" /> نشر كردّ رسمي من الإدارة</span>
+              <span className="inline-flex items-center gap-1 font-bold text-foreground">
+                <Shield className="size-3 text-gold" />
+                {replyingTo ? 'الرد باسم "مكتب علي شوفرليت"' : 'التعليق باسم "مكتب علي شوفرليت"'}
+              </span>
             </label>
           )}
           <div className="flex items-end gap-2">
             <Textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder={editingId ? "تعديل التعليق…" : "أضف تعليقاً…"}
+              placeholder={editingId ? "تعديل التعليق…" : (replyingTo ? `الرد على ${replyingTo.name}…` : "أضف تعليقاً…")}
               className="min-h-[42px] max-h-32 resize-none flex-1"
               maxLength={1000}
             />
-            {editingId && (
+            {(editingId || replyingTo) && (
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                onClick={() => { setEditingId(null); setText(""); }}
+                onClick={() => { setEditingId(null); setReplyingTo(null); setText(""); }}
                 aria-label="إلغاء"
               >
                 <X className="size-4" />
@@ -900,7 +1104,7 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
             <Button
               type="button"
               size="icon"
-              onClick={() => addOrEdit.mutate({ body: text.trim(), editingId, asAdmin })}
+              onClick={() => addOrEdit.mutate({ body: text.trim(), editingId, parentId: replyingTo?.id, asAdmin })}
               disabled={addOrEdit.isPending || !text.trim()}
               aria-label="إرسال"
             >
@@ -918,34 +1122,35 @@ function CommentsBody({ bannerId }: { bannerId: string }) {
 }
 
 function CommentRowView({
-  c, currentUserId, isAdmin, canBlock, onEdit, onDelete, onBlock,
+  c, currentUserId, isAdmin, canBlock, onReply, onEdit, onDelete, onBlock,
 }: {
   c: CommentRow;
   currentUserId: string | null;
   isAdmin: boolean;
   canBlock: boolean;
+  onReply: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onBlock: () => void;
 }) {
   const mine = currentUserId === c.user_id;
-  const name = c.profile?.full_name || (c.is_admin_reply ? "الإدارة" : "مستخدم");
+  const name = c.is_admin_reply ? "مكتب علي شوفرليت" : (c.profile?.full_name || "مستخدم");
   const initials = (name || "?").slice(0, 1);
   return (
     <div className="flex gap-2.5">
       <div className="size-9 rounded-full bg-muted grid place-items-center text-sm font-bold overflow-hidden shrink-0">
-        {c.profile?.avatar_url ? (
+        {c.profile?.avatar_url && !c.is_admin_reply ? (
           <img src={c.profile.avatar_url} alt="" className="w-full h-full object-cover" />
         ) : (
-          <span>{initials}</span>
+          <span className={c.is_admin_reply ? "text-gold font-black" : ""}>{c.is_admin_reply ? "ع" : initials}</span>
         )}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-sm font-bold">{name}</span>
+          <span className={`text-sm font-bold ${c.is_admin_reply ? "text-gold" : ""}`}>{name}</span>
           {c.is_admin_reply && (
             <span className="inline-flex items-center gap-1 text-[10px] font-bold text-gold bg-gold/10 border border-gold/30 rounded-full px-1.5 py-0.5">
-              <Shield className="size-2.5" /> الإدارة
+              <Shield className="size-2.5" /> مكتب علي شوفرليت
             </span>
           )}
           <span className="text-[10px] text-muted-foreground">
@@ -954,6 +1159,15 @@ function CommentRowView({
         </div>
         <p className="text-sm mt-0.5 whitespace-pre-wrap break-words">{c.content}</p>
         <div className="flex items-center gap-3 mt-1 text-[11px] text-muted-foreground">
+          {currentUserId && (
+            <button
+              type="button"
+              onClick={onReply}
+              className="inline-flex items-center gap-1 hover:text-foreground font-medium"
+            >
+              <Reply className="size-3" /> رد
+            </button>
+          )}
           {mine && (
             <>
               <button type="button" onClick={onEdit} className="inline-flex items-center gap-1 hover:text-foreground">

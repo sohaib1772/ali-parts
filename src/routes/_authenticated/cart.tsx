@@ -64,6 +64,7 @@ function CartPage() {
   };
 
   const changeSide = async (row: any, newSide: "LH" | "RH" | "PAIR" | null) => {
+    if (row.product?.has_side_options === false) return;
     if (row.side === newSide) return;
     // Merge with an existing line for the same (product, side) — treat null as its own slot.
     let existingQuery = supabase
@@ -163,24 +164,26 @@ function CartPage() {
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-bold line-clamp-2">{it.product?.name_ar}</h3>
               {it.product?.oem_number && <div className="text-[10px] text-muted-foreground font-mono">OEM: {it.product.oem_number}</div>}
-              <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-muted p-0.5">
-                {(["LH", "RH", "PAIR"] as const).map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => changeSide(it, it.side === s ? null : s)}
-                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-black transition ${
-                      it.side === s
-                        ? "bg-navy text-primary-foreground shadow"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {s === "LH" ? "LH · يسار" : s === "RH" ? "RH · يمين" : "تخم"}
-                  </button>
-                ))}
-                {!it.side && (
-                  <span className="px-2 text-[10px] text-muted-foreground">اختياري</span>
-                )}
-              </div>
+              {(it.product?.has_side_options ?? true) && (
+                <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-muted p-0.5">
+                  {(["LH", "RH", "PAIR"] as const).map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => changeSide(it, it.side === s ? null : s)}
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-black transition ${
+                        it.side === s
+                          ? "bg-navy text-primary-foreground shadow"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {s === "LH" ? "LH · يسار" : s === "RH" ? "RH · يمين" : "تخم"}
+                    </button>
+                  ))}
+                  {!it.side && (
+                    <span className="px-2 text-[10px] text-muted-foreground">اختياري</span>
+                  )}
+                </div>
+              )}
               <div className="text-navy font-extrabold text-sm mt-1">{formatIQD(adjust(it.product?.price_iqd))}</div>
               <div className="flex items-center gap-2 mt-2">
                 <div className="flex items-center bg-muted rounded-lg">

@@ -23,6 +23,7 @@ import type { Banner, Product } from "@/lib/queries";
 import { formatIQD } from "@/lib/format";
 import { useAdjustedPrice } from "@/lib/admin";
 import { thumbUrl } from "@/lib/image-url";
+import { isYouTubeUrl, safeYouTubeThumbnailUrl } from "@/lib/youtube";
 
 export const Route = createFileRoute("/")({
   validateSearch: filterSearchSchema,
@@ -313,10 +314,11 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   // on Iraqi mobile data, so nothing is downloaded until the user asks for it:
   // `preload="none"` + no autoPlay + no programmatic play() before this flips.
   const [started, setStarted] = useState(false);
-  // Show only the latest uploaded VIDEO as a fixed hero — no rotation.
-  // Hide the whole section when no video has been uploaded.
-  const current = banners.find((b) => !!(b as any).video_url) ?? null;
+  // Show the latest uploaded banner (video or image).
+  const current = banners[0] ?? null;
   const videoUrl = (current as any)?.video_url as string | undefined;
+  const isYouTube = !!videoUrl && isYouTubeUrl(videoUrl);
+  const isDirectVideo = !!videoUrl && !isYouTube;
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const heroRef = useRef<HTMLDivElement | null>(null);
   const userWantsSoundRef = useRef(false);
@@ -325,7 +327,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
 
   useEffect(() => {
     const box = heroRef.current;
-    if (!box) return;
+    if (!box || !isDirectVideo) return;
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
@@ -352,7 +354,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
     );
     io.observe(box);
     return () => io.disconnect();
-  }, []);
+  }, [isDirectVideo]);
 
   // Mirror `started` into a ref so the IntersectionObserver (created once) can
   // read the current value without being torn down and rebuilt.
@@ -361,49 +363,38 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
 
   useEffect(() => {
     const el = videoRef.current;
-    if (!el) return;
+    if (!el || !isDirectVideo) return;
     el.muted = muted;
     // Do not call play() until the user has tapped: play() forces the browser
     // to fetch the media regardless of preload="none".
     if (!started) return;
     const p = el.play();
     if (p && typeof p.catch === "function") p.catch(() => {});
-  }, [muted, current?.id, started]);
+  }, [muted, current?.id, started, isDirectVideo]);
 
   if (!current) return null;
 
+  const bannerImage = safeYouTubeThumbnailUrl(current.image_url, videoUrl) || null;
+
   const content = (
     <div className="relative overflow-hidden rounded-3xl bg-gradient-hero text-primary-foreground shadow-luxe aspect-[16/10]">
-      {current.image_url && (
+      {bannerImage && (
         <img
-          src={thumbUrl(current.image_url, { width: 1200, quality: 75 })}
+          src={thumbUrl(bannerImage, { width: 1200, quality: 75 })}
           alt={current.title_ar ?? ""}
           decoding="async"
           fetchPriority="low"
           className="absolute inset-0 w-full h-full object-cover"
         />
       )}
-      {mounted && (
+      {mounted && isDirectVideo && (
         <video
           ref={videoRef}
-          // Stream the hero straight from the network URL (faststart MP4 + range
-          // requests) so it starts on tap and loads progressively. Deliberately
-          // NOT routed through useCachedVideo: that can swap to a whole-file blob,
-          // which defeats progressive streaming and is wasteful for a large video.
           src={videoUrl}
-          // Banners created video-only have image_url = '' (empty string, not
-          // NULL), so `image_url || undefined` produced NO poster and the
-          // fallback <img> above never rendered either — the user stared at an
-          // empty gradient while 16MB downloaded. Fall back to the store icon
-          // so something branded always paints immediately.
-          poster={current.image_url || "/icon-512.png"}
+          poster={bannerImage || "/icon-512.png"}
           muted={muted}
           loop
           playsInline
-          // preload="none" AND no autoPlay: autoplay overrides preload, so the
-          // browser would download the whole file anyway. Together with the
-          // guarded play() calls above, a visitor who never taps play
-          // downloads zero video bytes.
           preload="none"
           disableRemotePlayback
           className="absolute inset-0 w-full h-full object-cover cursor-pointer"
@@ -420,7 +411,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
         />
       )}
       {/* Tap-to-play. Shown until the user starts the video; costs no bandwidth. */}
-      {mounted && !started && !videoFailed && (
+      {mounted && isDirectVideo && !started && !videoFailed && (
         <button
           type="button"
           onClick={(e) => {
@@ -445,8 +436,19 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
           </span>
         </button>
       )}
+      {/* YouTube badge overlay */}
+      {mounted && isYouTube && (
+        <div className="absolute inset-0 grid place-items-center bg-navy/25 backdrop-blur-[1px] pointer-events-none group">
+          <span className="size-16 rounded-full bg-gradient-gold text-navy grid place-items-center shadow-gold transition group-hover:scale-105">
+            <Play className="size-7 ms-1" fill="currentColor" />
+          </span>
+          <span className="absolute bottom-14 text-[11px] font-bold text-white/90 bg-black/50 backdrop-blur-md rounded-full px-3 py-1">
+            فيديو يوتيوب · اضغط للمشاهدة
+          </span>
+        </div>
+      )}
       {/* Buffering spinner — only once playback has actually been requested. */}
-      {mounted && started && !videoReady && !videoFailed && (
+      {mounted && isDirectVideo && started && !videoReady && !videoFailed && (
         <div className="absolute inset-0 grid place-items-center bg-navy/40 backdrop-blur-[2px] pointer-events-none">
           <div className="size-10 rounded-full border-2 border-white/25 border-t-gold animate-spin" />
         </div>
